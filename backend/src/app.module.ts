@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from './auth/auth.module';
 import { BusinessesModule } from './businesses/businesses.module';
+import { JobsModule } from './jobs/jobs.module';
 import { validateEnv } from './config/env.validation';
 
 @Module({
@@ -19,6 +20,7 @@ import { validateEnv } from './config/env.validation';
     ]),
     AuthModule,
     BusinessesModule,
+    JobsModule,
   ],
 })
 export class AppModule {}

@@ -2,24 +2,32 @@ import { useAuth } from '../contexts/AuthProvider';
 import { Button } from '../components/ui/Button';
 import { useState, useEffect } from 'react';
 import { BusinessManagement } from '../components/business/BusinessManagement';
+import { JobManagement } from '../components/jobs/JobManagement';
 import { getBusinessStats, BusinessStats } from '../lib/business-api';
+import { getJobStats, JobStats } from '../lib/jobs-api';
 
 export function EmployerDashboard() {
   const { profile, logout } = useAuth();
-  const [currentView, setCurrentView] = useState<'dashboard' | 'businesses'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'businesses' | 'jobs'>('dashboard');
   const [businessStats, setBusinessStats] = useState<BusinessStats | null>(null);
+  const [jobStats, setJobStats] = useState<JobStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const loadBusinessStats = async () => {
     try {
       setStatsLoading(true);
-      const stats = await getBusinessStats();
-      setBusinessStats(stats);
+      const [businessData, jobData] = await Promise.all([
+        getBusinessStats(),
+        getJobStats().catch(() => ({ total_jobs: 0, draft_jobs: 0, published_jobs: 0, closed_jobs: 0 }))
+      ]);
+      setBusinessStats(businessData);
+      setJobStats(jobData);
     } catch (error) {
-      console.error('Failed to load business stats:', error);
+      console.error('Failed to load stats:', error);
       // Set default stats if loading fails
       setBusinessStats({ total_businesses: 0, total_employees: 0 });
+      setJobStats({ total_jobs: 0, draft_jobs: 0, published_jobs: 0, closed_jobs: 0 });
     } finally {
       setStatsLoading(false);
     }
@@ -35,7 +43,7 @@ export function EmployerDashboard() {
         setCurrentView('businesses');
         break;
       case 'job-post-hiring':
-        console.log('Job Post & Hiring clicked - coming soon');
+        setCurrentView('jobs');
         break;
       case 'manage-schedule':
         console.log('Manage Schedule clicked - coming soon');
@@ -81,6 +89,10 @@ export function EmployerDashboard() {
   // Handle different views
   if (currentView === 'businesses') {
     return <BusinessManagement onBack={() => setCurrentView('dashboard')} />;
+  }
+
+  if (currentView === 'jobs') {
+    return <JobManagement onBack={() => setCurrentView('dashboard')} />;
   }
 
   return (
@@ -259,7 +271,13 @@ export function EmployerDashboard() {
                 <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-100 rounded-full flex items-center justify-center mb-2 sm:mb-3">
                   <span className="text-green-600 text-lg sm:text-xl">💼</span>
                 </div>
-                <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-green-600 mb-1">0</div>
+                <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-green-600 mb-1">
+                  {statsLoading ? (
+                    <div className="animate-pulse bg-gray-200 h-6 sm:h-8 w-8 sm:w-12 rounded mx-auto"></div>
+                  ) : (
+                    jobStats?.total_jobs || 0
+                  )}
+                </div>
                 <div className="text-xs sm:text-sm text-gray-600 font-medium">Job Posts</div>
               </div>
             </div>
