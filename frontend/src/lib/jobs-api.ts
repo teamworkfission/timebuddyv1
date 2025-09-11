@@ -48,10 +48,10 @@ export interface CreateJobData {
   business_type: string;
   phone: string;
   email?: string;
-  expected_hours_per_week?: number;
-  schedule?: string;
+  expected_hours_per_week: number;
+  schedule: string;
   pay_type: PayType;
-  pay_min: number;
+  pay_min?: number;
   pay_max?: number;
   pay_currency?: string;
   supplemental_pay?: SupplementalPayOption[];

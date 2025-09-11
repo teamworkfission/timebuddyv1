@@ -23,6 +23,39 @@ interface CreateJobPostProps {
 }
 
 export function CreateJobPost({ editingJob, onSuccess }: CreateJobPostProps) {
+  // Validation helper functions
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validatePhone = (phone: string): boolean => {
+    // Remove all non-digit characters for validation
+    const cleaned = phone.replace(/\D/g, '');
+    // US phone number: 10 or 11 digits (with or without country code)
+    return cleaned.length >= 10 && cleaned.length <= 11;
+  };
+
+  const formatPhone = (phone: string): string => {
+    // Remove all non-digit characters
+    const cleaned = phone.replace(/\D/g, '');
+    
+    // Format as (XXX) XXX-XXXX
+    if (cleaned.length >= 6) {
+      if (cleaned.length <= 10) {
+        return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+      } else {
+        // Handle 11 digit with country code
+        return `+${cleaned.slice(0, 1)} (${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7)}`;
+      }
+    } else if (cleaned.length >= 3) {
+      return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3)}`;
+    } else if (cleaned.length > 0) {
+      return cleaned;
+    }
+    return phone;
+  };
+
   const [businesses, setBusinesses] = useState<BusinessOption[]>([]);
   const [businessesLoading, setBusinessesLoading] = useState(true);
   const [formData, setFormData] = useState<CreateJobData>({
@@ -35,10 +68,10 @@ export function CreateJobPost({ editingJob, onSuccess }: CreateJobPostProps) {
     business_type: '',
     phone: '',
     email: '',
-    expected_hours_per_week: undefined,
+    expected_hours_per_week: 40,
     schedule: '',
     pay_type: 'hourly',
-    pay_min: 0,
+    pay_min: undefined,
     pay_max: undefined,
     pay_currency: 'USD',
     supplemental_pay: [],
@@ -140,11 +173,29 @@ export function CreateJobPost({ editingJob, onSuccess }: CreateJobPostProps) {
       if (!formData.phone.trim()) {
         throw new Error('Phone number is required');
       }
+      if (!validatePhone(formData.phone)) {
+        throw new Error('Please enter a valid phone number');
+      }
+      if (formData.email && formData.email.trim() && !validateEmail(formData.email)) {
+        throw new Error('Please enter a valid email address');
+      }
+      if (!formData.expected_hours_per_week || formData.expected_hours_per_week <= 0) {
+        throw new Error('Expected hours per week is required and must be greater than 0');
+      }
+      if (!formData.schedule || !formData.schedule.trim()) {
+        throw new Error('Schedule is required');
+      }
       if (!formData.job_description.trim()) {
         throw new Error('Job description is required');
       }
-      if (formData.pay_min <= 0) {
+      if (!formData.pay_min || formData.pay_min <= 0) {
         throw new Error('Pay must be greater than 0');
+      }
+      if (formData.pay_min < 0) {
+        throw new Error('Pay cannot be negative');
+      }
+      if (formData.pay_max && formData.pay_max < 0) {
+        throw new Error('Maximum pay cannot be negative');
       }
       if (payRange === 'range' && formData.pay_max && formData.pay_max < formData.pay_min) {
         throw new Error('Maximum pay cannot be less than minimum pay');
@@ -168,9 +219,9 @@ export function CreateJobPost({ editingJob, onSuccess }: CreateJobPostProps) {
         setFormData(prev => ({
           ...prev,
           job_title: '',
-          expected_hours_per_week: undefined,
+          expected_hours_per_week: 40,
           schedule: '',
-          pay_min: 0,
+          pay_min: undefined,
           pay_max: undefined,
           job_description: '',
           language_preference: '',
@@ -234,7 +285,7 @@ export function CreateJobPost({ editingJob, onSuccess }: CreateJobPostProps) {
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Choose Business <span className="text-red-500">*</span>
+              Choose Business <span className="text-red-500 text-lg font-bold">*</span>
             </label>
             <select
               value={formData.business_id}
@@ -285,16 +336,22 @@ export function CreateJobPost({ editingJob, onSuccess }: CreateJobPostProps) {
           </h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              label="Job Title"
-              value={formData.job_title}
-              onChange={(e) => handleInputChange('job_title', e.target.value)}
-              placeholder="e.g., Cashier, Server, Sales Associate"
-              required
-            />
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Job Type <span className="text-red-500">*</span>
+                Job Title <span className="text-red-500 text-lg font-bold">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.job_title}
+                onChange={(e) => handleInputChange('job_title', e.target.value)}
+                placeholder="e.g., Cashier, Server, Sales Associate"
+                className="w-full px-4 py-3 text-base rounded-lg border min-h-[44px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent border-gray-300"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Job Type <span className="text-red-500 text-lg font-bold">*</span>
               </label>
               <select
                 value={formData.job_type}
@@ -312,20 +369,31 @@ export function CreateJobPost({ editingJob, onSuccess }: CreateJobPostProps) {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              label="Phone Number"
-              type="tel"
-              value={formData.phone}
-              onChange={(e) => handleInputChange('phone', e.target.value)}
-              placeholder="(555) 123-4567"
-              required
-            />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Phone Number <span className="text-red-500 text-lg font-bold">*</span>
+              </label>
+              <input
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => {
+                  const formatted = formatPhone(e.target.value);
+                  handleInputChange('phone', formatted);
+                }}
+                placeholder="(555) 123-4567"
+                maxLength={17}
+                className="w-full px-4 py-3 text-base rounded-lg border min-h-[44px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent border-gray-300"
+                required
+              />
+            </div>
             <Input
               label="Email (Optional)"
               type="email"
               value={formData.email}
               onChange={(e) => handleInputChange('email', e.target.value)}
               placeholder="jobs@company.com"
+              pattern="[^\s@]+@[^\s@]+\.[^\s@]+"
+              title="Please enter a valid email address"
             />
           </div>
         </div>
@@ -338,21 +406,39 @@ export function CreateJobPost({ editingJob, onSuccess }: CreateJobPostProps) {
           </h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              label="Expected Hours per Week"
-              type="number"
-              min="1"
-              max="80"
-              value={formData.expected_hours_per_week || ''}
-              onChange={(e) => handleInputChange('expected_hours_per_week', parseInt(e.target.value) || undefined)}
-              placeholder="40"
-            />
-            <Input
-              label="Schedule"
-              value={formData.schedule || ''}
-              onChange={(e) => handleInputChange('schedule', e.target.value)}
-              placeholder="e.g., Mon–Fri, 9 AM–5 PM"
-            />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Expected Hours per Week <span className="text-red-500 text-lg font-bold">*</span>
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="80"
+                value={formData.expected_hours_per_week || ''}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value);
+                  if (!isNaN(value) && value > 0) {
+                    handleInputChange('expected_hours_per_week', value);
+                  }
+                }}
+                placeholder="40"
+                className="w-full px-4 py-3 text-base rounded-lg border min-h-[44px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent border-gray-300"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Schedule <span className="text-red-500 text-lg font-bold">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.schedule || ''}
+                onChange={(e) => handleInputChange('schedule', e.target.value)}
+                placeholder="e.g., Mon–Fri, 9 AM–5 PM"
+                className="w-full px-4 py-3 text-base rounded-lg border min-h-[44px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent border-gray-300"
+                required
+              />
+            </div>
           </div>
         </div>
 
@@ -365,7 +451,7 @@ export function CreateJobPost({ editingJob, onSuccess }: CreateJobPostProps) {
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Pay Type <span className="text-red-500">*</span>
+              Pay Type <span className="text-red-500 text-lg font-bold">*</span>
             </label>
             <select
               value={formData.pay_type}
@@ -410,16 +496,31 @@ export function CreateJobPost({ editingJob, onSuccess }: CreateJobPostProps) {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              label={payRange === 'single' ? 'Pay Amount' : 'Minimum Pay'}
-              type="number"
-              min="0"
-              step="0.01"
-              value={formData.pay_min}
-              onChange={(e) => handleInputChange('pay_min', parseFloat(e.target.value) || 0)}
-              placeholder="15.00"
-              required
-            />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {payRange === 'single' ? 'Pay Amount' : 'Minimum Pay'} <span className="text-red-500 text-lg font-bold">*</span>
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.pay_min || ''}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === '') {
+                    handleInputChange('pay_min', undefined);
+                  } else {
+                    const numValue = parseFloat(value);
+                    if (!isNaN(numValue) && numValue >= 0) {
+                      handleInputChange('pay_min', numValue);
+                    }
+                  }
+                }}
+                placeholder="15.00"
+                className="w-full px-4 py-3 text-base rounded-lg border min-h-[44px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent border-gray-300"
+                required
+              />
+            </div>
             {payRange === 'range' && (
               <Input
                 label="Maximum Pay"
@@ -427,7 +528,17 @@ export function CreateJobPost({ editingJob, onSuccess }: CreateJobPostProps) {
                 min="0"
                 step="0.01"
                 value={formData.pay_max || ''}
-                onChange={(e) => handleInputChange('pay_max', parseFloat(e.target.value) || undefined)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === '') {
+                    handleInputChange('pay_max', undefined);
+                  } else {
+                    const numValue = parseFloat(value);
+                    if (!isNaN(numValue) && numValue >= 0) {
+                      handleInputChange('pay_max', numValue);
+                    }
+                  }
+                }}
                 placeholder="20.00"
               />
             )}
@@ -445,7 +556,7 @@ export function CreateJobPost({ editingJob, onSuccess }: CreateJobPostProps) {
                     type="checkbox"
                     checked={(formData.supplemental_pay || []).includes(value as SupplementalPayOption)}
                     onChange={(e) => handleSupplementalPayChange(value as SupplementalPayOption, e.target.checked)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                   <span className="text-sm text-gray-700">{label}</span>
                 </label>
@@ -465,7 +576,7 @@ export function CreateJobPost({ editingJob, onSuccess }: CreateJobPostProps) {
                     type="checkbox"
                     checked={(formData.benefits || []).includes(value as BenefitsOption)}
                     onChange={(e) => handleBenefitsChange(value as BenefitsOption, e.target.checked)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                   <span className="text-sm text-gray-700">{label}</span>
                 </label>
@@ -483,7 +594,7 @@ export function CreateJobPost({ editingJob, onSuccess }: CreateJobPostProps) {
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Job Description <span className="text-red-500">*</span>
+              Job Description <span className="text-red-500 text-lg font-bold">*</span>
             </label>
             <textarea
               value={formData.job_description}
