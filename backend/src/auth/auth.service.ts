@@ -42,9 +42,27 @@ export class AuthService {
         throw new Error('Invalid token');
       }
       
+      // Fetch user profile to get role information
+      const { data: profile, error: profileError } = await this.supabase.admin
+        .from('profiles')
+        .select('id, email, role')
+        .eq('id', user.user.id)
+        .maybeSingle();
+
+      if (profileError) {
+        console.error('Failed to fetch user profile:', profileError);
+        throw new Error('Failed to fetch user profile');
+      }
+
+      if (!profile) {
+        throw new Error('User profile not found');
+      }
+      
       return {
+        id: profile.id,
         userId: user.user.id,
-        email: user.user.email || undefined,
+        email: profile.email || user.user.email || undefined,
+        role: profile.role,
       };
     } catch (error) {
       console.error('Token verification failed:', error);
