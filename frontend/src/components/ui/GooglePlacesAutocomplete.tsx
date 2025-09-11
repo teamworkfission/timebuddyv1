@@ -6,6 +6,7 @@ interface GooglePlacesAutocompleteProps {
     address: string;
     city?: string;
     state?: string;
+    county?: string;
     country?: string;
     postalCode?: string;
   }) => void;
@@ -40,6 +41,7 @@ export function GooglePlacesAutocomplete({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [googleMapsLoaded, setGoogleMapsLoaded] = useState(false);
+  const [hasSelectedPlace, setHasSelectedPlace] = useState(false);
   
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteService = useRef<any>(null);
@@ -48,12 +50,24 @@ export function GooglePlacesAutocomplete({
   // Load Google Maps API
   useEffect(() => {
     const loadGoogleMapsAPI = () => {
-      if (window.google && window.google.maps) {
-        setGoogleMapsLoaded(true);
-        autocompleteService.current = new window.google.maps.places.AutocompleteService();
-        const mapDiv = document.createElement('div');
-        const map = new window.google.maps.Map(mapDiv);
-        placesService.current = new window.google.maps.places.PlacesService(map);
+      if (window.google && window.google.maps && window.google.maps.places) {
+        try {
+          setGoogleMapsLoaded(true);
+          autocompleteService.current = new window.google.maps.places.AutocompleteService();
+          const mapDiv = document.createElement('div');
+          const map = new window.google.maps.Map(mapDiv, {
+            zoom: 1,
+            center: { lat: 40.7128, lng: -74.0060 }
+          });
+          placesService.current = new window.google.maps.places.PlacesService(map);
+        } catch (error) {
+          console.error('Failed to initialize Google Maps services:', error);
+        }
+        return;
+      }
+
+      // Check if script already exists to avoid duplicate loading
+      if (document.querySelector('script[src*="maps.googleapis.com"]')) {
         return;
       }
 
@@ -64,14 +78,27 @@ export function GooglePlacesAutocomplete({
       }
 
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async`;
       script.async = true;
+      script.defer = true;
       script.onload = () => {
-        setGoogleMapsLoaded(true);
-        autocompleteService.current = new window.google.maps.places.AutocompleteService();
-        const mapDiv = document.createElement('div');
-        const map = new window.google.maps.Map(mapDiv);
-        placesService.current = new window.google.maps.places.PlacesService(map);
+        // Add a small delay to ensure all Google Maps objects are ready
+        setTimeout(() => {
+          try {
+            if (window.google && window.google.maps && window.google.maps.places) {
+              setGoogleMapsLoaded(true);
+              autocompleteService.current = new window.google.maps.places.AutocompleteService();
+              const mapDiv = document.createElement('div');
+              const map = new window.google.maps.Map(mapDiv, {
+                zoom: 1,
+                center: { lat: 40.7128, lng: -74.0060 }
+              });
+              placesService.current = new window.google.maps.places.PlacesService(map);
+            }
+          } catch (error) {
+            console.error('Failed to initialize Google Maps services:', error);
+          }
+        }, 100);
       };
       script.onerror = () => {
         console.error('Failed to load Google Maps API');
@@ -120,11 +147,13 @@ export function GooglePlacesAutocomplete({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     setInputValue(newValue);
+    setHasSelectedPlace(false);
   };
 
   const handleSuggestionClick = (prediction: GooglePlacePrediction) => {
     setInputValue(prediction.description);
     setShowSuggestions(false);
+    setHasSelectedPlace(true);
 
     if (!placesService.current) {
       // Fallback parsing if Places service is not available
@@ -133,6 +162,7 @@ export function GooglePlacesAutocomplete({
         address: prediction.description,
         city: parts[1] || undefined,
         state: parts[2]?.split(' ')[0] || undefined,
+        county: undefined,
         postalCode: parts[2]?.split(' ')[1] || undefined,
       });
       return;
@@ -159,6 +189,7 @@ export function GooglePlacesAutocomplete({
             address: place.formatted_address || prediction.description,
             city: getComponent(['locality', 'sublocality']),
             state: getComponent(['administrative_area_level_1']),
+            county: getComponent(['administrative_area_level_2']),
             country: getComponent(['country']),
             postalCode: getComponent(['postal_code']),
           });
@@ -169,6 +200,7 @@ export function GooglePlacesAutocomplete({
             address: prediction.description,
             city: parts[1] || undefined,
             state: parts[2]?.split(' ')[0] || undefined,
+            county: undefined,
             postalCode: parts[2]?.split(' ')[1] || undefined,
           });
         }
@@ -190,7 +222,7 @@ export function GooglePlacesAutocomplete({
         value={inputValue}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
-        onFocus={() => inputValue.length > 2 && setShowSuggestions(true)}
+        onFocus={() => !hasSelectedPlace && inputValue.length > 2 && setShowSuggestions(true)}
         placeholder={placeholder}
         className={className}
         autoComplete="off"

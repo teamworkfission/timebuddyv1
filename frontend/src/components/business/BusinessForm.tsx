@@ -52,15 +52,16 @@ export function BusinessForm({ onSuccess, onCancel }: BusinessFormProps) {
     setFormData(prev => ({ ...prev, location: fullAddress }));
   };
 
-  const handlePlaceSelect = (place: { address: string; city?: string; state?: string; postalCode?: string }) => {
+  const handlePlaceSelect = (place: { address: string; city?: string; state?: string; county?: string; postalCode?: string }) => {
     setFormData(prev => ({ ...prev, location: place.address }));
     
     // Auto-populate manual fields if available
-    if (place.city || place.state || place.postalCode) {
+    if (place.city || place.state || place.county || place.postalCode) {
       setManualAddress(prev => ({
         ...prev,
         city: place.city || prev.city,
         state: place.state || prev.state,
+        county: place.county || prev.county,
         zipcode: place.postalCode || prev.zipcode,
         street: place.address.split(',')[0] || prev.street,
       }));
@@ -186,17 +187,17 @@ export function BusinessForm({ onSuccess, onCancel }: BusinessFormProps) {
 
         {/* Manual Address Fields - Mobile Optimized */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-          <div className="sm:col-span-2">
-            <label htmlFor="street" className="block text-sm font-medium text-gray-700 mb-2">
-              Street Address
+          <div>
+            <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-2">
+              State
             </label>
             <Input
-              id="street"
-              name="street"
+              id="state"
+              name="state"
               type="text"
-              value={manualAddress.street}
+              value={manualAddress.state}
               onChange={handleManualAddressChange}
-              placeholder="123 Main St"
+              placeholder="NY"
             />
           </div>
           <div>
@@ -210,19 +211,6 @@ export function BusinessForm({ onSuccess, onCancel }: BusinessFormProps) {
               value={manualAddress.city}
               onChange={handleManualAddressChange}
               placeholder="New York"
-            />
-          </div>
-          <div>
-            <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-2">
-              State
-            </label>
-            <Input
-              id="state"
-              name="state"
-              type="text"
-              value={manualAddress.state}
-              onChange={handleManualAddressChange}
-              placeholder="NY"
             />
           </div>
           <div>
@@ -249,6 +237,19 @@ export function BusinessForm({ onSuccess, onCancel }: BusinessFormProps) {
               value={manualAddress.zipcode}
               onChange={handleManualAddressChange}
               placeholder="10001"
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <label htmlFor="street" className="block text-sm font-medium text-gray-700 mb-2">
+              Street Address
+            </label>
+            <Input
+              id="street"
+              name="street"
+              type="text"
+              value={manualAddress.street}
+              onChange={handleManualAddressChange}
+              placeholder="123 Main St"
             />
           </div>
         </div>
