@@ -137,10 +137,3 @@ export class CreateJobDto {
   transportation_requirement?: string;
 }
 
-export { 
-  JOB_TYPES, 
-  JOB_STATUSES, 
-  PAY_TYPES, 
-  SUPPLEMENTAL_PAY_OPTIONS, 
-  BENEFITS_OPTIONS 
-};

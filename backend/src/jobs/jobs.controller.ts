@@ -16,15 +16,6 @@ import { CreateJobDto } from './dto/create-job.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
 import { AuthService } from '../auth/auth.service';
 
-interface AuthenticatedRequest extends Request {
-  user: {
-    id: string;
-    userId: string;
-    email: string;
-    role: string;
-  };
-}
-
 @Controller('jobs')
 export class JobsController {
   constructor(
@@ -34,7 +25,7 @@ export class JobsController {
 
   // Create a new job post
   @Post()
-  async create(@Request() req: AuthenticatedRequest, @Body() createJobDto: CreateJobDto) {
+  async create(@Request() req: any, @Body() createJobDto: CreateJobDto) {
     // Verify token and get user info
     const authHeader = req.headers.authorization;
     if (!authHeader) {
@@ -53,7 +44,7 @@ export class JobsController {
 
   // Get all job posts for the employer
   @Get()
-  async findAll(@Request() req: AuthenticatedRequest, @Query('status') status?: string) {
+  async findAll(@Request() req: any, @Query('status') status?: string) {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
       throw new BadRequestException('Authorization header missing');
@@ -71,7 +62,7 @@ export class JobsController {
 
   // Get job statistics
   @Get('stats')
-  async getStats(@Request() req: AuthenticatedRequest) {
+  async getStats(@Request() req: any) {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
       throw new BadRequestException('Authorization header missing');
@@ -89,7 +80,7 @@ export class JobsController {
 
   // Get employer's businesses for dropdown
   @Get('businesses')
-  async getBusinesses(@Request() req: AuthenticatedRequest) {
+  async getBusinesses(@Request() req: any) {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
       throw new BadRequestException('Authorization header missing');
@@ -107,7 +98,7 @@ export class JobsController {
 
   // Get a specific job post
   @Get(':id')
-  async findOne(@Request() req: AuthenticatedRequest, @Param('id') id: string) {
+  async findOne(@Request() req: any, @Param('id') id: string) {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
       throw new BadRequestException('Authorization header missing');
@@ -126,7 +117,7 @@ export class JobsController {
   // Update a job post
   @Patch(':id')
   async update(
-    @Request() req: AuthenticatedRequest, 
+    @Request() req: any, 
     @Param('id') id: string, 
     @Body() updateJobDto: UpdateJobDto
   ) {
@@ -147,7 +138,7 @@ export class JobsController {
 
   // Delete a job post
   @Delete(':id')
-  async remove(@Request() req: AuthenticatedRequest, @Param('id') id: string) {
+  async remove(@Request() req: any, @Param('id') id: string) {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
       throw new BadRequestException('Authorization header missing');
