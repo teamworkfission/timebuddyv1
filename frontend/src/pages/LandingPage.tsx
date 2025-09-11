@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthProvider';
 
 export function LandingPage() {
   const navigate = useNavigate();
-  const { user, profile, logout } = useAuth();
+  const { user, profile, loading, processingAuth, logout } = useAuth();
   const [authModal, setAuthModal] = useState<{
     isOpen: boolean;
     role: 'employee' | 'employer';
@@ -24,6 +24,18 @@ export function LandingPage() {
   const closeAuthModal = () => {
     setAuthModal(prev => ({ ...prev, isOpen: false }));
   };
+
+  // Show loading state during auth processing or initial load
+  if (loading || processingAuth) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   // If already logged in, show welcome message with logout
   if (user && profile) {

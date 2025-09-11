@@ -16,6 +16,7 @@ interface AuthContextType {
   user: User | null;
   profile: Profile | null;
   loading: boolean;
+  processingAuth: boolean;
   logout: () => Promise<void>;
 }
 
@@ -212,7 +213,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, logout }}>
+    <AuthContext.Provider value={{ user, profile, loading, processingAuth, logout }}>
       {children}
       
       <AccountMismatchModal
