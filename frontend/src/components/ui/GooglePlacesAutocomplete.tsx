@@ -42,6 +42,7 @@ export function GooglePlacesAutocomplete({
   const [isLoading, setIsLoading] = useState(false);
   const [googleMapsLoaded, setGoogleMapsLoaded] = useState(false);
   const [hasSelectedPlace, setHasSelectedPlace] = useState(false);
+  const [selectedAddress, setSelectedAddress] = useState<string>('');
   
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteService = useRef<any>(null);
@@ -111,8 +112,8 @@ export function GooglePlacesAutocomplete({
 
   // Debounced search function
   const debouncedSearch = useCallback(
-    debounce((query: string) => {
-      if (!googleMapsLoaded || !autocompleteService.current || query.length < 2) {
+    debounce((query: string, allowSearch: boolean = true) => {
+      if (!googleMapsLoaded || !autocompleteService.current || query.length < 2 || !allowSearch) {
         setSuggestions([]);
         setShowSuggestions(false);
         return;
@@ -140,20 +141,56 @@ export function GooglePlacesAutocomplete({
     [googleMapsLoaded]
   );
 
+  // Helper function to determine if input has changed significantly from selected address
+  const hasSignificantChange = (currentValue: string, originalValue: string): boolean => {
+    if (!originalValue) return true;
+    
+    // Allow search if field is cleared or nearly cleared
+    if (currentValue.length < 3) return true;
+    
+    // Allow search if input is significantly different (less than 70% similarity)
+    const similarity = getSimilarity(currentValue.toLowerCase(), originalValue.toLowerCase());
+    return similarity < 0.7;
+  };
+
+  // Simple similarity function based on common characters
+  const getSimilarity = (str1: string, str2: string): number => {
+    if (str1 === str2) return 1;
+    if (!str1 || !str2) return 0;
+    
+    const longer = str1.length > str2.length ? str1 : str2;
+    const shorter = str1.length > str2.length ? str2 : str1;
+    
+    if (longer.length === 0) return 1;
+    
+    const matchingChars = shorter.split('').filter((char, index) => 
+      longer.charAt(index) === char
+    ).length;
+    
+    return matchingChars / longer.length;
+  };
+
   useEffect(() => {
-    debouncedSearch(inputValue);
-  }, [inputValue, debouncedSearch]);
+    const shouldAllowSearch = !hasSelectedPlace || hasSignificantChange(inputValue, selectedAddress);
+    debouncedSearch(inputValue, shouldAllowSearch);
+  }, [inputValue, debouncedSearch, hasSelectedPlace, selectedAddress]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     setInputValue(newValue);
-    setHasSelectedPlace(false);
+    
+    // Only reset hasSelectedPlace if there's a significant change from the selected address
+    if (hasSelectedPlace && hasSignificantChange(newValue, selectedAddress)) {
+      setHasSelectedPlace(false);
+      setSelectedAddress('');
+    }
   };
 
   const handleSuggestionClick = (prediction: GooglePlacePrediction) => {
     setInputValue(prediction.description);
     setShowSuggestions(false);
     setHasSelectedPlace(true);
+    setSelectedAddress(prediction.description);
 
     if (!placesService.current) {
       // Fallback parsing if Places service is not available
@@ -222,7 +259,12 @@ export function GooglePlacesAutocomplete({
         value={inputValue}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
-        onFocus={() => !hasSelectedPlace && inputValue.length > 2 && setShowSuggestions(true)}
+        onFocus={() => {
+          const shouldAllowFocus = !hasSelectedPlace || hasSignificantChange(inputValue, selectedAddress);
+          if (shouldAllowFocus && inputValue.length > 2 && suggestions.length > 0) {
+            setShowSuggestions(true);
+          }
+        }}
         placeholder={placeholder}
         className={className}
         autoComplete="off"
