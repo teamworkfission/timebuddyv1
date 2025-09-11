@@ -1,15 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { GooglePlacesAutocomplete } from '../ui/GooglePlacesAutocomplete';
-import { createBusiness, BUSINESS_TYPES, BUSINESS_TYPE_LABELS, CreateBusinessData } from '../../lib/business-api';
+import { createBusiness, updateBusiness, BUSINESS_TYPES, BUSINESS_TYPE_LABELS, CreateBusinessData, Business } from '../../lib/business-api';
 
 interface BusinessFormProps {
   onSuccess: () => void;
   onCancel?: () => void;
+  initialData?: Business;
+  mode?: 'create' | 'edit';
 }
 
-export function BusinessForm({ onSuccess, onCancel }: BusinessFormProps) {
+export function BusinessForm({ onSuccess, onCancel, initialData, mode = 'create' }: BusinessFormProps) {
   const [formData, setFormData] = useState<CreateBusinessData>({
     name: '',
     type: 'restaurant',
@@ -29,6 +31,32 @@ export function BusinessForm({ onSuccess, onCancel }: BusinessFormProps) {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Initialize form data when editing
+  useEffect(() => {
+    if (mode === 'edit' && initialData) {
+      setFormData({
+        name: initialData.name,
+        type: initialData.type,
+        email: initialData.email,
+        phone: initialData.phone,
+        location: initialData.location,
+        total_employees: initialData.total_employees,
+      });
+
+      // Parse address components if available
+      const addressParts = initialData.location.split(', ');
+      if (addressParts.length >= 4) {
+        setManualAddress({
+          street: addressParts[0] || '',
+          city: addressParts[1] || '',
+          state: addressParts[2]?.split(' ')[0] || '',
+          county: '',
+          zipcode: addressParts[2]?.split(' ')[1] || '',
+        });
+      }
+    }
+  }, [mode, initialData]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -79,10 +107,14 @@ export function BusinessForm({ onSuccess, onCancel }: BusinessFormProps) {
         throw new Error('Please fill in all required fields');
       }
 
-      await createBusiness(formData);
+      if (mode === 'edit' && initialData) {
+        await updateBusiness(initialData.business_id, formData);
+      } else {
+        await createBusiness(formData);
+      }
       onSuccess();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create business');
+      setError(err instanceof Error ? err.message : `Failed to ${mode} business`);
     } finally {
       setLoading(false);
     }
@@ -91,8 +123,15 @@ export function BusinessForm({ onSuccess, onCancel }: BusinessFormProps) {
   return (
     <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
       <div className="mb-4 sm:mb-6">
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Add New Business</h2>
-        <p className="text-sm sm:text-base text-gray-600">Fill out the details for your business location</p>
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
+          {mode === 'edit' ? 'Edit Business' : 'Add New Business'}
+        </h2>
+        <p className="text-sm sm:text-base text-gray-600">
+          {mode === 'edit' 
+            ? 'Update the details for your business location' 
+            : 'Fill out the details for your business location'
+          }
+        </p>
       </div>
 
       {error && (
@@ -292,7 +331,10 @@ export function BusinessForm({ onSuccess, onCancel }: BusinessFormProps) {
             className="w-full sm:w-auto order-1 sm:order-2"
             size="md"
           >
-            {loading ? 'Creating Business...' : 'Create Business'}
+            {loading 
+              ? `${mode === 'edit' ? 'Updating' : 'Creating'} Business...` 
+              : `${mode === 'edit' ? 'Update' : 'Create'} Business`
+            }
           </Button>
         </div>
       </form>

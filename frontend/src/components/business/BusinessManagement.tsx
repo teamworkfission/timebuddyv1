@@ -13,6 +13,7 @@ export function BusinessManagement({ onBack }: BusinessManagementProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [editingBusiness, setEditingBusiness] = useState<Business | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
 
   const loadBusinesses = async () => {
@@ -38,10 +39,17 @@ export function BusinessManagement({ onBack }: BusinessManagementProps) {
 
   const handleFormSuccess = () => {
     setShowForm(false);
+    setEditingBusiness(null);
     loadBusinesses();
   };
 
   const handleAddBusiness = () => {
+    setEditingBusiness(null);
+    setShowForm(true);
+  };
+
+  const handleEditBusiness = (business: Business) => {
+    setEditingBusiness(business);
     setShowForm(true);
   };
 
@@ -92,7 +100,10 @@ export function BusinessManagement({ onBack }: BusinessManagementProps) {
               {businesses.length > 0 && (
                 <Button 
                   variant="outline" 
-                  onClick={() => setShowForm(false)}
+                  onClick={() => {
+                    setShowForm(false);
+                    setEditingBusiness(null);
+                  }}
                   className="w-full sm:w-auto order-1 sm:order-2"
                   size="sm"
                 >
@@ -104,7 +115,12 @@ export function BusinessManagement({ onBack }: BusinessManagementProps) {
 
           <BusinessForm 
             onSuccess={handleFormSuccess}
-            onCancel={businesses.length > 0 ? () => setShowForm(false) : undefined}
+            onCancel={businesses.length > 0 ? () => {
+              setShowForm(false);
+              setEditingBusiness(null);
+            } : undefined}
+            initialData={editingBusiness || undefined}
+            mode={editingBusiness ? 'edit' : 'create'}
           />
         </div>
       </div>
@@ -197,6 +213,7 @@ export function BusinessManagement({ onBack }: BusinessManagementProps) {
                 <div key={business.business_id} className="relative">
                   <BusinessTile 
                     business={business}
+                    onEdit={handleEditBusiness}
                     onDelete={deleting === business.business_id ? undefined : handleDeleteBusiness}
                   />
                   {deleting === business.business_id && (

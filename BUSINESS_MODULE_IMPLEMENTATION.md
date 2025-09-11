@@ -12,7 +12,8 @@ This document outlines the implementation of the Business Management module for 
 - **Role-based Access Control**: Ensures only employers can manage businesses
 
 ### Frontend (React + TypeScript)
-- **Business Form Component**: Comprehensive form for creating/editing businesses  
+- **Business Form Component**: Comprehensive form for creating/editing businesses with dual mode support
+- **Business Edit Functionality**: Edit icon in top-right corner of business tiles with modal editing
 - **Google Places Autocomplete**: Real-time address lookup and validation
 - **Business Management Dashboard**: List and manage multiple business locations
 - **Mobile-responsive Design**: Optimized for all device sizes
@@ -175,6 +176,7 @@ create table if not exists businesses (
 
 ### BusinessManagement Features
 - **Business Listing**: Clean, card-based layout of all businesses
+- **Edit Business**: Pencil icon in top-right corner of business tiles opens edit modal
 - **Quick Actions**: Edit, delete, and view business details
 - **Add New Business**: Modal-based form for adding new locations
 - **Statistics**: Employee count and business type breakdown
@@ -210,6 +212,37 @@ create table if not exists businesses (
 - **Role Permissions**: Test employer/employee access restrictions
 - **Mobile Responsiveness**: Test across different device sizes
 - **Error Handling**: Test network failures and API errors
+
+## Business Edit Functionality ✅ COMPLETED
+
+### Implementation Details
+**Edit Icon Design**:
+- **Location**: Top-right corner of business tile cards
+- **Icon**: Pencil/edit SVG icon with hover effects
+- **Styling**: Semi-transparent white background with hover transitions
+- **Accessibility**: ARIA labels and keyboard support
+
+**Edit Modal Flow**:
+1. **Trigger**: Click edit icon on any business tile
+2. **Form Mode**: BusinessForm component switches to 'edit' mode
+3. **Pre-population**: All existing business data pre-fills form fields
+4. **Address Parsing**: Location string is parsed back into manual address fields
+5. **API Call**: Uses PATCH endpoint to update existing business
+6. **Success**: Modal closes and business list refreshes
+
+**Technical Implementation**:
+- **BusinessTile**: Added absolute-positioned edit icon with onClick handler
+- **BusinessForm**: Enhanced with `initialData`, `mode` props and useEffect for data initialization
+- **BusinessManagement**: Added `editingBusiness` state and edit modal management
+- **API Integration**: Utilizes existing `updateBusiness` function from business-api.ts
+
+### Status: ✅ FULLY IMPLEMENTED
+- [x] Edit icon in top-right corner of business tiles
+- [x] Modal-based editing with pre-populated form
+- [x] Dual-mode BusinessForm (create/edit)
+- [x] Proper state management for edit flow
+- [x] Mobile-responsive design maintained
+- [x] Error handling and loading states
 
 ## Future Enhancements
 1. **Bulk Operations**: Select and modify multiple businesses
