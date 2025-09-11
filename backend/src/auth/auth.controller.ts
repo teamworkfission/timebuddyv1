@@ -69,10 +69,23 @@ export class AuthController {
         role: profile.role,
       };
     } catch (error) {
+      console.error('Auth completion error:', error);
+      
       if (error instanceof ThrottlerException) {
         throw new HttpException('Too many attempts, please try again later', HttpStatus.TOO_MANY_REQUESTS);
       }
-      throw error;
+      
+      // Handle specific JWT verification errors
+      if (error.message?.includes('Invalid token') || error.message?.includes('JWT')) {
+        throw new HttpException('Invalid or expired token', HttpStatus.UNAUTHORIZED);
+      }
+      
+      // Handle database/profile creation errors
+      if (error.message?.includes('Failed to create profile')) {
+        throw new HttpException('Failed to create user profile', HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+      
+      throw new HttpException('Authentication completion failed', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 }

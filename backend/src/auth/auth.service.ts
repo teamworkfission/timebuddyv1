@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { SupabaseService } from '../config/supabase.service';
-import * as jose from 'jose';
 
 @Injectable()
 export class AuthService {
@@ -34,17 +33,21 @@ export class AuthService {
     if (!bearer) throw new Error('Missing authorization header');
     
     const token = bearer.replace('Bearer ', '');
-    const jwks = jose.createRemoteJWKSet(
-      new URL(`${process.env.SUPABASE_URL}/auth/v1/keys`)
-    );
     
     try {
-      const { payload } = await jose.jwtVerify(token, jwks);
+      // Use Supabase client to verify the token
+      const { data: user, error } = await this.supabase.admin.auth.getUser(token);
+      
+      if (error || !user?.user) {
+        throw new Error('Invalid token');
+      }
+      
       return {
-        userId: payload.sub as string,
-        email: (payload as any).email as string | undefined,
+        userId: user.user.id,
+        email: user.user.email || undefined,
       };
     } catch (error) {
+      console.error('Token verification failed:', error);
       throw new Error('Invalid token');
     }
   }
@@ -72,7 +75,7 @@ export class AuthService {
       };
     }
 
-    // Create new profile with role lock
+    // Create new profile with role lock - handle race conditions
     const role = intendedRole ?? 'employee';
     const { data: newProfile, error } = await this.supabase.admin
       .from('profiles')
@@ -85,7 +88,26 @@ export class AuthService {
       .select('id, email, role')
       .single();
 
+    // Handle race condition: if profile was created by concurrent request
     if (error) {
+      // Check if error is due to unique constraint violation (profile already exists)
+      if (error.code === '23505' || error.message?.includes('duplicate key') || error.message?.includes('unique')) {
+        // Profile was created by concurrent request, fetch and return it
+        console.log('Profile creation race condition detected, fetching existing profile');
+        const { data: existingProfile, error: fetchError } = await this.supabase.admin
+          .from('profiles')
+          .select('id, email, role')
+          .eq('id', userId)
+          .single();
+
+        if (fetchError) {
+          throw new Error(`Failed to fetch existing profile after race condition: ${fetchError.message}`);
+        }
+
+        return existingProfile;
+      }
+      
+      // For other database errors, throw as before
       throw new Error(`Failed to create profile: ${error.message}`);
     }
 

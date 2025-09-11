@@ -37,6 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     typed: string;
     actual: string;
   } | null>(null);
+  const [processingAuth, setProcessingAuth] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -49,19 +50,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     navigate('/');
   };
 
+  // Auth guard: redirect authenticated users away from auth pages
   useEffect(() => {
-    // Auth guard: redirect authenticated users away from auth pages
     if (user && profile && ['/signin', '/signup'].includes(location.pathname)) {
       const dashboardPath = profile.role === 'employer' ? '/app/employer' : '/app/employee';
       navigate(dashboardPath, { replace: true });
-      return;
     }
+  }, [user, profile, location.pathname, navigate]);
 
+  // Auth listener: set up once and handle all auth state changes
+  useEffect(() => {
     const handleAuthCallback = async (session: any) => {
       if (!session) {
         setUser(null);
         setProfile(null);
         setLoading(false);
+        setProcessingAuth(false);
+        return;
+      }
+
+      // Prevent duplicate processing
+      if (processingAuth) {
+        console.log('Auth processing already in progress, skipping...');
+        return;
+      }
+
+      setProcessingAuth(true);
+      
+      // If we already have a user and profile, don't reprocess (prevents race conditions)
+      if (user && profile && session.user.id === user.id) {
+        console.log('User already authenticated with profile, skipping reprocessing');
+        setLoading(false);
+        setProcessingAuth(false);
         return;
       }
 
@@ -74,6 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (typedEmail && actualEmail && typedEmail !== actualEmail) {
         setMismatch({ typed: typedEmail, actual: actualEmail });
         setLoading(false);
+        setProcessingAuth(false);
         return;
       }
 
@@ -95,15 +116,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
       } catch (error) {
         console.error('Auth completion failed:', error);
-        // Clean signout on any auth failure to prevent broken state
-        await supabase.auth.signOut();
-        setUser(null);
-        setProfile(null);
-        clearAuthStorage();
-        navigate('/', { replace: true });
+        
+        // Only sign out for actual auth errors, not network errors
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        if (errorMessage.includes('Invalid or expired token') || errorMessage.includes('Unauthorized')) {
+          await supabase.auth.signOut();
+          setUser(null);
+          setProfile(null);
+          clearAuthStorage();
+          navigate('/', { replace: true });
+        } else {
+          // For other errors (network, etc), just show error but don't sign out
+          console.warn('Non-auth error during completion, retaining session:', errorMessage);
+        }
       }
       
       setLoading(false);
+      setProcessingAuth(false);
     };
 
     // Initial session check
@@ -120,19 +149,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(null);
           setProfile(null);
           setLoading(false);
+          setProcessingAuth(false);
         }
       }
     );
 
     return () => subscription.unsubscribe();
-  }, [navigate, location.pathname, user, profile]);
+  }, []); // Empty dependencies - this should only run once on mount
 
   const handleContinueAs = async () => {
-    if (!user || !mismatch) return;
+    if (!user || !mismatch || processingAuth) return;
+    
+    setProcessingAuth(true);
     
     try {
       const session = await supabase.auth.getSession();
-      if (!session.data.session) return;
+      if (!session.data.session) {
+        setProcessingAuth(false);
+        return;
+      }
 
       const intendedRole = sessionStorage.getItem('intendedRole') as 'employee' | 'employer' | null;
       const profileData = await completeAuth(session.data.session.access_token, intendedRole || undefined);
@@ -152,13 +187,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
     } catch (error) {
       console.error('Auth completion failed:', error);
-      // Clean signout on any auth failure to prevent broken state
-      setMismatch(null);
-      await supabase.auth.signOut();
-      setUser(null);
-      setProfile(null);
-      clearAuthStorage();
-      navigate('/', { replace: true });
+      
+      // Only sign out for actual auth errors, not network errors
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('Invalid or expired token') || errorMessage.includes('Unauthorized')) {
+        setMismatch(null);
+        await supabase.auth.signOut();
+        setUser(null);
+        setProfile(null);
+        clearAuthStorage();
+        navigate('/', { replace: true });
+      } else {
+        // For other errors (network, etc), just show error but retain session
+        console.warn('Non-auth error during completion, retaining session:', errorMessage);
+      }
+    } finally {
+      setProcessingAuth(false);
     }
   };
 

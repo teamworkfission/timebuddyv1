@@ -1,4 +1,4 @@
-import { IsString, IsUrl, IsPort, validateSync } from 'class-validator';
+import { IsString, IsUrl, IsPort, validateSync, IsOptional, Min, Max } from 'class-validator';
 import { plainToClass, Transform } from 'class-transformer';
 
 export class EnvironmentVariables {
@@ -8,13 +8,16 @@ export class EnvironmentVariables {
   @IsString()
   SUPABASE_SERVICE_ROLE_KEY!: string;
 
+  @IsOptional()
   @IsString()
-  ALLOWED_ORIGINS!: string;
+  ALLOWED_ORIGINS?: string;
 
-  @IsPort()
-  @Transform(({ value }) => parseInt(value))
+  @Transform(({ value }) => parseInt(value, 10))
+  @Min(1)
+  @Max(65535)
   PORT: number = 3000;
 
+  @IsOptional()
   @IsString()
   NODE_ENV: string = 'development';
 }
