@@ -37,6 +37,11 @@ export function EmployeeHome() {
       county: location.county || ''
     }));
     setShowLocationFilter(false);
+    
+    // If location is selected, automatically show job results
+    if (location.state || location.city || location.county) {
+      setHasSearched(true);
+    }
   };
 
   const clearLocationFilter = () => {
@@ -109,6 +114,13 @@ export function EmployeeHome() {
                   />
                 </div>
 
+                {/* Or divider */}
+                <div className="flex items-center">
+                  <div className="flex-1 border-t border-gray-200"></div>
+                  <div className="px-4 text-sm text-gray-500 font-medium">or</div>
+                  <div className="flex-1 border-t border-gray-200"></div>
+                </div>
+
                 {/* Location and Search Button Row */}
                 <div className="flex gap-3">
                   <Button
@@ -116,10 +128,10 @@ export function EmployeeHome() {
                     onClick={() => setShowLocationFilter(true)}
                     className="flex-1 flex items-center justify-center gap-2 py-3"
                   >
-                    📍 
+                    📍 Browse Local Jobs
                     {searchParams.state || searchParams.city || searchParams.county 
-                      ? `${searchParams.city || searchParams.state}${searchParams.county ? `, ${searchParams.county}` : ''}`
-                      : 'Ashburn, VA'
+                      ? ` (${searchParams.city || searchParams.state}${searchParams.county ? `, ${searchParams.county}` : ''})`
+                      : ''
                     }
                   </Button>
                   
@@ -167,92 +179,6 @@ export function EmployeeHome() {
         </div>
       </div>
 
-      {/* Local Community Benefits Section */}
-      <div className="bg-gradient-to-br from-blue-50 to-green-50">
-        <div className="max-w-6xl mx-auto px-4 py-16">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Connecting Local Communities
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              PTimeBuddy helps you find meaningful gig work near your location, 
-              supporting local businesses while building stronger community connections.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {/* For Workers */}
-            <div className="bg-white rounded-lg p-6 shadow-md">
-              <div className="text-center mb-4">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
-                  <span className="text-3xl">👨‍💼</span>
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900">For Workers</h3>
-              </div>
-              <ul className="space-y-2 text-gray-600">
-                <li>• Find gig work within your neighborhood</li>
-                <li>• Flexible scheduling around your life</li>
-                <li>• Build relationships with local employers</li>
-                <li>• Competitive pay rates in your area</li>
-                <li>• Support your local community</li>
-              </ul>
-            </div>
-
-            {/* For Businesses */}
-            <div className="bg-white rounded-lg p-6 shadow-md">
-              <div className="text-center mb-4">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
-                  <span className="text-3xl">🏪</span>
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900">For Local Businesses</h3>
-              </div>
-              <ul className="space-y-2 text-gray-600">
-                <li>• Connect with reliable local workers</li>
-                <li>• Fill positions quickly and efficiently</li>
-                <li>• Build a strong community workforce</li>
-                <li>• Reduce hiring costs and time</li>
-                <li>• Strengthen local economic growth</li>
-              </ul>
-            </div>
-
-            {/* For Community */}
-            <div className="bg-white rounded-lg p-6 shadow-md">
-              <div className="text-center mb-4">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-100 rounded-full mb-4">
-                  <span className="text-3xl">🤝</span>
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900">For Community</h3>
-              </div>
-              <ul className="space-y-2 text-gray-600">
-                <li>• Strengthen local economic ecosystem</li>
-                <li>• Reduce commute times and traffic</li>
-                <li>• Keep money circulating locally</li>
-                <li>• Build lasting community connections</li>
-                <li>• Support sustainable employment</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Call to Action */}
-      <div className="bg-white">
-        <div className="max-w-4xl mx-auto px-4 py-12 text-center">
-          <h3 className="text-2xl font-semibold text-gray-900 mb-4">
-            Ready to find your next opportunity?
-          </h3>
-          <p className="text-lg text-gray-600 mb-8">
-            Start your search above and discover gig work opportunities in your local area.
-          </p>
-          <Button
-            size="lg"
-            onClick={() => document.getElementById('search-input')?.focus()}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            Get Started →
-          </Button>
-        </div>
-      </div>
 
       {/* Location Filter Modal */}
       {showLocationFilter && (

@@ -136,6 +136,13 @@ export function JobBrowse({ initialSearchParams, autoLoad = false }: JobBrowsePr
               className="w-full"
             />
             
+            {/* Or divider */}
+            <div className="flex items-center">
+              <div className="flex-1 border-t border-gray-200"></div>
+              <div className="px-4 text-sm text-gray-500 font-medium">or</div>
+              <div className="flex-1 border-t border-gray-200"></div>
+            </div>
+
             {/* Location and Search Button Row */}
             <div className="flex gap-3">
               <Button
@@ -143,10 +150,10 @@ export function JobBrowse({ initialSearchParams, autoLoad = false }: JobBrowsePr
                 onClick={() => setShowLocationFilter(true)}
                 className="flex-1 flex items-center justify-center gap-2"
               >
-                📍 
+                📍 Browse Local Jobs
                 {searchParams.state || searchParams.city || searchParams.county 
-                  ? `${searchParams.city || searchParams.state}${searchParams.county ? `, ${searchParams.county}` : ''}`
-                  : 'Location Filter'
+                  ? ` (${searchParams.city || searchParams.state}${searchParams.county ? `, ${searchParams.county}` : ''})`
+                  : ''
                 }
               </Button>
               <Button

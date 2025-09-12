@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
+import { ProfileDropdown } from '../components/ui/ProfileDropdown';
 import { AuthModal } from '../components/AuthModal';
 import { useAuth } from '../contexts/AuthProvider';
 
@@ -45,11 +46,8 @@ export function LandingPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
               <h1 className="text-2xl font-bold text-blue-600">PtimeBuddy</h1>
-              <div className="flex items-center space-x-4">
-                <span className="text-gray-600">Welcome, {profile.email}</span>
-                <Button variant="outline" onClick={logout}>
-                  Logout
-                </Button>
+              <div className="flex items-center">
+                <ProfileDropdown email={profile.email} onLogout={logout} />
               </div>
             </div>
           </div>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthProvider';
 import { Button } from '../components/ui/Button';
+import { ProfileDropdown } from '../components/ui/ProfileDropdown';
 import { EmployeeDashboardTabs } from '../components/employee/EmployeeDashboardTabs';
 
 export function EmployeeDashboard() {
@@ -25,13 +26,8 @@ export function EmployeeDashboard() {
                 </Button>
                 <h1 className="text-2xl font-bold text-blue-600">PtimeBuddy</h1>
               </div>
-              <div className="flex items-center space-x-4">
-                <span className="text-gray-600">
-                  Welcome, <strong>{profile?.email}</strong>
-                </span>
-                <Button variant="outline" onClick={logout}>
-                  Logout
-                </Button>
+              <div className="flex items-center">
+                <ProfileDropdown email={profile?.email || ''} onLogout={logout} />
               </div>
             </div>
           </div>

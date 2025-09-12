@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { EmployeeHome } from './EmployeeHome';
 import { EmployeeSchedule } from './EmployeeSchedule';
 import { EmployeeEarnings } from './EmployeeEarnings';
+import { ProfileDropdown } from '../ui/ProfileDropdown';
 
 interface EmployeeDashboardTabsProps {
   userEmail?: string;
@@ -39,23 +40,10 @@ export function EmployeeDashboardTabs({ userEmail, onLogout, onShowProfile }: Em
       <div className="bg-white border-b border-gray-200 px-4 py-2">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
           <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-600">
-              👋 {userEmail}
-            </span>
+            <span className="text-lg font-bold text-blue-600">PtimeBuddy</span>
           </div>
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={onShowProfile}
-              className="px-3 py-1.5 text-xs border border-gray-300 rounded-md hover:bg-gray-50 flex items-center gap-1"
-            >
-              👤 Profile
-            </button>
-            <button
-              onClick={onLogout}
-              className="px-3 py-1.5 text-xs border border-gray-300 rounded-md hover:bg-gray-50"
-            >
-              Logout
-            </button>
+          <div className="flex items-center">
+            <ProfileDropdown email={userEmail || ''} onLogout={onLogout} />
           </div>
         </div>
       </div>

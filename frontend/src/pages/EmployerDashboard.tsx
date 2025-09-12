@@ -1,5 +1,6 @@
 import { useAuth } from '../contexts/AuthProvider';
 import { Button } from '../components/ui/Button';
+import { ProfileDropdown } from '../components/ui/ProfileDropdown';
 import { useState, useEffect } from 'react';
 import { BusinessManagement } from '../components/business/BusinessManagement';
 import { JobManagement } from '../components/jobs/JobManagement';
@@ -129,23 +130,8 @@ export function EmployerDashboard() {
             </button>
 
             {/* Desktop Profile Section */}
-            <div className="hidden sm:flex items-center space-x-4">
-              <div className="hidden md:flex items-center space-x-3">
-                <span className="text-sm text-gray-600">Welcome back</span>
-                <span className="text-sm font-medium text-gray-900 truncate max-w-[150px] lg:max-w-none">
-                  {profile?.email}
-                </span>
-              </div>
-              
-              {/* Profile Avatar */}
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-sm sm:text-lg">👤</span>
-                </div>
-                <Button variant="outline" size="sm" onClick={logout}>
-                  Logout
-                </Button>
-              </div>
+            <div className="hidden sm:flex items-center">
+              <ProfileDropdown email={profile?.email || ''} onLogout={logout} />
             </div>
           </div>
 
