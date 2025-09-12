@@ -22,7 +22,7 @@ export function JobCard({ job, isExpanded = false, onToggleExpanded }: JobCardPr
         <div className="space-y-2">
           {/* Job Title */}
           <h3 className="text-lg font-semibold text-gray-900 truncate">
-            🏷️ {job.job_title}
+            {job.job_title}
           </h3>
           
           {/* Business Name */}
@@ -62,7 +62,7 @@ export function JobCard({ job, isExpanded = false, onToggleExpanded }: JobCardPr
         {/* Main Job Info */}
         <div className="space-y-2">
           <h3 className="text-xl font-bold text-gray-900">
-            🏷️ {job.job_title}
+            {job.job_title}
           </h3>
           <p className="text-lg text-gray-700">
             🏢 {job.business_name}
@@ -75,57 +75,57 @@ export function JobCard({ job, isExpanded = false, onToggleExpanded }: JobCardPr
         </div>
 
         {/* Pay and Type Info */}
-        <div className="bg-blue-50 p-3 rounded-lg">
-          <div className="flex flex-wrap gap-4 text-sm">
-            <span className="text-blue-800">
-              💼 {job.job_type === 'full-time' ? 'Full-Time' : 'Part-Time'}
-            </span>
-            <span className="text-blue-800">
-              💰 {formatPayRange(job)}
-            </span>
+        <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-400">
+          <div className="grid grid-cols-1 gap-2 text-sm">
+            <div className="flex justify-between">
+              <span className="font-medium text-blue-900">Job Type:</span>
+              <span className="text-blue-800">{job.job_type === 'full-time' ? 'Full-Time' : 'Part-Time'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="font-medium text-blue-900">Pay:</span>
+              <span className="text-blue-800">{formatPayRange(job)}</span>
+            </div>
             {job.expected_hours_per_week && (
-              <span className="text-blue-800">
-                ⏰ {formatHoursPerWeek(job.expected_hours_per_week)}
-              </span>
+              <div className="flex justify-between">
+                <span className="font-medium text-blue-900">Hours/Week:</span>
+                <span className="text-blue-800">{formatHoursPerWeek(job.expected_hours_per_week)}</span>
+              </div>
             )}
           </div>
         </div>
 
         {/* Schedule */}
         {job.schedule && (
-          <div>
-            <p className="text-gray-800">
-              📅 <span className="font-medium">Schedule:</span> {job.schedule}
-            </p>
+          <div className="border-t-2 border-gray-300 pt-4">
+            <h4 className="font-semibold text-gray-900 mb-2">Schedule</h4>
+            <p className="text-gray-700">{job.schedule}</p>
           </div>
         )}
 
         {/* Supplemental Pay */}
         {job.supplemental_pay.length > 0 && (
-          <div>
-            <p className="text-gray-800">
-              💵 <span className="font-medium">Additional Pay:</span> {job.supplemental_pay.join(' • ')}
-            </p>
+          <div className="border-t-2 border-gray-300 pt-4">
+            <h4 className="font-semibold text-gray-900 mb-2">Additional Pay</h4>
+            <p className="text-gray-700">{job.supplemental_pay.join(' • ')}</p>
           </div>
         )}
 
         {/* Benefits */}
         {job.benefits.length > 0 && (
-          <div>
-            <p className="text-gray-800">
-              🎁 <span className="font-medium">Benefits:</span> {job.benefits.map(benefit => {
-                if (benefit === 'health_insurance') return 'Health Insurance';
-                if (benefit === '401k') return '401(k)';
-                if (benefit === 'pto') return 'Paid Time Off';
-                return benefit;
-              }).join(' • ')}
-            </p>
+          <div className="border-t-2 border-gray-300 pt-4">
+            <h4 className="font-semibold text-gray-900 mb-2">Benefits</h4>
+            <p className="text-gray-700">{job.benefits.map(benefit => {
+              if (benefit === 'health_insurance') return 'Health Insurance';
+              if (benefit === '401k') return '401(k)';
+              if (benefit === 'pto') return 'Paid Time Off';
+              return benefit;
+            }).join(' • ')}</p>
           </div>
         )}
 
         {/* Job Description */}
-        <div className="border-t border-gray-200 pt-4">
-          <h4 className="font-medium text-gray-900 mb-2">📝 Job Description</h4>
+        <div className="border-t-2 border-gray-300 pt-4">
+          <h4 className="font-semibold text-gray-900 mb-3">Job Description</h4>
           <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
             {job.job_description}
           </p>
@@ -133,40 +133,52 @@ export function JobCard({ job, isExpanded = false, onToggleExpanded }: JobCardPr
 
         {/* Requirements */}
         {(job.language_preference || job.transportation_requirement) && (
-          <div className="border-t border-gray-200 pt-4 space-y-2">
-            {job.language_preference && (
-              <p className="text-gray-800">
-                🗣️ <span className="font-medium">Language:</span> {job.language_preference}
-              </p>
-            )}
-            {job.transportation_requirement && (
-              <p className="text-gray-800">
-                🚗 <span className="font-medium">Transportation:</span> {job.transportation_requirement}
-              </p>
-            )}
-            <p className="text-gray-800">
-              🏪 <span className="font-medium">Business Type:</span> {job.business_type}
-            </p>
+          <div className="border-t-2 border-gray-300 pt-4">
+            <h4 className="font-semibold text-gray-900 mb-3">Requirements</h4>
+            <div className="space-y-2">
+              {job.language_preference && (
+                <div>
+                  <span className="font-medium text-gray-800">Language:</span>
+                  <span className="text-gray-700 ml-2">{job.language_preference}</span>
+                </div>
+              )}
+              {job.transportation_requirement && (
+                <div>
+                  <span className="font-medium text-gray-800">Transportation:</span>
+                  <span className="text-gray-700 ml-2">{job.transportation_requirement}</span>
+                </div>
+              )}
+              <div>
+                <span className="font-medium text-gray-800">Business Type:</span>
+                <span className="text-gray-700 ml-2">{job.business_type}</span>
+              </div>
+            </div>
           </div>
         )}
 
         {/* Contact Info */}
-        <div className="border-t border-gray-200 pt-4 space-y-2">
-          <p className="text-gray-800">
-            📞 <span className="font-medium">Phone:</span> {job.phone}
-          </p>
-          {job.email && (
-            <p className="text-gray-800">
-              ✉️ <span className="font-medium">Email:</span> {job.email}
-            </p>
-          )}
-          <p className="text-gray-600 text-sm">
-            📅 Posted {formatTimeAgo(job.published_at || job.created_at)}
-          </p>
+        <div className="border-t-2 border-gray-300 pt-4">
+          <h4 className="font-semibold text-gray-900 mb-3">Contact Information</h4>
+          <div className="space-y-2">
+            <div>
+              <span className="font-medium text-gray-800">Phone:</span>
+              <span className="text-gray-700 ml-2">{job.phone}</span>
+            </div>
+            {job.email && (
+              <div>
+                <span className="font-medium text-gray-800">Email:</span>
+                <span className="text-gray-700 ml-2">{job.email}</span>
+              </div>
+            )}
+            <div>
+              <span className="font-medium text-gray-800">Posted:</span>
+              <span className="text-gray-600 text-sm ml-2">{formatTimeAgo(job.published_at || job.created_at)}</span>
+            </div>
+          </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="border-t border-gray-200 pt-4 flex gap-3">
+        <div className="border-t-2 border-gray-300 pt-4 flex gap-3">
           <Button
             variant="outline"
             className="flex-1 flex items-center justify-center gap-2"
