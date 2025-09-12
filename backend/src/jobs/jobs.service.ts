@@ -237,7 +237,15 @@ export class JobsService {
     }
 
     if (state) {
-      query = query.ilike('location', `%${state}%`);
+      // Search for both full state name and abbreviation to handle mixed formats
+      const stateAbbreviation = this.getStateAbbreviation(state);
+      if (stateAbbreviation) {
+        // Search for either full name or abbreviation
+        query = query.or(`location.ilike.%${state}%,location.ilike.%${stateAbbreviation}%`);
+      } else {
+        // Fallback to original behavior if no abbreviation found
+        query = query.ilike('location', `%${state}%`);
+      }
     }
 
     if (city) {
@@ -336,6 +344,56 @@ export class JobsService {
     };
   }
 
+  // US State code to full name mapping
+  private readonly stateCodeToName: Record<string, string> = {
+    'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas', 'CA': 'California',
+    'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware', 'FL': 'Florida', 'GA': 'Georgia',
+    'HI': 'Hawaii', 'ID': 'Idaho', 'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa',
+    'KS': 'Kansas', 'KY': 'Kentucky', 'LA': 'Louisiana', 'ME': 'Maine', 'MD': 'Maryland',
+    'MA': 'Massachusetts', 'MI': 'Michigan', 'MN': 'Minnesota', 'MS': 'Mississippi', 'MO': 'Missouri',
+    'MT': 'Montana', 'NE': 'Nebraska', 'NV': 'Nevada', 'NH': 'New Hampshire', 'NJ': 'New Jersey',
+    'NM': 'New Mexico', 'NY': 'New York', 'NC': 'North Carolina', 'ND': 'North Dakota', 'OH': 'Ohio',
+    'OK': 'Oklahoma', 'OR': 'Oregon', 'PA': 'Pennsylvania', 'RI': 'Rhode Island', 'SC': 'South Carolina',
+    'SD': 'South Dakota', 'TN': 'Tennessee', 'TX': 'Texas', 'UT': 'Utah', 'VT': 'Vermont',
+    'VA': 'Virginia', 'WA': 'Washington', 'WV': 'West Virginia', 'WI': 'Wisconsin', 'WY': 'Wyoming'
+  };
+
+  // Helper method to get state abbreviation from full state name
+  private getStateAbbreviation(fullStateName: string): string | null {
+    for (const [code, name] of Object.entries(this.stateCodeToName)) {
+      if (name === fullStateName) {
+        return code;
+      }
+    }
+    return null;
+  }
+
+  private extractStateFromLocation(location: string): string | null {
+    const parts = location.split(',').map(p => p.trim());
+    
+    // Handle different address formats:
+    // Format 1: "Street, City, State Code, ZIP, Country" -> parts[2] is state code
+    // Format 2: "City, State Code, Country" -> parts[1] is state code  
+    // Format 3: "City, County, State" -> parts[2] is full state name
+    
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      
+      // Check if this part is a 2-letter state code
+      if (part.length === 2 && this.stateCodeToName[part.toUpperCase()]) {
+        return this.stateCodeToName[part.toUpperCase()];
+      }
+      
+      // Check if this part is already a full state name
+      const fullStates = Object.values(this.stateCodeToName);
+      if (fullStates.includes(part)) {
+        return part;
+      }
+    }
+    
+    return null;
+  }
+
   async getStatesWithJobs(): Promise<LocationOption[]> {
     const { data, error } = await this.supabase.admin
       .from('job_posts')
@@ -350,9 +408,7 @@ export class JobsService {
     const stateCounts: Record<string, number> = {};
     (data || []).forEach(job => {
       if (job.location) {
-        // Extract state (last part after comma)
-        const parts = job.location.split(',').map(p => p.trim());
-        const state = parts[parts.length - 1];
+        const state = this.extractStateFromLocation(job.location);
         if (state) {
           stateCounts[state] = (stateCounts[state] || 0) + 1;
         }
@@ -364,25 +420,63 @@ export class JobsService {
       .sort((a, b) => a.name.localeCompare(b.name));
   }
 
+  private extractCityFromLocation(location: string): string | null {
+    const parts = location.split(',').map(p => p.trim());
+    
+    // Handle different address formats:
+    // Format 1: "Street, City, State Code, ZIP, Country" -> parts[1] is city
+    // Format 2: "City, State Code, Country" -> parts[0] is city  
+    // Format 3: "City, County, State" -> parts[0] is city
+    
+    // For most US addresses, the city is typically the first or second part
+    // Skip street addresses (containing numbers or common street words)
+    for (let i = 0; i < Math.min(2, parts.length); i++) {
+      const part = parts[i];
+      
+      // Skip if it looks like a street address (contains numbers)
+      if (/\d/.test(part)) {
+        continue;
+      }
+      
+      // Skip if it's a state code or country
+      if (part.length === 2 && this.stateCodeToName[part.toUpperCase()]) {
+        continue;
+      }
+      
+      if (part === 'USA' || part === 'United States') {
+        continue;
+      }
+      
+      return part;
+    }
+    
+    return null;
+  }
+
   async getCitiesWithJobs(state: string): Promise<LocationOption[]> {
     const { data, error } = await this.supabase.admin
       .from('job_posts')
       .select('location')
-      .eq('status', 'published')
-      .ilike('location', `%${state}%`);
+      .eq('status', 'published');
 
     if (error) {
       throw new Error(`Failed to fetch cities: ${error.message}`);
     }
 
-    // Parse cities from location strings
+    // Parse cities from location strings, filtering by state
     const cityCounts: Record<string, number> = {};
+    const stateAbbreviation = this.getStateAbbreviation(state);
+    
     (data || []).forEach(job => {
-      if (job.location && job.location.includes(state)) {
-        const parts = job.location.split(',').map(p => p.trim());
-        // Assuming format: "City, State" or "City, County, State"
-        if (parts.length >= 2) {
-          const city = parts[0];
+      if (job.location) {
+        const jobState = this.extractStateFromLocation(job.location);
+        // Match by full state name, abbreviation, or if location contains either format
+        const stateMatches = jobState === state || 
+                           job.location.includes(state) ||
+                           (stateAbbreviation && (jobState === stateAbbreviation || job.location.includes(stateAbbreviation)));
+        
+        if (stateMatches) {
+          const city = this.extractCityFromLocation(job.location);
           if (city) {
             cityCounts[city] = (cityCounts[city] || 0) + 1;
           }
@@ -395,27 +489,47 @@ export class JobsService {
       .sort((a, b) => a.name.localeCompare(b.name));
   }
 
+  private extractCountyFromLocation(location: string): string | null {
+    const parts = location.split(',').map(p => p.trim());
+    
+    // Look for parts containing "County" or "Parish"
+    for (const part of parts) {
+      if (part.toLowerCase().includes('county') || part.toLowerCase().includes('parish')) {
+        return part;
+      }
+    }
+    
+    return null;
+  }
+
   async getCountiesWithJobs(state: string, city: string): Promise<LocationOption[]> {
     const { data, error } = await this.supabase.admin
       .from('job_posts')
       .select('location')
-      .eq('status', 'published')
-      .ilike('location', `%${city}%`)
-      .ilike('location', `%${state}%`);
+      .eq('status', 'published');
 
     if (error) {
       throw new Error(`Failed to fetch counties: ${error.message}`);
     }
 
-    // Parse counties from location strings
+    // Parse counties from location strings, filtering by state and city
     const countyCounts: Record<string, number> = {};
+    const stateAbbreviation = this.getStateAbbreviation(state);
+    
     (data || []).forEach(job => {
-      if (job.location && job.location.includes(city) && job.location.includes(state)) {
-        const parts = job.location.split(',').map(p => p.trim());
-        // Assuming format: "City, County, State" 
-        if (parts.length === 3) {
-          const county = parts[1];
-          if (county && county.toLowerCase().includes('county')) {
+      if (job.location) {
+        const jobState = this.extractStateFromLocation(job.location);
+        const jobCity = this.extractCityFromLocation(job.location);
+        
+        // Match by state (full name or abbreviation) and city
+        const stateMatches = jobState === state || 
+                           job.location.includes(state) ||
+                           (stateAbbreviation && (jobState === stateAbbreviation || job.location.includes(stateAbbreviation)));
+        const cityMatches = jobCity === city || job.location.includes(city);
+        
+        if (stateMatches && cityMatches) {
+          const county = this.extractCountyFromLocation(job.location);
+          if (county) {
             countyCounts[county] = (countyCounts[county] || 0) + 1;
           }
         }
