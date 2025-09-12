@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '../ui/Button';
 import { GooglePlacesAutocomplete } from '../ui/GooglePlacesAutocomplete';
+import { DocumentManager } from './DocumentManager';
 import { employeesApi, Employee, CreateEmployeeData, TRANSPORTATION_OPTIONS, COMMON_SKILLS, COMMON_LANGUAGES } from '../../lib/employees-api';
 import { useAuth } from '../../contexts/AuthProvider';
 
@@ -30,6 +31,11 @@ export function EmployeeProfile({ onBack }: EmployeeProfileProps) {
     languages: [],
     resume_url: ''
   });
+
+  // Document URLs from DocumentManager
+  const [documentUrls, setDocumentUrls] = useState<{
+    resume?: string;
+  }>({});
 
   // Address lookup state
   const [addressLookup, setAddressLookup] = useState('');
@@ -112,7 +118,13 @@ export function EmployeeProfile({ onBack }: EmployeeProfileProps) {
     setSaving(true);
 
     try {
-      const savedProfile = await employeesApi.createOrUpdateProfile(formData);
+      // Include document URL from uploaded document
+      const profileData = {
+        ...formData,
+        resume_url: documentUrls.resume || formData.resume_url,
+      };
+
+      const savedProfile = await employeesApi.createOrUpdateProfile(profileData);
       setEmployeeProfile(savedProfile);
       setSuccess(employeeProfile ? 'Profile updated successfully!' : 'Profile created successfully!');
     } catch (err) {
@@ -205,11 +217,6 @@ export function EmployeeProfile({ onBack }: EmployeeProfileProps) {
             </div>
           )}
 
-          {success && (
-            <div className="mx-6 mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
-              <p className="text-sm text-green-700">{success}</p>
-            </div>
-          )}
 
           <form onSubmit={handleSubmit} className="p-6 space-y-8">
             {/* Required Fields */}
@@ -483,30 +490,35 @@ export function EmployeeProfile({ onBack }: EmployeeProfileProps) {
                   </div>
                 </div>
 
-                {/* Resume / Cover Letter Upload Placeholder */}
+                {/* Document Upload */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Resume / Cover Letter (PDF/DOC)
                   </label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-md p-6 text-center">
-                    <div className="text-gray-500">
-                      <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                      <p className="mt-2 text-sm text-gray-600">Resume upload coming soon</p>
-                      <p className="text-xs text-gray-500">PDF, DOC files will be supported</p>
-                    </div>
-                  </div>
+                  <p className="text-xs text-gray-600 mb-3">
+                    Upload your resume or cover letter - you can use either document type
+                  </p>
+                  <DocumentManager onDocumentsChange={setDocumentUrls} />
                 </div>
               </div>
             </div>
 
             {/* Submit Button */}
-            <div className="flex justify-end pt-6 border-t border-gray-200">
+            <div className="flex justify-between items-center pt-6 border-t border-gray-200">
+              {/* Success Message */}
+              <div className="flex-1">
+                {success && (
+                  <div className="p-3 bg-green-50 border border-green-200 rounded-md max-w-md">
+                    <p className="text-sm text-green-700">{success}</p>
+                  </div>
+                )}
+              </div>
+              
+              {/* Submit Button */}
               <Button 
                 type="submit" 
                 disabled={saving}
-                className="bg-red-600 hover:bg-red-700 text-white px-8 py-2 font-medium"
+                className="bg-red-600 hover:bg-red-700 text-white px-8 py-2 font-medium ml-4"
               >
                 {saving ? (
                   <div className="flex items-center">
