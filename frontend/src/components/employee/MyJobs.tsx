@@ -1,29 +1,42 @@
 import { useState, useEffect } from 'react';
 import { JobCard } from './JobCard';
 import { Button } from '../ui/Button';
+import { JobTabs, JobTabType } from './JobTabs';
+import { AppliedJobs } from './AppliedJobs';
 import { PublicJobPost } from '../../lib/public-job-api';
+import { getJobApplications } from '../../lib/job-applications-api';
 
 interface SavedJob extends PublicJobPost {
   saved_at: string;
 }
 
 export function MyJobs() {
+  const [activeTab, setActiveTab] = useState<JobTabType>('saved');
   const [savedJobs, setSavedJobs] = useState<SavedJob[]>([]);
+  const [appliedJobsCount, setAppliedJobsCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
 
   useEffect(() => {
     loadSavedJobs();
+    loadAppliedJobsCount();
     
     // Listen for saved jobs changes
     const handleSavedJobsChange = () => {
       loadSavedJobs();
     };
     
+    // Listen for new job applications
+    const handleNewApplication = () => {
+      loadAppliedJobsCount();
+    };
+    
     window.addEventListener('savedJobsChanged', handleSavedJobsChange);
+    window.addEventListener('jobApplicationSubmitted', handleNewApplication);
     
     return () => {
       window.removeEventListener('savedJobsChanged', handleSavedJobsChange);
+      window.removeEventListener('jobApplicationSubmitted', handleNewApplication);
     };
   }, []);
 
@@ -37,6 +50,16 @@ export function MyJobs() {
       console.error('Failed to load saved jobs:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadAppliedJobsCount = async () => {
+    try {
+      const applications = await getJobApplications();
+      setAppliedJobsCount(applications.length);
+    } catch (error) {
+      console.error('Failed to load applied jobs count:', error);
+      setAppliedJobsCount(0);
     }
   };
 
@@ -60,7 +83,7 @@ export function MyJobs() {
     }
   };
 
-  const renderJobsList = () => {    
+  const renderSavedJobsList = () => {    
     if (loading) {
       return (
         <div className="flex justify-center py-12">
@@ -122,20 +145,50 @@ export function MyJobs() {
     );
   };
 
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'saved':
+        return (
+          <div>
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                Saved Jobs
+              </h2>
+              <p className="text-gray-600">
+                Jobs you've saved for later review and application
+              </p>
+            </div>
+            {renderSavedJobsList()}
+          </div>
+        );
+      case 'applied':
+        return <AppliedJobs />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
       {/* Section Header */}
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          Saved Jobs
-        </h2>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          My Jobs
+        </h1>
         <p className="text-gray-600">
-          Jobs you've saved for later review and application
+          Manage your saved jobs and track your applications
         </p>
       </div>
 
-      {/* Jobs List */}
-      {renderJobsList()}
+      {/* Job Tabs */}
+      <JobTabs
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        savedJobsCount={savedJobs.length}
+        appliedJobsCount={appliedJobsCount}
+      >
+        {renderTabContent()}
+      </JobTabs>
     </div>
   );
 }

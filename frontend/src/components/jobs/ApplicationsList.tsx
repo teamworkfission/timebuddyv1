@@ -265,8 +265,8 @@ export function ApplicationsList({ jobPostId, jobTitle }: ApplicationsListProps)
                       </div>
                     )}
 
-                    {/* Resume */}
-                    {application.resume_url && (
+                    {/* Resume - Only show if resume_url exists and is not empty */}
+                    {application.resume_url && application.resume_url.trim() !== '' && (
                       <div>
                         <p className="text-sm font-medium text-gray-700 mb-3">📄 Resume</p>
                         <ResumeViewer 

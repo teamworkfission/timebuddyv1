@@ -141,6 +141,9 @@ export function JobApplicationModal({ isOpen, onClose, job, onSuccess }: JobAppl
       await createJobApplication(formData);
       setSuccess(true);
       
+      // Notify other components that a new application was submitted
+      window.dispatchEvent(new CustomEvent('jobApplicationSubmitted'));
+      
       // Auto-close after success
       setTimeout(() => {
         handleClose();

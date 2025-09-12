@@ -37,6 +37,22 @@ export interface JobApplicationWithJobDetails extends JobApplication {
   job_title: string;
   business_name: string;
   location: string;
+  job_description: string;
+  job_type: string;
+  pay_type: string;
+  pay_min: number;
+  pay_max?: number;
+  pay_currency: string;
+  expected_hours_per_week?: number;
+  schedule?: string;
+  supplemental_pay: string[];
+  benefits: string[];
+  business_type: string;
+  language_preference?: string;
+  transportation_requirement?: string;
+  phone: string;
+  email?: string;
+  published_at: string;
 }
 
 export interface UpdateJobApplicationData {

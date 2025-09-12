@@ -33,6 +33,22 @@ export interface JobApplicationWithJobDetails extends JobApplication {
   job_title: string;
   business_name: string;
   location: string;
+  job_description: string;
+  job_type: string;
+  pay_type: string;
+  pay_min: number;
+  pay_max?: number;
+  pay_currency: string;
+  expected_hours_per_week?: number;
+  schedule?: string;
+  supplemental_pay: string[];
+  benefits: string[];
+  business_type: string;
+  language_preference?: string;
+  transportation_requirement?: string;
+  phone: string;
+  email?: string;
+  published_at: string;
 }
 
 @Injectable()
@@ -100,7 +116,24 @@ export class JobApplicationsService {
         job_posts!inner(
           job_title,
           business_name,
-          location
+          location,
+          job_description,
+          job_type,
+          pay_type,
+          pay_min,
+          pay_max,
+          pay_currency,
+          expected_hours_per_week,
+          schedule,
+          supplemental_pay,
+          benefits,
+          business_type,
+          language_preference,
+          transportation_requirement,
+          phone,
+          email,
+          published_at,
+          created_at
         )
       `)
       .eq('employee_id', employeeId)
@@ -116,6 +149,22 @@ export class JobApplicationsService {
       job_title: app.job_posts.job_title,
       business_name: app.job_posts.business_name,
       location: app.job_posts.location,
+      job_description: app.job_posts.job_description,
+      job_type: app.job_posts.job_type,
+      pay_type: app.job_posts.pay_type,
+      pay_min: app.job_posts.pay_min,
+      pay_max: app.job_posts.pay_max,
+      pay_currency: app.job_posts.pay_currency,
+      expected_hours_per_week: app.job_posts.expected_hours_per_week,
+      schedule: app.job_posts.schedule,
+      supplemental_pay: app.job_posts.supplemental_pay || [],
+      benefits: app.job_posts.benefits || [],
+      business_type: app.job_posts.business_type,
+      language_preference: app.job_posts.language_preference,
+      transportation_requirement: app.job_posts.transportation_requirement,
+      phone: app.job_posts.phone,
+      email: app.job_posts.email,
+      published_at: app.job_posts.published_at,
       job_posts: undefined, // Remove nested object
     }));
   }
