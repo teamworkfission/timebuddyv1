@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { PublicJobPost, formatPayRange, formatHoursPerWeek, formatTimeAgo, formatLocation } from '../../lib/public-job-api';
+import { BUSINESS_TYPE_LABELS } from '../../lib/business-api';
 import { Button } from '../ui/Button';
 
 interface JobCardProps {
@@ -65,7 +66,7 @@ export function JobCard({ job, isExpanded = false, onToggleExpanded }: JobCardPr
             {job.job_title}
           </h3>
           <p className="text-lg text-gray-700">
-            🏢 {job.business_name}
+            🏢 {job.business_name} <span className="font-bold text-gray-900">({BUSINESS_TYPE_LABELS[job.business_type as keyof typeof BUSINESS_TYPE_LABELS] || job.business_type})</span>
           </p>
           <p className="text-gray-600">
             📍 {locationInfo.city}
@@ -148,10 +149,6 @@ export function JobCard({ job, isExpanded = false, onToggleExpanded }: JobCardPr
                   <span className="text-gray-700 ml-2">{job.transportation_requirement}</span>
                 </div>
               )}
-              <div>
-                <span className="font-medium text-gray-800">Business Type:</span>
-                <span className="text-gray-700 ml-2">{job.business_type}</span>
-              </div>
             </div>
           </div>
         )}

@@ -7,12 +7,14 @@ import { ProfileDropdown } from '../ui/ProfileDropdown';
 interface EmployeeDashboardTabsProps {
   userEmail?: string;
   onLogout: () => void;
-  onShowProfile: () => void;
+  onJobProfile?: () => void;
+  isProfileComplete?: boolean;
+  profileCompletionPercentage?: number;
 }
 
 type TabType = 'home' | 'schedule' | 'earnings';
 
-export function EmployeeDashboardTabs({ userEmail, onLogout, onShowProfile }: EmployeeDashboardTabsProps) {
+export function EmployeeDashboardTabs({ userEmail, onLogout, onJobProfile, isProfileComplete, profileCompletionPercentage }: EmployeeDashboardTabsProps) {
   const [activeTab, setActiveTab] = useState<TabType>('home');
 
   const tabs = [
@@ -43,7 +45,13 @@ export function EmployeeDashboardTabs({ userEmail, onLogout, onShowProfile }: Em
             <span className="text-lg font-bold text-blue-600">PtimeBuddy</span>
           </div>
           <div className="flex items-center">
-            <ProfileDropdown email={userEmail || ''} onLogout={onLogout} />
+            <ProfileDropdown 
+              email={userEmail || ''} 
+              onLogout={onLogout} 
+              onJobProfile={onJobProfile}
+              isProfileComplete={isProfileComplete}
+              profileCompletionPercentage={profileCompletionPercentage}
+            />
           </div>
         </div>
       </div>

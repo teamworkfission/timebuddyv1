@@ -1,12 +1,71 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthProvider';
 import { Button } from '../components/ui/Button';
 import { ProfileDropdown } from '../components/ui/ProfileDropdown';
 import { EmployeeDashboardTabs } from '../components/employee/EmployeeDashboardTabs';
+import { EmployeeProfile } from '../components/employee/EmployeeProfile';
+import { employeesApi, Employee } from '../lib/employees-api';
 
 export function EmployeeDashboard() {
   const { profile, logout } = useAuth();
   const [showProfile, setShowProfile] = useState(false);
+  const [showJobProfile, setShowJobProfile] = useState(false);
+  const [employeeProfile, setEmployeeProfile] = useState<Employee | null>(null);
+
+  // Calculate profile completion
+  const calculateProfileCompletion = () => {
+    if (!employeeProfile) return { percentage: 0, isComplete: false };
+    
+    const requiredFields = [
+      employeeProfile.full_name,
+      employeeProfile.phone,
+      employeeProfile.email,
+      employeeProfile.state,
+      employeeProfile.city,
+      employeeProfile.availability
+    ];
+
+    const filledRequired = requiredFields.filter(field => field && field.trim().length > 0).length;
+    const percentage = Math.round((filledRequired / requiredFields.length) * 100);
+    const isComplete = percentage === 100;
+
+    return { percentage, isComplete };
+  };
+
+  const profileCompletion = calculateProfileCompletion();
+  const isProfileComplete = profileCompletion.isComplete;
+
+  // Load employee profile on component mount
+  useEffect(() => {
+    const loadEmployeeProfile = async () => {
+      try {
+        const data = await employeesApi.getProfile();
+        setEmployeeProfile(data);
+      } catch (err) {
+        // Profile doesn't exist yet - user is new
+        setEmployeeProfile(null);
+      }
+    };
+
+    if (profile?.role === 'employee') {
+      loadEmployeeProfile();
+    }
+  }, [profile]);
+
+  // Refresh profile after editing
+  const handleJobProfileComplete = () => {
+    setShowJobProfile(false);
+    // Reload profile data
+    const loadEmployeeProfile = async () => {
+      try {
+        const data = await employeesApi.getProfile();
+        setEmployeeProfile(data);
+      } catch (err) {
+        setEmployeeProfile(null);
+      }
+    };
+    loadEmployeeProfile();
+  };
 
   if (showProfile) {
     return (
@@ -73,10 +132,18 @@ export function EmployeeDashboard() {
 
   // Main dashboard with tabbed interface
   return (
-    <EmployeeDashboardTabs 
-      userEmail={profile?.email}
-      onLogout={logout}
-      onShowProfile={() => setShowProfile(true)}
-    />
+    <>
+      {showJobProfile ? (
+        <EmployeeProfile onBack={handleJobProfileComplete} />
+      ) : (
+        <EmployeeDashboardTabs 
+          userEmail={profile?.email}
+          onLogout={logout}
+          onJobProfile={() => setShowJobProfile(true)}
+          isProfileComplete={Boolean(isProfileComplete)}
+          profileCompletionPercentage={profileCompletion.percentage}
+        />
+      )}
+    </>
   );
 }
