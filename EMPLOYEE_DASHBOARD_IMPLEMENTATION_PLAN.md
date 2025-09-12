@@ -136,13 +136,30 @@ job_description, language_preference, transportation_requirement
 ### New Components
 ```
 src/components/employee/
-├── JobBrowse.tsx              // Main job search interface
-├── JobCard.tsx                // Compact & expanded job card component
-├── LocationFilter.tsx         // Hierarchical location filter drawer
+├── JobBrowse.tsx              // Main job search interface ✅ IMPLEMENTED
+├── JobCard.tsx                // Compact & expanded job card component ✅ IMPLEMENTED
+├── LocationFilter.tsx         // Hierarchical location filter drawer ✅ IMPLEMENTED
 ├── LocationDropdown.tsx       // Searchable location dropdown
 ├── JobSearch.tsx              // Search input component  
 ├── ApplicationModal.tsx       // Job application modal
+├── EmployeeProfile.tsx        // Complete employee profile management ✅ IMPLEMENTED
+├── DocumentManager.tsx        // Document upload management ✅ IMPLEMENTED
 └── WorkerProfile.tsx          // Basic worker profile management
+```
+
+### Document Upload Components ✅ NEW FEATURE
+```
+src/components/ui/
+└── FileUpload.tsx             // Reusable drag-drop file upload component ✅ IMPLEMENTED
+
+src/lib/
+└── documents-api.ts           // API client for document operations ✅ IMPLEMENTED
+
+src/backend/documents/
+├── documents.controller.ts    // File upload/delete endpoints ✅ IMPLEMENTED
+├── documents.service.ts       // Supabase storage integration ✅ IMPLEMENTED
+├── documents.module.ts        // NestJS module configuration ✅ IMPLEMENTED
+└── dto/upload-document.dto.ts // Document type definitions ✅ IMPLEMENTED
 ```
 
 ### New API Endpoints
@@ -163,6 +180,18 @@ GET /locations/counties/:state/:city // Counties with jobs
 
 POST /applications             // Submit job application
   { job_id, worker_data, cover_message }
+
+POST /documents/upload         // Upload resume/cover letter ✅ IMPLEMENTED
+  FormData: file, type (resume|cover_letter)
+
+GET /documents/:type           // Get document URL ✅ IMPLEMENTED
+  → { url, filename, type, uploadedAt }
+
+GET /documents                 // List user documents ✅ IMPLEMENTED
+  → [DocumentData]
+
+DELETE /documents/:type        // Delete document ✅ IMPLEMENTED
+  → { success: boolean }
 ```
 
 ### Database Enhancements
@@ -201,6 +230,12 @@ CREATE TABLE worker_profiles (
   resume_url TEXT,
   created_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Document storage (Supabase Storage) ✅ IMPLEMENTED
+-- Bucket: employee-documents
+-- Security policies: user-specific file access
+-- File types: PDF, DOC, DOCX up to 5MB
+-- File naming: {user_id}/{document_type}.{extension}
 ```
 
 ---
@@ -234,6 +269,16 @@ CREATE TABLE worker_profiles (
 - [ ] Implement infinite scroll/pagination
 - [ ] Performance optimization and caching
 - [ ] Cross-browser mobile testing
+
+### **Phase 5: Document Upload System (Week 5)** ✅ COMPLETED
+- [x] Create Supabase storage bucket with security policies
+- [x] Implement backend Documents module with upload/delete APIs
+- [x] Build FileUpload component with drag-drop interface
+- [x] Create DocumentManager for employee profile integration
+- [x] Add file validation (PDF, DOC, DOCX, 5MB limit)
+- [x] Implement document viewing and deletion
+- [x] Update employee profile form integration
+- [x] Move success messages to better UX position
 
 ---
 
@@ -286,12 +331,19 @@ CREATE TABLE worker_profiles (
 - `GET /jobs/locations/states` - Get states with available jobs
 - `GET /jobs/locations/cities/:state` - Get cities with jobs in a state  
 - `GET /jobs/locations/counties/:state/:city` - Get counties with jobs
+- **✅ NEW:** `POST /documents/upload` - Upload resume/cover letter files
+- **✅ NEW:** `GET /documents/:type` - Get document URL for viewing
+- **✅ NEW:** `GET /documents` - List all user documents
+- **✅ NEW:** `DELETE /documents/:type` - Delete document
 
 **Frontend Components (Ready for Use):**
 - **JobBrowse** - Main mobile-first job search interface
 - **JobCard** - Compact cards that expand to show full job details
 - **LocationFilter** - Hierarchical State→City→County filter modal
 - **EmployeeDashboard** - Replaced with new job search interface
+- **✅ NEW:** **EmployeeProfile** - Complete profile management with document upload
+- **✅ NEW:** **DocumentManager** - Handles resume/cover letter upload/delete
+- **✅ NEW:** **FileUpload** - Reusable drag-drop file upload component
 
 **Key Features Working:**
 - ✅ Mobile-optimized vertical job feed
@@ -302,6 +354,11 @@ CREATE TABLE worker_profiles (
 - ✅ Job count display in location filters
 - ✅ Responsive design for mobile/desktop
 - ✅ Clean data separation (only published jobs shown)
+- **✅ NEW:** Document upload with drag-drop interface
+- **✅ NEW:** File validation (PDF, DOC, DOCX up to 5MB)
+- **✅ NEW:** Secure user-specific document storage
+- **✅ NEW:** Document management (upload, view, update, delete)
+- **✅ NEW:** Enhanced profile form with better success message positioning
 
 ### 🚀 Ready to Test
 
@@ -312,6 +369,46 @@ CREATE TABLE worker_profiles (
 4. Employers can post jobs which will appear in employee search
 
 **Note:** Location hierarchy will work once job posts have proper location data in the database.
+
+### 🎉 Phase 5 Implementation Summary - Document Upload System
+
+**✅ What's New (January 2025):**
+
+**Supabase Storage Integration:**
+- Created `employee-documents` storage bucket with security policies
+- Implemented user-specific file access (users can only access their own files)
+- Support for PDF, DOC, DOCX files up to 5MB
+- Automatic file replacement when uploading new versions
+
+**Backend Document APIs:**
+- Full Documents module with TypeScript support
+- Secure file upload with validation
+- Document management (CRUD operations)
+- Integration with existing employee profile system
+
+**Frontend Document Components:**
+- **FileUpload.tsx** - Modern drag-drop interface with progress indicators
+- **DocumentManager.tsx** - Complete document management UI
+- Seamless integration with EmployeeProfile form
+- Real-time file validation and error handling
+
+**Enhanced User Experience:**
+- Moved success messages to left corner near submit button (better UX)
+- Visual file icons and metadata display
+- Clear feedback for upload progress and errors
+- Simplified single upload area (resume OR cover letter)
+
+**Security & Privacy:**
+- User-specific file paths in Supabase storage
+- Row-level security policies
+- File type and size validation at multiple layers
+- Secure signed URLs for file access
+
+**Ready for Production:**
+- All components tested and working
+- No linter errors
+- Changes committed and pushed to GitHub
+- Backend TypeScript compilation successful
 
 ---
 

@@ -6,6 +6,7 @@ import { BusinessesModule } from './businesses/businesses.module';
 import { JobsModule } from './jobs/jobs.module';
 import { EmployeesModule } from './employees/employees.module';
 import { DocumentsModule } from './documents/documents.module';
+import { JobApplicationsModule } from './job-applications/job-applications.module';
 import { validateEnv } from './config/env.validation';
 
 @Module({
@@ -25,6 +26,7 @@ import { validateEnv } from './config/env.validation';
     JobsModule,
     EmployeesModule,
     DocumentsModule,
+    JobApplicationsModule,
   ],
 })
 export class AppModule {}

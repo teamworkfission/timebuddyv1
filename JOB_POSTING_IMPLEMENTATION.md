@@ -75,32 +75,50 @@ create table if not exists job_posts (
 - ✅ **Comprehensive Fields**: All user-specified requirements included
 - ✅ **Audit Trail**: Created/updated timestamps with published/closed tracking
 
-#### **2. job_applications Table**
+#### **2. employee_job_application Table**
 **Purpose**: Track employee applications to job posts
 **Primary Key**: `id` (uuid)
-**Row Count**: 0 (ready for future applicant system)
+**Row Count**: 0 (ready for applications)
 
 ```sql
-create table if not exists job_applications (
+create table if not exists employee_job_application (
   id uuid primary key default gen_random_uuid(),
   job_post_id uuid not null references job_posts(id) on delete cascade,
-  applicant_id uuid not null references profiles(id) on delete cascade,
+  employee_id uuid not null references profiles(id) on delete cascade,
   
-  -- Application status workflow
+  -- Employee data
+  full_name text not null,
+  email text not null,
+  phone text,
+  city text,
+  state text,
+  short_bio text,
+  availability text,
+  skills text[],
+  transportation text check (transportation in ('own_car', 'public_transit', 'not_needed')),
+  languages text[],
+  resume_url text,
+  
+  -- Privacy controls
+  show_phone boolean not null default true,
+  show_email boolean not null default true,
+  
+  -- Application specific
+  cover_message text,
   status text not null default 'applied' check (status in ('applied', 'reviewed', 'interviewed', 'hired', 'rejected')),
   
-  -- Application data
-  cover_letter text,
-  resume_url text, -- future: file uploads
+  -- Safety disclaimer
+  safety_disclaimer_accepted boolean not null,
+  safety_disclaimer_accepted_at timestamptz not null,
+  
+  -- Timestamps
   applied_at timestamptz default now(),
   status_updated_at timestamptz default now(),
-  
-  -- Metadata
   created_at timestamptz default now(),
   updated_at timestamptz default now(),
   
   -- Prevent duplicate applications
-  unique(job_post_id, applicant_id)
+  unique(job_post_id, employee_id)
 );
 ```
 
@@ -112,9 +130,9 @@ create table if not exists job_applications (
 "Employers can manage their job posts" - Full CRUD for job owners
 "Everyone can view published job posts" - Public read access to published jobs
 
--- job_applications policies  
+-- employee_job_application policies  
 "Employers can view applications to their jobs" - See applicants for owned jobs
-"Applicants can manage their own applications" - CRUD for own applications
+"Employees can manage their own applications" - CRUD for own applications
 ```
 
 #### **Database Indexes**
@@ -123,9 +141,9 @@ create table if not exists job_applications (
 idx_job_posts_employer_id on job_posts(employer_id)
 idx_job_posts_business_id on job_posts(business_id)  
 idx_job_posts_status on job_posts(status)
-idx_job_applications_job_post_id on job_applications(job_post_id)
-idx_job_applications_applicant_id on job_applications(applicant_id)
-idx_job_applications_status on job_applications(status)
+idx_employee_job_application_job_post_id on employee_job_application(job_post_id)
+idx_employee_job_application_employee_id on employee_job_application(employee_id)
+idx_employee_job_application_status on employee_job_application(status)
 ```
 
 #### **Database Constraints**

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { PublicJobPost, formatPayRange, formatHoursPerWeek, formatTimeAgo, formatLocation } from '../../lib/public-job-api';
 import { BUSINESS_TYPE_LABELS } from '../../lib/business-api';
 import { Button } from '../ui/Button';
+import { JobApplicationModal } from './JobApplicationModal';
 
 interface JobCardProps {
   job: PublicJobPost;
@@ -248,30 +249,16 @@ export function JobCard({ job, isExpanded = false, onToggleExpanded }: JobCardPr
         </div>
       </div>
 
-      {/* Application Modal Placeholder */}
-      {showApplicationModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-bold mb-4">Apply to {job.job_title}</h3>
-            <p className="text-gray-600 mb-4">
-              Application system coming soon! For now, please contact:
-            </p>
-            <p className="text-gray-800 mb-4">
-              📞 {job.phone}<br />
-              {job.email && (
-                <>✉️ {job.email}</>
-              )}
-            </p>
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => setShowApplicationModal(false)}
-            >
-              Close
-            </Button>
-          </div>
-        </div>
-      )}
+      {/* Job Application Modal */}
+      <JobApplicationModal
+        isOpen={showApplicationModal}
+        onClose={() => setShowApplicationModal(false)}
+        job={job}
+        onSuccess={() => {
+          // Optional: Show success message or refresh applications list
+          console.log('Application submitted successfully');
+        }}
+      />
     </div>
   );
 }

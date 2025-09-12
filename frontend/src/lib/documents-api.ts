@@ -50,7 +50,7 @@ export class DocumentsApi {
   async uploadDocument(
     file: File,
     type: DocumentType,
-    onProgress?: (progress: UploadProgress) => void
+    _onProgress?: (progress: UploadProgress) => void
   ): Promise<DocumentData> {
     if (!file) {
       throw new Error('No file provided');

@@ -8,6 +8,7 @@ import {
   JOB_STATUS_LABELS,
   JOB_TYPE_LABELS
 } from '../../lib/jobs-api';
+import { ApplicationsList } from './ApplicationsList';
 
 export function PostTracking() {
   const [jobs, setJobs] = useState<JobPost[]>([]);
@@ -278,14 +279,8 @@ export function PostTracking() {
                   )}
                 </div>
 
-                {/* Placeholder for Future Applicants Section */}
-                <div className="mt-4 p-4 bg-gray-50 rounded-md border-2 border-dashed border-gray-200">
-                  <div className="text-center text-gray-500">
-                    <span className="text-2xl mb-2 block">👥</span>
-                    <p className="text-sm font-medium">Applicant Tracking</p>
-                    <p className="text-xs">Coming soon: View and manage job applicants</p>
-                  </div>
-                </div>
+                {/* Job Applications */}
+                <ApplicationsList jobPostId={job.id} jobTitle={job.job_title} />
               </div>
             </div>
           ))}
