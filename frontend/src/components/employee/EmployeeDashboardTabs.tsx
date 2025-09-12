@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { EmployeeHome } from './EmployeeHome';
 import { EmployeeSchedule } from './EmployeeSchedule';
 import { EmployeeEarnings } from './EmployeeEarnings';
+import { MyJobs } from './MyJobs';
 import { ProfileDropdown } from '../ui/ProfileDropdown';
 
 interface EmployeeDashboardTabsProps {
@@ -12,13 +13,14 @@ interface EmployeeDashboardTabsProps {
   profileCompletionPercentage?: number;
 }
 
-type TabType = 'home' | 'schedule' | 'earnings';
+type TabType = 'home' | 'myjobs' | 'schedule' | 'earnings';
 
 export function EmployeeDashboardTabs({ userEmail, onLogout, onJobProfile, isProfileComplete, profileCompletionPercentage }: EmployeeDashboardTabsProps) {
   const [activeTab, setActiveTab] = useState<TabType>('home');
 
   const tabs = [
     { id: 'home' as TabType, label: 'Home', icon: '🏠' },
+    { id: 'myjobs' as TabType, label: 'My Jobs', icon: '💼' },
     { id: 'schedule' as TabType, label: 'Schedule', icon: '📅' },
     { id: 'earnings' as TabType, label: 'Earnings', icon: '💰' }
   ];
@@ -27,6 +29,8 @@ export function EmployeeDashboardTabs({ userEmail, onLogout, onJobProfile, isPro
     switch (activeTab) {
       case 'home':
         return <EmployeeHome />;
+      case 'myjobs':
+        return <MyJobs />;
       case 'schedule':
         return <EmployeeSchedule />;
       case 'earnings':
