@@ -18,14 +18,19 @@ interface JobBrowseState {
   hasNextPage: boolean;
 }
 
-export function JobBrowse() {
+interface JobBrowseProps {
+  initialSearchParams?: Partial<JobSearchParams>;
+  autoLoad?: boolean;
+}
+
+export function JobBrowse({ initialSearchParams, autoLoad = false }: JobBrowseProps) {
   const [searchParams, setSearchParams] = useState<JobSearchParams>({
-    keywords: '',
-    state: '',
-    city: '',
-    county: '',
-    page: 1,
-    limit: 20
+    keywords: initialSearchParams?.keywords || '',
+    state: initialSearchParams?.state || '',
+    city: initialSearchParams?.city || '',
+    county: initialSearchParams?.county || '',
+    page: initialSearchParams?.page || 1,
+    limit: initialSearchParams?.limit || 20
   });
 
   const [jobState, setJobState] = useState<JobBrowseState>({
@@ -44,10 +49,12 @@ export function JobBrowse() {
     loadJobs();
   }, [searchParams]);
 
-  // Initial load
+  // Initial load - only if autoLoad is true
   useEffect(() => {
-    loadJobs();
-  }, []);
+    if (autoLoad) {
+      loadJobs();
+    }
+  }, [autoLoad]);
 
   const loadJobs = async (loadMore = false) => {
     setJobState(prev => ({ ...prev, loading: true, error: null }));
@@ -129,7 +136,7 @@ export function JobBrowse() {
               className="w-full"
             />
             
-            {/* Location and Near Me Row */}
+            {/* Location and Search Button Row */}
             <div className="flex gap-3">
               <Button
                 variant="outline"
@@ -143,14 +150,10 @@ export function JobBrowse() {
                 }
               </Button>
               <Button
-                variant="outline"
-                className="flex items-center gap-2"
-                onClick={() => {
-                  // TODO: Implement near me functionality
-                  console.log('Near me clicked');
-                }}
+                onClick={() => loadJobs()}
+                className="px-6 bg-blue-600 hover:bg-blue-700"
               >
-                📍 Near Me
+                Search
               </Button>
             </div>
           </div>

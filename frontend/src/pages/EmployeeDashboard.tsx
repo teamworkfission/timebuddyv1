@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthProvider';
 import { Button } from '../components/ui/Button';
-import { JobBrowse } from '../components/employee/JobBrowse';
+import { EmployeeDashboardTabs } from '../components/employee/EmployeeDashboardTabs';
 
 export function EmployeeDashboard() {
   const { profile, logout } = useAuth();
@@ -75,40 +75,12 @@ export function EmployeeDashboard() {
     );
   }
 
-  // Main job search interface
+  // Main dashboard with tabbed interface
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Top Navigation */}
-      <div className="bg-white border-b border-gray-200 px-4 py-2">
-        <div className="max-w-4xl mx-auto flex justify-between items-center">
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-600">
-              👋 {profile?.email}
-            </span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setShowProfile(true)}
-              className="text-xs"
-            >
-              👤 Profile
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={logout}
-              className="text-xs"
-            >
-              Logout
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Job Browse Interface */}
-      <JobBrowse />
-    </div>
+    <EmployeeDashboardTabs 
+      userEmail={profile?.email}
+      onLogout={logout}
+      onShowProfile={() => setShowProfile(true)}
+    />
   );
 }
