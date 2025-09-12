@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '../ui/Button';
 import { BusinessForm } from './BusinessForm';
 import { BusinessTile } from './BusinessTile';

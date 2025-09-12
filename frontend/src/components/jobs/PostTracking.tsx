@@ -6,8 +6,7 @@ import {
   updateJobPost, 
   deleteJobPost,
   JOB_STATUS_LABELS,
-  JOB_TYPE_LABELS,
-  PAY_TYPE_LABELS
+  JOB_TYPE_LABELS
 } from '../../lib/jobs-api';
 
 export function PostTracking() {

@@ -205,7 +205,7 @@ export function CreateJobPost({ editingJob, onSuccess }: CreateJobPostProps) {
         ...formData,
         status,
         pay_max: payRange === 'single' ? undefined : formData.pay_max,
-        expected_hours_per_week: formData.expected_hours_per_week || undefined,
+        expected_hours_per_week: formData.expected_hours_per_week || 0,
       };
 
       if (editingJob) {

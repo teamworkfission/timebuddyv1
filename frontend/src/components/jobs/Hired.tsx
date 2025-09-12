@@ -1,9 +1,7 @@
-import { useState, useEffect } from 'react';
 import { Button } from '../ui/Button';
 
 // Placeholder component for hired applicants
 export function Hired() {
-  const [loading, setLoading] = useState(false);
 
   return (
     <div className="space-y-6">

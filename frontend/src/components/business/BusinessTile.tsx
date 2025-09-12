@@ -1,4 +1,4 @@
-import React from 'react';
+// React import not needed for functional components
 import { Business, BUSINESS_TYPE_LABELS } from '../../lib/business-api';
 
 interface BusinessTileProps {

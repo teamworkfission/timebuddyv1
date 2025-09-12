@@ -14,6 +14,7 @@ import {
 import { JobsService } from './jobs.service';
 import { CreateJobDto } from './dto/create-job.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
+import { JobSearchDto } from './dto/job-search.dto';
 import { AuthService } from '../auth/auth.service';
 
 @Controller('jobs')
@@ -152,5 +153,37 @@ export class JobsController {
     }
 
     return this.jobsService.remove(id, user.id);
+  }
+
+  // PUBLIC ENDPOINTS FOR JOB SEEKERS (NO AUTH REQUIRED)
+
+  // Search published jobs publicly
+  @Get('public/search')
+  async searchPublicJobs(@Query() searchDto: JobSearchDto) {
+    return this.jobsService.searchPublicJobs(searchDto);
+  }
+
+  // Get a specific published job publicly
+  @Get('public/:id')
+  async getPublicJob(@Param('id') id: string) {
+    return this.jobsService.getPublicJobById(id);
+  }
+
+  // Get states with available jobs
+  @Get('locations/states')
+  async getStatesWithJobs() {
+    return this.jobsService.getStatesWithJobs();
+  }
+
+  // Get cities with jobs in a specific state
+  @Get('locations/cities/:state')
+  async getCitiesWithJobs(@Param('state') state: string) {
+    return this.jobsService.getCitiesWithJobs(state);
+  }
+
+  // Get counties with jobs in a specific state and city
+  @Get('locations/counties/:state/:city')
+  async getCountiesWithJobs(@Param('state') state: string, @Param('city') city: string) {
+    return this.jobsService.getCountiesWithJobs(state, city);
   }
 }
