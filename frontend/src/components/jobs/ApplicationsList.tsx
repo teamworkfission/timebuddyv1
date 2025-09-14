@@ -7,7 +7,7 @@ import {
   getStatusColorClass,
   formatApplicationDate 
 } from '../../lib/job-applications-api';
-import { ResumeViewer } from './ResumeViewer';
+import { PDFPreviewModal } from '../ui/PDFPreviewModal';
 
 interface ApplicationsListProps {
   jobPostId: string;
@@ -19,6 +19,8 @@ export function ApplicationsList({ jobPostId, jobTitle }: ApplicationsListProps)
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [hiddenApplications, setHiddenApplications] = useState<Set<string>>(new Set());
+  const [previewApplication, setPreviewApplication] = useState<{resumeUrl: string, applicantName: string} | null>(null);
 
   const loadApplications = async () => {
     try {
@@ -43,6 +45,51 @@ export function ApplicationsList({ jobPostId, jobTitle }: ApplicationsListProps)
 
   const handleToggleExpanded = () => {
     setIsExpanded(!isExpanded);
+  };
+
+  const handleHideApplication = (applicationId: string) => {
+    setHiddenApplications(prev => new Set([...prev, applicationId]));
+  };
+
+  const handleViewResume = (resumeUrl: string, applicantName: string) => {
+    // Validate URL before opening modal
+    if (!resumeUrl || resumeUrl.trim() === '') {
+      console.error('Invalid resume URL provided');
+      return;
+    }
+    
+    // Debug logging
+    console.log('Opening resume preview for:', applicantName);
+    console.log('Resume URL:', resumeUrl);
+    console.log('URL type:', resumeUrl.includes('supabase') ? 'Supabase Storage' : 'External URL');
+    
+    setPreviewApplication({ resumeUrl, applicantName });
+  };
+
+  const getFileType = (url: string): string => {
+    const extension = url.split('.').pop()?.toLowerCase();
+    switch (extension) {
+      case 'pdf':
+        return 'PDF';
+      case 'doc':
+      case 'docx':
+        return 'Word Document';
+      default:
+        return 'Document';
+    }
+  };
+
+  const getFileIcon = (url: string): string => {
+    const extension = url.split('.').pop()?.toLowerCase();
+    switch (extension) {
+      case 'pdf':
+        return '📄';
+      case 'doc':
+      case 'docx':
+        return '📝';
+      default:
+        return '📎';
+    }
   };
 
   return (
@@ -121,7 +168,7 @@ export function ApplicationsList({ jobPostId, jobTitle }: ApplicationsListProps)
 
           {!loading && !error && applications.length > 0 && (
             <div className="space-y-4 p-4">
-              {applications.map((application) => (
+              {applications.filter(app => !hiddenApplications.has(app.id)).map((application) => (
                 <div key={application.id} className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200">
                   {/* Application Header Card */}
                   <div className="p-6 border-b border-gray-100">
@@ -151,9 +198,20 @@ export function ApplicationsList({ jobPostId, jobTitle }: ApplicationsListProps)
                         </div>
                       </div>
                       
-                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColorClass(application.status)}`}>
-                        {APPLICATION_STATUS_LABELS[application.status]}
-                      </span>
+                      <div className="flex items-center space-x-2">
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColorClass(application.status)}`}>
+                          {APPLICATION_STATUS_LABELS[application.status]}
+                        </span>
+                        <button
+                          onClick={() => handleHideApplication(application.id)}
+                          className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                          title="Hide this application"
+                        >
+                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                   </div>
 
@@ -166,9 +224,18 @@ export function ApplicationsList({ jobPostId, jobTitle }: ApplicationsListProps)
                         <span className="text-blue-500">✉️</span>
                         <div>
                           <p className="text-xs text-gray-500 uppercase tracking-wide">Email</p>
-                          <p className="text-sm font-medium text-gray-900">
-                            {application.show_email ? application.email : '🔒 Hidden by user'}
-                          </p>
+                          {application.show_email ? (
+                            <a 
+                              href={`mailto:${application.email}`}
+                              className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                            >
+                              {application.email}
+                            </a>
+                          ) : (
+                            <p className="text-sm font-medium text-gray-900">
+                              🔒 Hidden by user
+                            </p>
+                          )}
                         </div>
                       </div>
                       
@@ -177,9 +244,18 @@ export function ApplicationsList({ jobPostId, jobTitle }: ApplicationsListProps)
                           <span className="text-green-500">📞</span>
                           <div>
                             <p className="text-xs text-gray-500 uppercase tracking-wide">Phone</p>
-                            <p className="text-sm font-medium text-gray-900">
-                              {application.show_phone ? application.phone : '🔒 Hidden by user'}
-                            </p>
+                            {application.show_phone ? (
+                              <a 
+                                href={`tel:${application.phone}`}
+                                className="text-sm font-medium text-green-600 hover:text-green-800 hover:underline transition-colors"
+                              >
+                                {application.phone}
+                              </a>
+                            ) : (
+                              <p className="text-sm font-medium text-gray-900">
+                                🔒 Hidden by user
+                              </p>
+                            )}
                           </div>
                         </div>
                       )}
@@ -189,7 +265,6 @@ export function ApplicationsList({ jobPostId, jobTitle }: ApplicationsListProps)
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {application.availability && (
                         <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
-                          <span className="text-blue-600">⏰</span>
                           <div>
                             <p className="text-xs text-blue-700 uppercase tracking-wide font-medium">Availability</p>
                             <p className="text-sm text-gray-900">{application.availability}</p>
@@ -199,7 +274,6 @@ export function ApplicationsList({ jobPostId, jobTitle }: ApplicationsListProps)
                       
                       {application.transportation && (
                         <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
-                          <span className="text-green-600">🚗</span>
                           <div>
                             <p className="text-xs text-green-700 uppercase tracking-wide font-medium">Transportation</p>
                             <p className="text-sm text-gray-900">
@@ -231,7 +305,7 @@ export function ApplicationsList({ jobPostId, jobTitle }: ApplicationsListProps)
 
                         {application.languages && application.languages.length > 0 && (
                           <div>
-                            <p className="text-sm font-medium text-gray-700 mb-2">🌍 Languages</p>
+                            <p className="text-sm font-medium text-gray-700 mb-2">Languages</p>
                             <div className="flex flex-wrap gap-2">
                               {application.languages.map((language, index) => (
                                 <span
@@ -269,10 +343,30 @@ export function ApplicationsList({ jobPostId, jobTitle }: ApplicationsListProps)
                     {application.resume_url && application.resume_url.trim() !== '' && (
                       <div>
                         <p className="text-sm font-medium text-gray-700 mb-3">📄 Resume</p>
-                        <ResumeViewer 
-                          resumeUrl={application.resume_url} 
-                          applicantName={application.full_name}
-                        />
+                        <div 
+                          className="border border-gray-200 rounded-lg p-3 bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors"
+                          onClick={() => handleViewResume(application.resume_url, application.full_name)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-lg">{getFileIcon(application.resume_url)}</span>
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">
+                                  {application.full_name}'s Resume
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  {getFileType(application.resume_url)} • Click to view
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-blue-600">
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              </svg>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     )}
 
@@ -282,6 +376,16 @@ export function ApplicationsList({ jobPostId, jobTitle }: ApplicationsListProps)
             </div>
           )}
         </div>
+      )}
+
+      {/* PDF Preview Modal */}
+      {previewApplication && (
+        <PDFPreviewModal
+          isOpen={!!previewApplication}
+          onClose={() => setPreviewApplication(null)}
+          pdfUrl={previewApplication.resumeUrl}
+          applicantName={previewApplication.applicantName}
+        />
       )}
     </div>
   );
