@@ -220,44 +220,56 @@ export function ApplicationsList({ jobPostId, jobTitle }: ApplicationsListProps)
                     
                     {/* Contact Information */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                        <span className="text-blue-500">✉️</span>
-                        <div>
-                          <p className="text-xs text-gray-500 uppercase tracking-wide">Email</p>
-                          {application.show_email ? (
-                            <a 
-                              href={`mailto:${application.email}`}
-                              className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors"
-                            >
+                      {application.show_email ? (
+                        <a 
+                          href={`mailto:${application.email}`}
+                          className="flex items-center space-x-3 p-3 bg-gray-50 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                        >
+                          <span className="text-blue-500">✉️</span>
+                          <div>
+                            <p className="text-xs text-gray-500 uppercase tracking-wide">Email</p>
+                            <p className="text-sm font-medium text-blue-600 hover:text-blue-800">
                               {application.email}
-                            </a>
-                          ) : (
+                            </p>
+                          </div>
+                        </a>
+                      ) : (
+                        <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                          <span className="text-blue-500">✉️</span>
+                          <div>
+                            <p className="text-xs text-gray-500 uppercase tracking-wide">Email</p>
                             <p className="text-sm font-medium text-gray-900">
                               🔒 Hidden by user
                             </p>
-                          )}
+                          </div>
                         </div>
-                      </div>
+                      )}
                       
                       {application.phone && (
-                        <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                          <span className="text-green-500">📞</span>
-                          <div>
-                            <p className="text-xs text-gray-500 uppercase tracking-wide">Phone</p>
-                            {application.show_phone ? (
-                              <a 
-                                href={`tel:${application.phone}`}
-                                className="text-sm font-medium text-green-600 hover:text-green-800 hover:underline transition-colors"
-                              >
+                        application.show_phone ? (
+                          <a 
+                            href={`tel:${application.phone}`}
+                            className="flex items-center space-x-3 p-3 bg-gray-50 hover:bg-green-50 rounded-lg transition-colors cursor-pointer"
+                          >
+                            <span className="text-green-500">📞</span>
+                            <div>
+                              <p className="text-xs text-gray-500 uppercase tracking-wide">Phone</p>
+                              <p className="text-sm font-medium text-green-600 hover:text-green-800">
                                 {application.phone}
-                              </a>
-                            ) : (
+                              </p>
+                            </div>
+                          </a>
+                        ) : (
+                          <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                            <span className="text-green-500">📞</span>
+                            <div>
+                              <p className="text-xs text-gray-500 uppercase tracking-wide">Phone</p>
                               <p className="text-sm font-medium text-gray-900">
                                 🔒 Hidden by user
                               </p>
-                            )}
+                            </div>
                           </div>
-                        </div>
+                        )
                       )}
                     </div>
 
