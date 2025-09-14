@@ -15,6 +15,12 @@ export function ResumeViewer({ resumeUrl, applicantName }: ResumeViewerProps) {
       console.error('Invalid resume URL provided');
       return;
     }
+    
+    // Debug logging
+    console.log('Opening resume preview for:', applicantName);
+    console.log('Resume URL:', resumeUrl);
+    console.log('URL type:', resumeUrl.includes('supabase') ? 'Supabase Storage' : 'External URL');
+    
     setIsPreviewOpen(true);
   };
 

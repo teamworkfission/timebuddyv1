@@ -29,6 +29,12 @@ export interface JobApplication {
   updated_at: string;
 }
 
+export interface JobApplicationWithJobInfo extends JobApplication {
+  job_title: string;
+  business_name: string;
+  location: string;
+}
+
 export interface JobApplicationWithJobDetails extends JobApplication {
   job_title: string;
   business_name: string;
@@ -46,8 +52,8 @@ export interface JobApplicationWithJobDetails extends JobApplication {
   business_type: string;
   language_preference?: string;
   transportation_requirement?: string;
-  phone: string;
-  email?: string;
+  employer_phone: string;
+  employer_email?: string;
   published_at: string;
 }
 
@@ -162,14 +168,14 @@ export class JobApplicationsService {
       business_type: app.job_posts.business_type,
       language_preference: app.job_posts.language_preference,
       transportation_requirement: app.job_posts.transportation_requirement,
-      phone: app.job_posts.phone,
-      email: app.job_posts.email,
+      employer_phone: app.job_posts.phone,
+      employer_email: app.job_posts.email,
       published_at: app.job_posts.published_at,
       job_posts: undefined, // Remove nested object
     }));
   }
 
-  async findAllByEmployer(employerId: string): Promise<JobApplicationWithJobDetails[]> {
+  async findAllByEmployer(employerId: string): Promise<JobApplicationWithJobInfo[]> {
     const { data, error } = await this.supabase.admin
       .from('employee_job_application')
       .select(`
