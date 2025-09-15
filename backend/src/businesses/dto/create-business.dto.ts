@@ -42,10 +42,6 @@ export class CreateBusinessDto {
   @MaxLength(150)
   location: string;
 
-  @Transform(({ value }) => parseInt(value))
-  @IsInt()
-  @Min(0)
-  total_employees: number;
 }
 
 export { BUSINESS_TYPES };

@@ -18,7 +18,6 @@ export function BusinessForm({ onSuccess, onCancel, initialData, mode = 'create'
     email: '',
     phone: '',
     location: '',
-    total_employees: 0,
   });
 
   const [manualAddress, setManualAddress] = useState({
@@ -41,7 +40,6 @@ export function BusinessForm({ onSuccess, onCancel, initialData, mode = 'create'
         email: initialData.email,
         phone: initialData.phone,
         location: initialData.location,
-        total_employees: initialData.total_employees,
       });
 
       // Parse address components if available
@@ -62,7 +60,7 @@ export function BusinessForm({ onSuccess, onCancel, initialData, mode = 'create'
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'total_employees' ? parseInt(value) || 0 : value,
+      [name]: value,
     }));
   };
 
@@ -293,22 +291,6 @@ export function BusinessForm({ onSuccess, onCancel, initialData, mode = 'create'
           </div>
         </div>
 
-        {/* Total Employees */}
-        <div>
-          <label htmlFor="total_employees" className="block text-sm font-medium text-gray-700 mb-2">
-            Total Employees
-          </label>
-          <Input
-            id="total_employees"
-            name="total_employees"
-            type="number"
-            min="0"
-            value={formData.total_employees}
-            onChange={handleInputChange}
-            placeholder="0"
-          />
-          <p className="mt-1 text-xs text-gray-500">Number of employees you can schedule for this location</p>
-        </div>
 
         {/* Form Actions - Mobile Optimized */}
         <div className="flex flex-col sm:flex-row gap-3 sm:justify-end pt-4 sm:pt-6 border-t border-gray-200">

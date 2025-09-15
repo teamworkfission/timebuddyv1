@@ -8,6 +8,7 @@ import { EmployeesModule } from './employees/employees.module';
 import { DocumentsModule } from './documents/documents.module';
 import { JobApplicationsModule } from './job-applications/job-applications.module';
 import { JoinRequestsModule } from './join-requests/join-requests.module';
+import { SchedulesModule } from './schedules/schedules.module';
 import { validateEnv } from './config/env.validation';
 
 @Module({
@@ -29,6 +30,7 @@ import { validateEnv } from './config/env.validation';
     DocumentsModule,
     JobApplicationsModule,
     JoinRequestsModule,
+    SchedulesModule,
   ],
 })
 export class AppModule {}

@@ -86,12 +86,24 @@ export function BusinessTile({ business, onEdit, onDelete, onAddEmployee, onView
           {/* Contact Info */}
           <div className="flex items-center space-x-2">
             <span className="text-gray-400 text-sm">📞</span>
-            <p className="text-xs sm:text-sm text-gray-600 truncate">{business.phone}</p>
+            <a 
+              href={`tel:${business.phone}`}
+              className="text-xs sm:text-sm text-blue-600 hover:text-blue-800 hover:underline truncate transition-colors"
+              title="Call phone number"
+            >
+              {business.phone}
+            </a>
           </div>
 
           <div className="flex items-center space-x-2">
             <span className="text-gray-400 text-sm">📧</span>
-            <p className="text-xs sm:text-sm text-gray-600 truncate">{business.email}</p>
+            <a 
+              href={`mailto:${business.email}`}
+              className="text-xs sm:text-sm text-blue-600 hover:text-blue-800 hover:underline truncate transition-colors"
+              title="Send email"
+            >
+              {business.email}
+            </a>
           </div>
 
           {/* Employee Count */}

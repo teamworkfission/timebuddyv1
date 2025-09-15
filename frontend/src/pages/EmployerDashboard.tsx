@@ -4,12 +4,13 @@ import { ProfileDropdown } from '../components/ui/ProfileDropdown';
 import { useState, useEffect } from 'react';
 import { BusinessManagement } from '../components/business/BusinessManagement';
 import { JobManagement } from '../components/jobs/JobManagement';
+import { ScheduleManagement } from '../components/schedules/ScheduleManagement';
 import { getBusinessStats, BusinessStats } from '../lib/business-api';
 import { getJobStats, JobStats } from '../lib/jobs-api';
 
 export function EmployerDashboard() {
   const { profile, logout } = useAuth();
-  const [currentView, setCurrentView] = useState<'dashboard' | 'businesses' | 'jobs'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'businesses' | 'jobs' | 'schedules'>('dashboard');
   const [businessStats, setBusinessStats] = useState<BusinessStats | null>(null);
   const [jobStats, setJobStats] = useState<JobStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
@@ -47,7 +48,7 @@ export function EmployerDashboard() {
         setCurrentView('jobs');
         break;
       case 'manage-schedule':
-        console.log('Manage Schedule clicked - coming soon');
+        setCurrentView('schedules');
         break;
       default:
         console.log(`Unknown tile clicked: ${tileId}`);
@@ -94,6 +95,10 @@ export function EmployerDashboard() {
 
   if (currentView === 'jobs') {
     return <JobManagement onBack={() => setCurrentView('dashboard')} />;
+  }
+
+  if (currentView === 'schedules') {
+    return <ScheduleManagement onBack={() => setCurrentView('dashboard')} />;
   }
 
   return (

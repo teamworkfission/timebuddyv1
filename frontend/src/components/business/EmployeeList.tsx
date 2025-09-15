@@ -14,6 +14,7 @@ export function EmployeeList({ businessId, businessName, onBack }: EmployeeListP
   const [error, setError] = useState<string | null>(null);
   const [removing, setRemoving] = useState<string | null>(null);
   const [updatingRole, setUpdatingRole] = useState<string | null>(null);
+  const [copySuccess, setCopySuccess] = useState<string | null>(null);
 
   const loadEmployees = async () => {
     try {
@@ -64,6 +65,16 @@ export function EmployeeList({ businessId, businessName, onBack }: EmployeeListP
     }
   };
 
+  const handleCopyToClipboard = async (text: string, type: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopySuccess(`${type} copied!`);
+      setTimeout(() => setCopySuccess(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy to clipboard:', err);
+    }
+  };
+
   const getTransportationIcon = (transportation: string) => {
     switch (transportation) {
       case 'own_car': return '🚗';
@@ -95,6 +106,13 @@ export function EmployeeList({ businessId, businessName, onBack }: EmployeeListP
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Copy Success Toast */}
+      {copySuccess && (
+        <div className="fixed top-4 right-4 z-50 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg transition-all duration-300">
+          ✅ {copySuccess}
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -191,18 +209,64 @@ export function EmployeeList({ businessId, businessName, onBack }: EmployeeListP
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <div>
                           <h4 className="text-sm font-medium text-gray-900 mb-2">Contact Information</h4>
-                          <div className="space-y-1 text-sm text-gray-600">
-                            <div className="flex items-center space-x-2">
+                          <div className="space-y-2 text-sm">
+                            {/* Email - Clickable mailto link */}
+                            <div className="flex items-center space-x-2 group">
                               <span>📧</span>
-                              <span>{employee.employee.email}</span>
+                              <a 
+                                href={`mailto:${employee.employee.email}`}
+                                className="text-blue-600 hover:text-blue-800 hover:underline transition-colors cursor-pointer"
+                                title="Send email"
+                              >
+                                {employee.employee.email}
+                              </a>
+                              <button
+                                onClick={() => handleCopyToClipboard(employee.employee.email, 'Email')}
+                                className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-600 transition-opacity"
+                                title="Copy email"
+                              >
+                                📋
+                              </button>
                             </div>
-                            <div className="flex items-center space-x-2">
+                            
+                            {/* Phone - Clickable tel link */}
+                            <div className="flex items-center space-x-2 group">
                               <span>📞</span>
-                              <span>{employee.employee.phone}</span>
+                              <a 
+                                href={`tel:${employee.employee.phone}`}
+                                className="text-blue-600 hover:text-blue-800 hover:underline transition-colors cursor-pointer"
+                                title="Call phone number"
+                              >
+                                {employee.employee.phone}
+                              </a>
+                              <button
+                                onClick={() => handleCopyToClipboard(employee.employee.phone, 'Phone')}
+                                className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-600 transition-opacity"
+                                title="Copy phone number"
+                              >
+                                📋
+                              </button>
                             </div>
-                            <div className="flex items-center space-x-2">
+                            
+                            {/* Location - Clickable Google Maps link */}
+                            <div className="flex items-center space-x-2 group">
                               <span>📍</span>
-                              <span>{employee.employee.city}, {employee.employee.state}</span>
+                              <a 
+                                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${employee.employee.city}, ${employee.employee.state}`)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-800 hover:underline transition-colors cursor-pointer"
+                                title="View on Google Maps"
+                              >
+                                {employee.employee.city}, {employee.employee.state}
+                              </a>
+                              <button
+                                onClick={() => handleCopyToClipboard(`${employee.employee.city}, ${employee.employee.state}`, 'Location')}
+                                className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-600 transition-opacity"
+                                title="Copy location"
+                              >
+                                📋
+                              </button>
                             </div>
                           </div>
                         </div>

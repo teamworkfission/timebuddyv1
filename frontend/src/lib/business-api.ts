@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 
-const API_BASE_URL = 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
 
 export interface Business {
   business_id: string;
@@ -35,7 +35,6 @@ export interface CreateBusinessData {
   email: string;
   phone: string;
   location: string;
-  total_employees: number;
 }
 
 export interface BusinessStats {
@@ -260,4 +259,39 @@ export async function updateEmployeeRole(
   }
 
   return response.json();
+}
+
+// BusinessesApi class for compatibility with schedules component
+export class BusinessesApi {
+  static async getBusinesses(): Promise<Business[]> {
+    return getBusinesses();
+  }
+
+  static async getBusiness(id: string): Promise<Business> {
+    return getBusiness(id);
+  }
+
+  static async createBusiness(businessData: CreateBusinessData): Promise<Business> {
+    return createBusiness(businessData);
+  }
+
+  static async updateBusiness(id: string, businessData: Partial<CreateBusinessData>): Promise<Business> {
+    return updateBusiness(id, businessData);
+  }
+
+  static async deleteBusiness(id: string): Promise<void> {
+    return deleteBusiness(id);
+  }
+
+  static async getBusinessEmployees(businessId: string): Promise<BusinessEmployee[]> {
+    return getBusinessEmployees(businessId);
+  }
+
+  static async removeBusinessEmployee(businessId: string, employeeId: string): Promise<void> {
+    return removeBusinessEmployee(businessId, employeeId);
+  }
+
+  static async updateEmployeeRole(businessId: string, employeeId: string, role: string): Promise<BusinessEmployee> {
+    return updateEmployeeRole(businessId, employeeId, role);
+  }
 }
