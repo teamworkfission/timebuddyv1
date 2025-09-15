@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Button } from '../ui/Button';
+import { ConfirmationModal } from '../ui/ConfirmationModal';
 import { 
   JobPost, 
   getJobPosts, 
@@ -15,9 +16,22 @@ export function PostTracking() {
   const [jobs, setJobs] = useState<JobPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<'all' | 'draft' | 'published' | 'closed'>('all');
+  const [filter, setFilter] = useState<'all' | 'draft' | 'published'>('all');
   const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
   const [selectedBusinessName, setSelectedBusinessName] = useState<string>('');
+  
+  // Confirmation modal state
+  const [confirmationModal, setConfirmationModal] = useState<{
+    isOpen: boolean;
+    type: 'close' | 'delete';
+    jobId: string;
+    jobTitle: string;
+  }>({
+    isOpen: false,
+    type: 'close',
+    jobId: '',
+    jobTitle: ''
+  });
 
   useEffect(() => {
     loadJobs();
@@ -31,7 +45,9 @@ export function PostTracking() {
         filter === 'all' ? undefined : filter,
         selectedBusinessId || undefined
       );
-      setJobs(jobData);
+      // Filter out closed jobs - they should only appear in Closed tab
+      const filteredJobs = jobData.filter(job => job.status !== 'closed');
+      setJobs(filteredJobs);
     } catch (error) {
       console.error('Failed to load jobs:', error);
       setError('Failed to load job posts. Please try again.');
@@ -40,27 +56,35 @@ export function PostTracking() {
     }
   };
 
-  const handleStatusChange = async (jobId: string, newStatus: 'published' | 'closed') => {
-    try {
-      await updateJobPost(jobId, { status: newStatus });
-      loadJobs(); // Reload to show updated status
-    } catch (error) {
-      console.error('Failed to update job status:', error);
-      setError('Failed to update job status. Please try again.');
-    }
+  const handleClose = async (jobId: string, jobTitle: string) => {
+    setConfirmationModal({
+      isOpen: true,
+      type: 'close',
+      jobId,
+      jobTitle
+    });
   };
 
   const handleDelete = async (jobId: string, jobTitle: string) => {
-    if (!confirm(`Are you sure you want to delete "${jobTitle}"? This action cannot be undone.`)) {
-      return;
-    }
+    setConfirmationModal({
+      isOpen: true,
+      type: 'delete',
+      jobId,
+      jobTitle
+    });
+  };
 
+  const confirmAction = async () => {
     try {
-      await deleteJobPost(jobId);
-      loadJobs(); // Reload to reflect deletion
+      if (confirmationModal.type === 'close') {
+        await updateJobPost(confirmationModal.jobId, { status: 'closed' });
+      } else if (confirmationModal.type === 'delete') {
+        await deleteJobPost(confirmationModal.jobId);
+      }
+      loadJobs(); // Reload to reflect changes
     } catch (error) {
-      console.error('Failed to delete job:', error);
-      setError('Failed to delete job post. Please try again.');
+      console.error(`Failed to ${confirmationModal.type} job:`, error);
+      setError(`Failed to ${confirmationModal.type} job post. Please try again.`);
     }
   };
 
@@ -140,7 +164,7 @@ export function PostTracking() {
         {selectedBusinessId && (
           <div className="flex items-center space-x-4">
             <div className="flex space-x-2">
-              {(['all', 'draft', 'published', 'closed'] as const).map((status) => (
+              {(['all', 'draft', 'published'] as const).map((status) => (
                 <button
                   key={status}
                   onClick={() => setFilter(status)}
@@ -232,28 +256,25 @@ export function PostTracking() {
                       <Button
                         variant="primary"
                         size="sm"
-                        onClick={() => handleStatusChange(job.id, 'published')}
+                        onClick={() => updateJobPost(job.id, { status: 'published' }).then(() => loadJobs())}
                       >
                         Publish
                       </Button>
                     )}
                     {job.status === 'published' && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleStatusChange(job.id, 'closed')}
+                      <button
+                        onClick={() => handleClose(job.id, job.job_title)}
+                        className="px-3 py-1.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 border border-red-600 rounded-lg transition-colors"
                       >
                         Close
-                      </Button>
+                      </button>
                     )}
-                    <Button
-                      variant="outline"
-                      size="sm"
+                    <button
                       onClick={() => handleDelete(job.id, job.job_title)}
-                      className="text-red-600 border-red-200 hover:bg-red-50"
+                      className="px-3 py-1.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 border border-red-600 rounded-lg transition-colors"
                     >
                       Delete
-                    </Button>
+                    </button>
                   </div>
                 </div>
 
@@ -333,6 +354,21 @@ export function PostTracking() {
           ))}
         </div>
       )}
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={confirmationModal.isOpen}
+        onClose={() => setConfirmationModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmAction}
+        title="⚠️ Are you sure?"
+        message={
+          confirmationModal.type === 'close'
+            ? `Closing "${confirmationModal.jobTitle}" will remove it permanently from the employee view.`
+            : `Deleting "${confirmationModal.jobTitle}" will remove it permanently from the employee view and cannot be undone.`
+        }
+        confirmText={confirmationModal.type === 'close' ? 'Close' : 'Delete'}
+        type="danger"
+      />
     </div>
   );
 }

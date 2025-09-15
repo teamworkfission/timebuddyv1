@@ -4,12 +4,13 @@ import { CreateJobPost } from './CreateJobPost';
 import { PostTracking } from './PostTracking';
 import { Shortlisted } from './Shortlisted';
 import { Hired } from './Hired';
+import { ClosedJobs } from './ClosedJobs';
 
 interface JobManagementProps {
   onBack: () => void;
 }
 
-type TabType = 'create' | 'tracking' | 'shortlisted' | 'hired';
+type TabType = 'create' | 'tracking' | 'shortlisted' | 'hired' | 'closed';
 
 export function JobManagement({ onBack }: JobManagementProps) {
   const [activeTab, setActiveTab] = useState<TabType>('create');
@@ -19,6 +20,7 @@ export function JobManagement({ onBack }: JobManagementProps) {
     { id: 'tracking' as TabType, label: 'Post Tracking', icon: '📊' },
     { id: 'shortlisted' as TabType, label: 'Shortlisted', icon: '📥' },
     { id: 'hired' as TabType, label: 'Hired', icon: '✅' },
+    { id: 'closed' as TabType, label: 'Closed', icon: '📁' },
   ];
 
   const renderContent = () => {
@@ -31,6 +33,8 @@ export function JobManagement({ onBack }: JobManagementProps) {
         return <Shortlisted />;
       case 'hired':
         return <Hired />;
+      case 'closed':
+        return <ClosedJobs />;
       default:
         return <CreateJobPost />;
     }

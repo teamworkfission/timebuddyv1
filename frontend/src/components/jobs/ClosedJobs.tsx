@@ -3,7 +3,7 @@ import { Button } from '../ui/Button';
 import { ConfirmationModal } from '../ui/ConfirmationModal';
 import { 
   JobPost, 
-  getJobsWithApplicationStatus, 
+  getJobPosts, 
   updateJobPost, 
   deleteJobPost,
   JOB_STATUS_LABELS,
@@ -11,59 +11,52 @@ import {
 } from '../../lib/jobs-api';
 import { ApplicationsList } from './ApplicationsList';
 
-export function Shortlisted() {
+export function ClosedJobs() {
   const [jobs, setJobs] = useState<JobPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<'all' | 'draft' | 'published'>('all');
   const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
   const [selectedBusinessName, setSelectedBusinessName] = useState<string>('');
   
   // Confirmation modal state
   const [confirmationModal, setConfirmationModal] = useState<{
     isOpen: boolean;
-    type: 'close' | 'delete';
+    type: 'delete' | 'reopen';
     jobId: string;
     jobTitle: string;
   }>({
     isOpen: false,
-    type: 'close',
+    type: 'delete',
     jobId: '',
     jobTitle: ''
   });
 
   useEffect(() => {
     loadJobs();
-  }, [filter, selectedBusinessId]);
+  }, [selectedBusinessId]);
 
   const loadJobs = async () => {
     try {
       setLoading(true);
       setError(null);
-      // Only get jobs that have shortlisted or interviewed applications
-      const jobData = await getJobsWithApplicationStatus(
-        ['shortlisted', 'interviewed'],
+      // Only get jobs with 'closed' status
+      const jobData = await getJobPosts(
+        'closed',
         selectedBusinessId || undefined
       );
-      
-      // Apply status filter if not 'all' and filter out closed jobs
-      const filteredJobs = filter === 'all' 
-        ? jobData.filter(job => job.status !== 'closed')
-        : jobData.filter(job => job.status === filter && job.status !== 'closed');
-      
-      setJobs(filteredJobs);
+      setJobs(jobData);
     } catch (error) {
-      console.error('Failed to load jobs:', error);
-      setError('Failed to load job posts. Please try again.');
+      console.error('Failed to load closed jobs:', error);
+      setError('Failed to load closed job posts. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleClose = async (jobId: string, jobTitle: string) => {
+  const handleReopen = async (jobId: string, jobTitle: string) => {
     setConfirmationModal({
       isOpen: true,
-      type: 'close',
+      type: 'reopen',
       jobId,
       jobTitle
     });
@@ -80,10 +73,10 @@ export function Shortlisted() {
 
   const confirmAction = async () => {
     try {
-      if (confirmationModal.type === 'close') {
-        await updateJobPost(confirmationModal.jobId, { status: 'closed' });
-      } else if (confirmationModal.type === 'delete') {
+      if (confirmationModal.type === 'delete') {
         await deleteJobPost(confirmationModal.jobId);
+      } else if (confirmationModal.type === 'reopen') {
+        await updateJobPost(confirmationModal.jobId, { status: 'published' });
       }
       loadJobs(); // Reload to reflect changes
     } catch (error) {
@@ -112,31 +105,18 @@ export function Shortlisted() {
     return `${currency}${job.pay_min}${payType}`;
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'draft':
-        return 'bg-gray-100 text-gray-800';
-      case 'published':
-        return 'bg-green-100 text-green-800';
-      case 'closed':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
-        <span className="ml-2">Loading shortlisted applications...</span>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+        <span className="ml-2">Loading closed jobs...</span>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Header with Filter */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div>
           <div className="flex items-center space-x-4">
@@ -153,37 +133,17 @@ export function Shortlisted() {
             )}
             <div>
               <h2 className="text-2xl font-bold text-gray-900">
-                {selectedBusinessId ? `${selectedBusinessName} - Shortlisted` : 'Shortlisted Applications'}
+                {selectedBusinessId ? `${selectedBusinessName} - Closed Jobs` : 'Closed Jobs'}
               </h2>
               <p className="text-gray-600">
                 {selectedBusinessId 
-                  ? `View shortlisted and interviewed candidates for ${selectedBusinessName}`
-                  : 'Manage your shortlisted and interviewed candidates'
+                  ? `Manage closed job posts for ${selectedBusinessName}`
+                  : 'Manage your closed job posts and archived positions'
                 }
               </p>
             </div>
           </div>
         </div>
-        
-        {selectedBusinessId && (
-          <div className="flex items-center space-x-4">
-            <div className="flex space-x-2">
-              {(['all', 'draft', 'published'] as const).map((status) => (
-                <button
-                  key={status}
-                  onClick={() => setFilter(status)}
-                  className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                    filter === status
-                      ? 'bg-orange-600 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  {status === 'all' ? 'All' : JOB_STATUS_LABELS[status]}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Error Message */}
@@ -202,18 +162,15 @@ export function Shortlisted() {
 
       {/* Business Tile View or Job Posts List */}
       {!selectedBusinessId ? (
-        <ShortlistedBusinessTileView onBusinessSelect={handleBusinessSelect} />
+        <ClosedBusinessTileView onBusinessSelect={handleBusinessSelect} />
       ) : jobs.length === 0 ? (
         <div className="text-center py-12">
           <div className="text-gray-400 mb-4">
-            <span className="text-6xl">📥</span>
+            <span className="text-6xl">📁</span>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No shortlisted applications found</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No closed jobs found</h3>
           <p className="text-gray-500 mb-6">
-            {filter === 'all' 
-              ? "No applications have been shortlisted yet."
-              : `No shortlisted applications found for ${filter} job posts.`
-            }
+            No job posts have been closed for this business yet.
           </p>
           <Button variant="primary" onClick={() => window.location.reload()}>
             Go to Post Tracking
@@ -234,11 +191,8 @@ export function Shortlisted() {
                       <h3 className="text-xl font-semibold text-gray-900">
                         {job.job_title}
                       </h3>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(job.status)}`}>
+                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
                         {JOB_STATUS_LABELS[job.status as keyof typeof JOB_STATUS_LABELS]}
-                      </span>
-                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                        Shortlisted
                       </span>
                     </div>
                     <div className="flex items-center text-sm text-gray-600 space-x-4">
@@ -256,26 +210,17 @@ export function Shortlisted() {
                       </span>
                     </div>
                   </div>
-                  
+
                   {/* Action Buttons */}
                   <div className="flex items-center space-x-2 mt-4 sm:mt-0">
-                    {job.status === 'draft' && (
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={() => updateJobPost(job.id, { status: 'published' }).then(() => loadJobs())}
-                      >
-                        Publish
-                      </Button>
-                    )}
-                    {job.status === 'published' && (
-                      <button
-                        onClick={() => handleClose(job.id, job.job_title)}
-                        className="px-3 py-1.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 border border-red-600 rounded-lg transition-colors"
-                      >
-                        Close
-                      </button>
-                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleReopen(job.id, job.job_title)}
+                      className="text-green-600 border-green-200 hover:bg-green-50"
+                    >
+                      Reopen
+                    </Button>
                     <button
                       onClick={() => handleDelete(job.id, job.job_title)}
                       className="px-3 py-1.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 border border-red-600 rounded-lg transition-colors"
@@ -349,8 +294,13 @@ export function Shortlisted() {
                   )}
                 </div>
 
-                {/* Shortlisted Applications - Only show shortlisted and interviewed */}
-                <ShortlistedApplicationsList jobPostId={job.id} jobTitle={job.job_title} />
+                {/* Applications List - Show all applications for closed jobs */}
+                <ApplicationsList 
+                  jobPostId={job.id} 
+                  jobTitle={job.job_title}
+                  statusFilter={['applied', 'reviewed', 'shortlisted', 'interviewed', 'hired', 'rejected']}
+                  showActionButtons={false}
+                />
               </div>
             </div>
           ))}
@@ -362,41 +312,41 @@ export function Shortlisted() {
         isOpen={confirmationModal.isOpen}
         onClose={() => setConfirmationModal(prev => ({ ...prev, isOpen: false }))}
         onConfirm={confirmAction}
-        title="⚠️ Are you sure?"
+        title={confirmationModal.type === 'delete' ? '⚠️ Are you sure?' : '🔄 Reopen Job Post?'}
         message={
-          confirmationModal.type === 'close'
-            ? `Closing "${confirmationModal.jobTitle}" will remove it permanently from the employee view.`
-            : `Deleting "${confirmationModal.jobTitle}" will remove it permanently from the employee view and cannot be undone.`
+          confirmationModal.type === 'delete'
+            ? `Deleting "${confirmationModal.jobTitle}" will permanently remove it from the employee view and cannot be undone.`
+            : `Reopening "${confirmationModal.jobTitle}" will make it visible to employees again and change its status to Published.`
         }
-        confirmText={confirmationModal.type === 'close' ? 'Close' : 'Delete'}
-        type="danger"
+        confirmText={confirmationModal.type === 'delete' ? 'Delete' : 'Reopen'}
+        type={confirmationModal.type === 'delete' ? 'danger' : 'warning'}
       />
     </div>
   );
 }
 
-// Custom Business Tile View for Shortlisted - only shows businesses with shortlisted/interviewed applications
-function ShortlistedBusinessTileView({ onBusinessSelect }: { onBusinessSelect: (businessId: string, businessName: string) => void }) {
+// Custom Business Tile View for Closed Jobs - only shows businesses with closed jobs
+function ClosedBusinessTileView({ onBusinessSelect }: { onBusinessSelect: (businessId: string, businessName: string) => void }) {
   const [businessStats, setBusinessStats] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadShortlistedBusinessStats();
+    loadClosedBusinessStats();
   }, []);
 
-  const loadShortlistedBusinessStats = async () => {
+  const loadClosedBusinessStats = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      // Get jobs that have shortlisted or interviewed applications
-      const jobsWithShortlisted = await getJobsWithApplicationStatus(['shortlisted', 'interviewed']);
+      // Get only closed jobs
+      const closedJobs = await getJobPosts('closed');
       
       // Group by business and create stats
       const businessStatsMap = new Map();
       
-      jobsWithShortlisted.forEach(job => {
+      closedJobs.forEach(job => {
         const businessId = job.business_id;
         if (!businessStatsMap.has(businessId)) {
           businessStatsMap.set(businessId, {
@@ -404,27 +354,18 @@ function ShortlistedBusinessTileView({ onBusinessSelect }: { onBusinessSelect: (
             business_name: job.business_name,
             business_type: job.business_type,
             location: job.location,
-            total_jobs: 0,
-            published_jobs: 0,
-            draft_jobs: 0,
             closed_jobs: 0,
-            shortlisted_applications: 0,
-            interviewed_applications: 0,
             total_applications: 0
           });
         }
         
         const stats = businessStatsMap.get(businessId);
-        stats.total_jobs += 1;
-        
-        if (job.status === 'published') stats.published_jobs += 1;
-        else if (job.status === 'draft') stats.draft_jobs += 1;
-        else if (job.status === 'closed') stats.closed_jobs += 1;
+        stats.closed_jobs += 1;
       });
       
       setBusinessStats(Array.from(businessStatsMap.values()));
     } catch (err) {
-      console.error('Failed to load shortlisted business stats:', err);
+      console.error('Failed to load closed business stats:', err);
       setError(err instanceof Error ? err.message : 'Failed to load business statistics');
     } finally {
       setLoading(false);
@@ -453,8 +394,8 @@ function ShortlistedBusinessTileView({ onBusinessSelect }: { onBusinessSelect: (
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading shortlisted applications...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading closed jobs...</p>
         </div>
       </div>
     );
@@ -479,11 +420,11 @@ function ShortlistedBusinessTileView({ onBusinessSelect }: { onBusinessSelect: (
     return (
       <div className="text-center py-12">
         <div className="text-gray-400 mb-4">
-          <span className="text-6xl">📥</span>
+          <span className="text-6xl">📁</span>
         </div>
-        <h3 className="text-lg font-medium text-gray-900 mb-2">No shortlisted applications yet</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">No closed jobs yet</h3>
         <p className="text-gray-500 mb-6">
-          When you shortlist candidates from your job posts, they'll appear here organized by business.
+          When you close job posts, they'll appear here organized by business.
         </p>
       </div>
     );
@@ -492,30 +433,24 @@ function ShortlistedBusinessTileView({ onBusinessSelect }: { onBusinessSelect: (
   return (
     <div className="space-y-6">
       {/* Summary Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
-          <div className="text-2xl font-bold text-orange-600 mb-1">{businessStats.length}</div>
+          <div className="text-2xl font-bold text-red-600 mb-1">{businessStats.length}</div>
           <div className="text-sm text-gray-600 font-medium">
             Business{businessStats.length !== 1 ? 'es' : ''}
           </div>
         </div>
         <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
-          <div className="text-2xl font-bold text-purple-600 mb-1">
-            {businessStats.reduce((sum, b) => sum + (b.shortlisted_applications || 0), 0)}
+          <div className="text-2xl font-bold text-gray-600 mb-1">
+            {businessStats.reduce((sum, b) => sum + b.closed_jobs, 0)}
           </div>
-          <div className="text-sm text-gray-600 font-medium">Shortlisted</div>
+          <div className="text-sm text-gray-600 font-medium">Closed Jobs</div>
         </div>
         <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
           <div className="text-2xl font-bold text-blue-600 mb-1">
-            {businessStats.reduce((sum, b) => sum + (b.interviewed_applications || 0), 0)}
+            {businessStats.reduce((sum, b) => sum + (b.total_applications || 0), 0)}
           </div>
-          <div className="text-sm text-gray-600 font-medium">Interviewed</div>
-        </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
-          <div className="text-2xl font-bold text-green-600 mb-1">
-            {businessStats.reduce((sum, b) => sum + b.published_jobs, 0)}
-          </div>
-          <div className="text-sm text-gray-600 font-medium">Active Jobs</div>
+          <div className="text-sm text-gray-600 font-medium">Applications</div>
         </div>
       </div>
 
@@ -525,17 +460,17 @@ function ShortlistedBusinessTileView({ onBusinessSelect }: { onBusinessSelect: (
           <div
             key={business.business_id}
             onClick={() => onBusinessSelect(business.business_id, business.business_name)}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg hover:border-orange-300 transition-all duration-200 cursor-pointer overflow-hidden"
+            className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg hover:border-red-300 transition-all duration-200 cursor-pointer overflow-hidden"
           >
             {/* Header with Business Type */}
-            <div className="bg-gradient-to-r from-orange-500 to-orange-600 p-4">
+            <div className="bg-gradient-to-r from-red-500 to-red-600 p-4">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center flex-shrink-0">
                   <span className="text-lg">{getBusinessTypeIcon(business.business_type)}</span>
                 </div>
                 <div className="min-w-0 flex-1">
                   <h3 className="text-lg font-semibold text-white truncate">{business.business_name}</h3>
-                  <p className="text-orange-100 text-sm truncate">
+                  <p className="text-red-100 text-sm truncate">
                     {business.business_type?.replace('_', ' ') || 'Business'}
                   </p>
                 </div>
@@ -551,29 +486,17 @@ function ShortlistedBusinessTileView({ onBusinessSelect }: { onBusinessSelect: (
                   <span className="truncate">{business.location}</span>
                 </div>
 
-                {/* Shortlisted Statistics */}
-                <div className="grid grid-cols-2 gap-3 pt-2">
+                {/* Closed Jobs Statistics */}
+                <div className="grid grid-cols-1 gap-3 pt-2">
                   <div className="text-center">
-                    <div className="text-xl font-bold text-orange-600">{business.shortlisted_applications || 0}</div>
-                    <div className="text-xs text-gray-600">Shortlisted</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-xl font-bold text-purple-600">{business.interviewed_applications || 0}</div>
-                    <div className="text-xs text-gray-600">Interviewed</div>
-                  </div>
-                </div>
-
-                {/* Status Breakdown */}
-                <div className="pt-2 border-t border-gray-100">
-                  <div className="flex justify-between text-xs text-gray-600">
-                    <span>Jobs: {business.total_jobs}</span>
-                    <span>Published: {business.published_jobs}</span>
+                    <div className="text-2xl font-bold text-red-600">{business.closed_jobs}</div>
+                    <div className="text-xs text-gray-600">Closed Jobs</div>
                   </div>
                 </div>
 
                 {/* Click Indicator */}
-                <div className="pt-2 text-center">
-                  <span className="text-xs text-orange-600 font-medium">Click to view candidates →</span>
+                <div className="pt-2 text-center border-t border-gray-100">
+                  <span className="text-xs text-red-600 font-medium">Click to view closed jobs →</span>
                 </div>
               </div>
             </div>
@@ -581,17 +504,5 @@ function ShortlistedBusinessTileView({ onBusinessSelect }: { onBusinessSelect: (
         ))}
       </div>
     </div>
-  );
-}
-
-// Custom Applications List for Shortlisted - only shows shortlisted and interviewed applications
-function ShortlistedApplicationsList({ jobPostId, jobTitle }: { jobPostId: string; jobTitle: string }) {
-  return (
-    <ApplicationsList 
-      jobPostId={jobPostId} 
-      jobTitle={jobTitle}
-      statusFilter={['shortlisted', 'interviewed']}
-      showActionButtons={true}
-    />
   );
 }
