@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '../ui/Button';
 import { 
   JobPost, 
-  getJobPosts, 
+  getJobsWithApplicationStatus, 
   updateJobPost, 
   deleteJobPost,
   JOB_STATUS_LABELS,
@@ -26,11 +26,18 @@ export function Shortlisted() {
     try {
       setLoading(true);
       setError(null);
-      const jobData = await getJobPosts(
-        filter === 'all' ? undefined : filter,
+      // Only get jobs that have shortlisted or interviewed applications
+      const jobData = await getJobsWithApplicationStatus(
+        ['shortlisted', 'interviewed'],
         selectedBusinessId || undefined
       );
-      setJobs(jobData);
+      
+      // Apply status filter if not 'all'
+      const filteredJobs = filter === 'all' 
+        ? jobData 
+        : jobData.filter(job => job.status === filter);
+      
+      setJobs(filteredJobs);
     } catch (error) {
       console.error('Failed to load jobs:', error);
       setError('Failed to load job posts. Please try again.');
@@ -348,13 +355,40 @@ function ShortlistedBusinessTileView({ onBusinessSelect }: { onBusinessSelect: (
     try {
       setLoading(true);
       setError(null);
-      // This would need a new API endpoint to get businesses with shortlisted applications
-      // For now, we'll use the existing one and filter client-side
-      const { getBusinessJobStats } = await import('../../lib/business-api');
-      const data = await getBusinessJobStats();
-      // Filter to only show businesses that have shortlisted or interviewed applications
-      // This is a placeholder - in a real implementation, we'd filter on the backend
-      setBusinessStats(data);
+      
+      // Get jobs that have shortlisted or interviewed applications
+      const jobsWithShortlisted = await getJobsWithApplicationStatus(['shortlisted', 'interviewed']);
+      
+      // Group by business and create stats
+      const businessStatsMap = new Map();
+      
+      jobsWithShortlisted.forEach(job => {
+        const businessId = job.business_id;
+        if (!businessStatsMap.has(businessId)) {
+          businessStatsMap.set(businessId, {
+            business_id: businessId,
+            business_name: job.business_name,
+            business_type: job.business_type,
+            location: job.location,
+            total_jobs: 0,
+            published_jobs: 0,
+            draft_jobs: 0,
+            closed_jobs: 0,
+            shortlisted_applications: 0,
+            interviewed_applications: 0,
+            total_applications: 0
+          });
+        }
+        
+        const stats = businessStatsMap.get(businessId);
+        stats.total_jobs += 1;
+        
+        if (job.status === 'published') stats.published_jobs += 1;
+        else if (job.status === 'draft') stats.draft_jobs += 1;
+        else if (job.status === 'closed') stats.closed_jobs += 1;
+      });
+      
+      setBusinessStats(Array.from(businessStatsMap.values()));
     } catch (err) {
       console.error('Failed to load shortlisted business stats:', err);
       setError(err instanceof Error ? err.message : 'Failed to load business statistics');

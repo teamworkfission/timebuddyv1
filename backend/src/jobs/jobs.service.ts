@@ -544,4 +544,69 @@ export class JobsService {
       .map(([name, job_count]) => ({ name, job_count }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }
+
+  async findJobsWithApplicationStatus(
+    employerId: string, 
+    applicationStatuses: string[], 
+    businessId?: string
+  ): Promise<JobWithBusiness[]> {
+    let query = this.supabase.admin
+      .from('job_posts')
+      .select(`
+        *,
+        businesses!inner(
+          name,
+          type,
+          location,
+          phone,
+          email
+        )
+      `)
+      .eq('employer_id', employerId);
+
+    // Add business filter if provided
+    if (businessId) {
+      query = query.eq('business_id', businessId);
+    }
+
+    const { data: allJobs, error: jobsError } = await query;
+
+    if (jobsError) {
+      throw new Error(`Failed to fetch jobs: ${jobsError.message}`);
+    }
+
+    if (!allJobs || allJobs.length === 0) {
+      return [];
+    }
+
+    // Get job IDs that have applications with the specified statuses
+    const { data: applicationsData, error: applicationsError } = await this.supabase.admin
+      .from('employee_job_application')
+      .select('job_post_id')
+      .in('status', applicationStatuses)
+      .in('job_post_id', allJobs.map(job => job.id));
+
+    if (applicationsError) {
+      throw new Error(`Failed to fetch applications: ${applicationsError.message}`);
+    }
+
+    // Get unique job IDs that have applications with the specified statuses
+    const jobIdsWithApplications = new Set(
+      (applicationsData || []).map(app => app.job_post_id)
+    );
+
+    // Filter jobs to only include those with applications in the specified statuses
+    const filteredJobs = allJobs.filter(job => jobIdsWithApplications.has(job.id));
+
+    // Transform the data to match the expected format
+    return filteredJobs.map(job => ({
+      ...job,
+      business_name: job.businesses.name,
+      location: job.businesses.location,
+      business_type: job.businesses.type,
+      phone: job.businesses.phone,
+      email: job.businesses.email,
+      businesses: undefined, // Remove nested object
+    }));
+  }
 }

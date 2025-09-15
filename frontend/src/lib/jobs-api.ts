@@ -223,3 +223,29 @@ export async function getEmployerBusinesses(): Promise<BusinessOption[]> {
 
   return response.json();
 }
+
+/**
+ * Get jobs that have applications with specific statuses
+ * This is used for Shortlisted and Hired tabs to only show jobs with relevant applications
+ */
+export async function getJobsWithApplicationStatus(
+  applicationStatuses: string[], 
+  businessId?: string
+): Promise<JobPost[]> {
+  const headers = await getAuthHeaders();
+  
+  const params = new URLSearchParams();
+  applicationStatuses.forEach(status => params.append('application_status', status));
+  if (businessId) params.append('business_id', businessId);
+  
+  const url = `${API_BASE_URL}/jobs/with-applications?${params.toString()}`;
+    
+  const response = await fetch(url, { headers });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+  }
+
+  return response.json();
+}

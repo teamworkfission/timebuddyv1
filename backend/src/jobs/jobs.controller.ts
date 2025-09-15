@@ -101,6 +101,33 @@ export class JobsController {
     return this.jobsService.getEmployerBusinesses(user.id);
   }
 
+  // Get jobs that have applications with specific statuses
+  @Get('with-applications')
+  async getJobsWithApplications(
+    @Request() req: any,
+    @Query('application_status') applicationStatuses: string | string[],
+    @Query('business_id') businessId?: string
+  ) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      throw new BadRequestException('Authorization header missing');
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const user = await this.authService.verifyToken(token);
+
+    if (user.role !== 'employer') {
+      throw new BadRequestException('Only employers can view job posts');
+    }
+
+    // Ensure applicationStatuses is an array
+    const statusArray = Array.isArray(applicationStatuses) 
+      ? applicationStatuses 
+      : [applicationStatuses];
+
+    return this.jobsService.findJobsWithApplicationStatus(user.id, statusArray, businessId);
+  }
+
   // Get a specific job post
   @Get(':id')
   async findOne(@Request() req: any, @Param('id') id: string) {
