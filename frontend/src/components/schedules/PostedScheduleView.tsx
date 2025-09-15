@@ -7,14 +7,15 @@ interface PostedScheduleViewProps {
   shiftTemplates: ShiftTemplate[];
 }
 
+// US Week Order: Sunday to Saturday (0-6)
 const DAYS = [
+  { key: 0, label: 'Sun', fullLabel: 'Sunday' },
   { key: 1, label: 'Mon', fullLabel: 'Monday' },
   { key: 2, label: 'Tue', fullLabel: 'Tuesday' },
   { key: 3, label: 'Wed', fullLabel: 'Wednesday' },
   { key: 4, label: 'Thu', fullLabel: 'Thursday' },
   { key: 5, label: 'Fri', fullLabel: 'Friday' },
-  { key: 6, label: 'Sat', fullLabel: 'Saturday' },
-  { key: 0, label: 'Sun', fullLabel: 'Sunday' }
+  { key: 6, label: 'Sat', fullLabel: 'Saturday' }
 ];
 
 export function PostedScheduleView({ weeklySchedule, shiftTemplates }: PostedScheduleViewProps) {
@@ -113,7 +114,7 @@ export function PostedScheduleView({ weeklySchedule, shiftTemplates }: PostedSch
           {DAYS.map((day) => {
             const dayShifts = getShiftsForDay(day.key);
             const dayDate = new Date(weeklySchedule.week_start_date);
-            dayDate.setDate(dayDate.getDate() + (day.key === 0 ? 6 : day.key - 1));
+            dayDate.setDate(dayDate.getDate() + day.key); // Sunday=0, Monday=1, etc.
             
             return (
               <div key={day.key} className="bg-white border border-gray-200 rounded-lg p-4">

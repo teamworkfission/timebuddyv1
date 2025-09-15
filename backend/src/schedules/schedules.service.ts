@@ -60,10 +60,10 @@ export class SchedulesService {
   async createWeeklySchedule(createDto: CreateScheduleDto, userId: string): Promise<WeeklySchedule> {
     const supabase = this.supabaseService.admin;
     
-    // Validate that week_start_date is a Monday
+    // Validate that week_start_date is a Sunday (US standard week structure)
     const date = new Date(createDto.week_start_date);
-    if (date.getDay() !== 1) {
-      throw new BadRequestException('week_start_date must be a Monday');
+    if (date.getDay() !== 0) {
+      throw new BadRequestException('week_start_date must be a Sunday (US standard week structure)');
     }
 
     const { data, error } = await supabase

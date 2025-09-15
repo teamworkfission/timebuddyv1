@@ -9,6 +9,7 @@ import {
   CreateShiftDto, 
   UpdateShiftDto 
 } from '../../lib/schedules-api';
+import { Business } from '../../lib/business-api';
 
 interface WeeklyScheduleViewProps {
   businessId: string;
@@ -17,19 +18,21 @@ interface WeeklyScheduleViewProps {
   shifts: Shift[];
   shiftTemplates: ShiftTemplate[];
   mode: 'edit' | 'posted';
+  business?: Business;
   onShiftCreate: (shift: CreateShiftDto) => void;
   onShiftUpdate: (shiftId: string, shift: UpdateShiftDto) => void;
   onShiftDelete: (shiftId: string) => void;
 }
 
+// US Week Order: Sunday to Saturday (0-6)
 const DAYS = [
+  { key: 0, label: 'Sun', fullLabel: 'Sunday' },
   { key: 1, label: 'Mon', fullLabel: 'Monday' },
   { key: 2, label: 'Tue', fullLabel: 'Tuesday' },
   { key: 3, label: 'Wed', fullLabel: 'Wednesday' },
   { key: 4, label: 'Thu', fullLabel: 'Thursday' },
   { key: 5, label: 'Fri', fullLabel: 'Friday' },
-  { key: 6, label: 'Sat', fullLabel: 'Saturday' },
-  { key: 0, label: 'Sun', fullLabel: 'Sunday' }
+  { key: 6, label: 'Sat', fullLabel: 'Saturday' }
 ];
 
 export function WeeklyScheduleView({
@@ -39,6 +42,7 @@ export function WeeklyScheduleView({
   shifts,
   shiftTemplates,
   mode,
+  business,
   onShiftCreate,
   onShiftUpdate,
   onShiftDelete
@@ -144,6 +148,8 @@ export function WeeklyScheduleView({
                         shifts={getShiftsForCell(employee.id, day.key)}
                         shiftTemplates={shiftTemplates}
                         mode={mode}
+                        business={business}
+                        weekStartDate={weekStartDate}
                         onCellClick={() => handleCellClick(employee.id, employee.full_name, day.key, day.fullLabel)}
                       />
                     </td>
