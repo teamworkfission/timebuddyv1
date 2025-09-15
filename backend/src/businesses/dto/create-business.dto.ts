@@ -1,4 +1,4 @@
-import { IsString, IsEmail, IsIn, IsInt, IsNotEmpty, Min, MaxLength } from 'class-validator';
+import { IsString, IsEmail, IsIn, IsInt, IsNotEmpty, Min, MaxLength, IsOptional, IsNumber, IsDateString } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 const BUSINESS_TYPES = [
@@ -41,6 +41,23 @@ export class CreateBusinessDto {
   @IsNotEmpty()
   @MaxLength(150)
   location: string;
+
+  // Timezone-related fields (automatically populated by timezone service)
+  @IsOptional()
+  @IsNumber()
+  latitude?: number;
+
+  @IsOptional()
+  @IsNumber()
+  longitude?: number;
+
+  @IsOptional()
+  @IsString()
+  timezone?: string;
+
+  @IsOptional()
+  @IsDateString()
+  timezone_resolved_at?: string;
 
 }
 

@@ -61,7 +61,8 @@ export class SchedulesService {
     const supabase = this.supabaseService.admin;
     
     // Validate that week_start_date is a Sunday (US standard week structure)
-    const date = new Date(createDto.week_start_date);
+    // Using T00:00:00 to ensure local time parsing and avoid timezone conversion issues
+    const date = new Date(createDto.week_start_date + 'T00:00:00');
     if (date.getDay() !== 0) {
       throw new BadRequestException('week_start_date must be a Sunday (US standard week structure)');
     }

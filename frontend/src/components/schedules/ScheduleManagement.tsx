@@ -66,8 +66,8 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
       console.log('Loading schedule data for business:', selectedBusinessId);
       console.log('Current week:', currentWeek);
       
-      // Check what day of the week this is
-      const weekDate = new Date(currentWeek);
+      // Check what day of the week this is (using local time to avoid timezone issues)
+      const weekDate = new Date(currentWeek + 'T00:00:00');
       console.log('Week start date day of week:', weekDate.getDay(), '(0=Sun, 6=Sat)');
       
       // Load schedule and templates in parallel
