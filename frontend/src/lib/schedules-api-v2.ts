@@ -1,15 +1,19 @@
 import { supabase } from './supabase';
-import { 
-  getTimezoneFromLocation, 
-  TimezoneInfo, 
-  getBusinessWeekStart, 
-  formatTimeInBusinessTimezone,
-  DEFAULT_TIMEZONE
-} from './timezone-utils';
-import { getWeekStartWithGoogleTimezone } from './google-timezone-api';
 import { Business } from './business-api';
+import {
+  getCurrentWeekStartForBusiness,
+  getScheduleWindowEnd,
+  isWeekInEditableWindow,
+  isWeekInPast,
+  canNavigateToNextWeek,
+  formatWeekRange,
+  formatTime,
+  getNextWeek,
+  getPreviousWeek,
+  getCurrentWeekStartInTimezone
+} from './simplified-timezone';
 
-// Types
+// Re-export types from existing schedules API
 export interface ShiftTemplate {
   id: string;
   business_id: string;
@@ -286,155 +290,21 @@ export class SchedulesApi {
 // Schedule window configuration
 export const SCHEDULE_WINDOW_WEEKS = 4;
 
-// Utility functions
-/**
- * Get current week start (Sunday) in UTC
- * Fixed to return Sunday-based weeks for US scheduling
- */
+// Export simplified timezone functions
+export {
+  getCurrentWeekStartForBusiness,
+  getScheduleWindowEnd,
+  isWeekInEditableWindow,
+  isWeekInPast,
+  canNavigateToNextWeek,
+  formatWeekRange,
+  formatTime,
+  getNextWeek,
+  getPreviousWeek,
+  getCurrentWeekStartInTimezone
+};
+
+// Fallback for non-business contexts
 export function getCurrentWeekStart(): string {
-  const now = new Date();
-  const dayOfWeek = now.getDay(); // 0=Sunday, 1=Monday, etc.
-  const daysToSunday = -dayOfWeek; // Always go back to Sunday
-  const sunday = new Date(now);
-  sunday.setDate(now.getDate() + daysToSunday);
-  sunday.setHours(0, 0, 0, 0); // Start of day
-  return sunday.toISOString().split('T')[0];
-}
-
-/**
- * Get current week start in business timezone
- * Now supports Google Timezone API for better accuracy
- */
-export async function getCurrentWeekStartForBusiness(business: Business): Promise<string> {
-  // Try Google API first (if API key is configured)
-  try {
-    const googleWeekStart = await getWeekStartWithGoogleTimezone(business.location);
-    console.log('Using Google Timezone API result:', googleWeekStart);
-    return googleWeekStart;
-  } catch (error) {
-    console.warn('Google API failed, falling back to hardcoded mapping:', error);
-  }
-
-  // Fallback to hardcoded state mapping
-  const timezoneInfo = getTimezoneFromLocation(business.location);
-  if (!timezoneInfo) {
-    console.warn('No timezone info found, using UTC fallback');
-    return getCurrentWeekStart();
-  }
-  
-  // SIMPLE APPROACH: Get current time in business timezone and find Sunday
-  const now = new Date();
-  const businessTime = new Date(now.toLocaleString('en-US', { timeZone: timezoneInfo.iana }));
-  const dayOfWeek = businessTime.getDay(); // 0=Sunday
-  const daysToSunday = -dayOfWeek; // Go back to Sunday
-  const sunday = new Date(businessTime);
-  sunday.setDate(businessTime.getDate() + daysToSunday);
-  sunday.setHours(0, 0, 0, 0);
-  
-  return sunday.toISOString().split('T')[0];
-}
-
-/**
- * Get the start of the scheduling window (current Sunday)
- */
-export async function getScheduleWindowStart(business?: Business): Promise<string> {
-  if (business) {
-    return await getCurrentWeekStartForBusiness(business);
-  }
-  return getCurrentWeekStart();
-}
-
-/**
- * Get the end of the scheduling window (4 weeks from current Sunday)
- */
-export async function getScheduleWindowEnd(business?: Business): Promise<string> {
-  const startDate = await getScheduleWindowStart(business);
-  const start = new Date(startDate);
-  start.setDate(start.getDate() + (SCHEDULE_WINDOW_WEEKS * 7));
-  return start.toISOString().split('T')[0];
-}
-
-/**
- * Check if a week is within the editable 4-week window
- */
-export async function isWeekInEditableWindow(weekStart: string, business?: Business): Promise<boolean> {
-  const windowStart = await getScheduleWindowStart(business);
-  const windowEnd = await getScheduleWindowEnd(business);
-  return weekStart >= windowStart && weekStart < windowEnd;
-}
-
-/**
- * Check if a week is in the past
- */
-export async function isWeekInPast(weekStart: string, business?: Business): Promise<boolean> {
-  const windowStart = await getScheduleWindowStart(business);
-  return weekStart < windowStart;
-}
-
-/**
- * Check if it's safe to navigate to next week (within window)
- */
-export async function canNavigateToNextWeek(currentWeek: string, business?: Business): Promise<boolean> {
-  const nextWeek = getNextWeek(currentWeek);
-  const windowEnd = await getScheduleWindowEnd(business);
-  return nextWeek < windowEnd;
-}
-
-/**
- * Format week range for display (Sunday to Saturday)
- */
-export function formatWeekRange(weekStart: string, business?: Business): string {
-  const start = new Date(weekStart);
-  const end = new Date(start);
-  end.setDate(start.getDate() + 6); // Sunday + 6 = Saturday
-  
-  let options: Intl.DateTimeFormatOptions = { 
-    month: 'short', 
-    day: 'numeric' 
-  };
-  
-  // If business has timezone info, format in that timezone
-  if (business) {
-    const timezoneInfo = getTimezoneFromLocation(business.location);
-    if (timezoneInfo) {
-      options = { ...options, timeZone: timezoneInfo.iana };
-    }
-  }
-  
-  const startStr = start.toLocaleDateString('en-US', options);
-  const endStr = end.toLocaleDateString('en-US', options);
-  const year = start.getFullYear();
-  
-  return `${startStr} - ${endStr}, ${year}`;
-}
-
-/**
- * Format time string with timezone awareness
- */
-export function formatTime(timeString: string, business?: Business, format: 'short' | 'long' = 'short'): string {
-  if (business) {
-    const timezoneInfo = getTimezoneFromLocation(business.location);
-    if (timezoneInfo) {
-      return formatTimeInBusinessTimezone(timeString, timezoneInfo, format);
-    }
-  }
-  
-  // Fallback to simple format
-  const [hours, minutes] = timeString.split(':');
-  const hour = parseInt(hours);
-  const ampm = hour >= 12 ? 'PM' : 'AM';
-  const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-  return `${displayHour}:${minutes} ${ampm}`;
-}
-
-export function getNextWeek(weekStart: string): string {
-  const date = new Date(weekStart);
-  date.setDate(date.getDate() + 7);
-  return date.toISOString().split('T')[0];
-}
-
-export function getPreviousWeek(weekStart: string): string {
-  const date = new Date(weekStart);
-  date.setDate(date.getDate() - 7);
-  return date.toISOString().split('T')[0];
+  return getCurrentWeekStartInTimezone('UTC');
 }

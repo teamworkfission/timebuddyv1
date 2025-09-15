@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { BusinessScheduleSelector } from './BusinessScheduleSelector';
 import { ScheduleTabs } from './ScheduleTabs';
@@ -6,7 +6,16 @@ import { WeekNavigator } from './WeekNavigator';
 import { WeeklyScheduleView } from './WeeklyScheduleView';
 import { ShiftTemplateManager } from './ShiftTemplateManager';
 import { PostedScheduleView } from './PostedScheduleView';
-import { SchedulesApi, getCurrentWeekStart, WeeklySchedule, ShiftTemplate, CreateShiftDto, UpdateShiftDto } from '../../lib/schedules-api';
+import { 
+  SchedulesApi, 
+  getCurrentWeekStart, 
+  getCurrentWeekStartForBusiness,
+  isWeekInEditableWindow,
+  WeeklySchedule, 
+  ShiftTemplate, 
+  CreateShiftDto, 
+  UpdateShiftDto 
+} from '../../lib/schedules-api';
 import { BusinessesApi, Business } from '../../lib/business-api';
 import { Button } from '../ui/Button';
 
@@ -54,6 +63,13 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
     setError(null);
 
     try {
+      console.log('Loading schedule data for business:', selectedBusinessId);
+      console.log('Current week:', currentWeek);
+      
+      // Check what day of the week this is
+      const weekDate = new Date(currentWeek);
+      console.log('Week start date day of week:', weekDate.getDay(), '(0=Sun, 6=Sat)');
+      
       // Load schedule and templates in parallel
       const [schedule, templates] = await Promise.all([
         SchedulesApi.getWeeklySchedule(selectedBusinessId, currentWeek),
@@ -150,19 +166,60 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
     setError(null);
   };
 
-  const handleWeekChange = (weekStart: string) => {
+  const handleWeekChange = async (weekStart: string) => {
+    const selectedBusiness = businesses.find(b => b.business_id === selectedBusinessId);
+    
+    // Only allow navigation within the 4-week window
+    try {
+      if (selectedBusiness && !(await isWeekInEditableWindow(weekStart, selectedBusiness))) {
+        console.warn('Cannot navigate to week outside the 4-week scheduling window');
+        return;
+      }
+    } catch (error) {
+      console.error('Error checking week editability:', error);
+      return;
+    }
+    
     setCurrentWeek(weekStart);
-    // Save current week to localStorage for session memory
-    localStorage.setItem('schedule_current_week', weekStart);
+    // Save current week to localStorage for session memory (with error handling)
+    try {
+      localStorage.setItem('schedule_current_week', weekStart);
+    } catch (error) {
+      console.warn('Failed to save week to localStorage:', error);
+    }
   };
 
-  // Load saved week from localStorage on mount
+  // Load saved week from localStorage on mount, ensuring it's within window
   useEffect(() => {
-    const savedWeek = localStorage.getItem('schedule_current_week');
-    if (savedWeek) {
-      setCurrentWeek(savedWeek);
-    }
-  }, []);
+    const loadSavedWeek = async () => {
+      if (selectedBusinessId) {
+        try {
+          const savedWeek = localStorage.getItem('schedule_current_week');
+          if (savedWeek) {
+            const selectedBusiness = businesses.find(b => b.business_id === selectedBusinessId);
+            if (selectedBusiness && await isWeekInEditableWindow(savedWeek, selectedBusiness)) {
+              setCurrentWeek(savedWeek);
+            } else if (selectedBusiness) {
+              // If saved week is outside window, use current week
+              const currentWeekForBusiness = await getCurrentWeekStartForBusiness(selectedBusiness);
+              setCurrentWeek(currentWeekForBusiness);
+              localStorage.setItem('schedule_current_week', currentWeekForBusiness);
+            }
+          }
+        } catch (error) {
+          console.warn('Failed to read from localStorage:', error);
+          // Clear potentially corrupted localStorage data
+          try {
+            localStorage.removeItem('schedule_current_week');
+          } catch (clearError) {
+            console.warn('Failed to clear corrupted localStorage:', clearError);
+          }
+        }
+      }
+    };
+    
+    loadSavedWeek();
+  }, [selectedBusinessId, businesses]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -222,6 +279,7 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
               <WeekNavigator
                 currentWeek={currentWeek}
                 onWeekChange={handleWeekChange}
+                business={businesses.find(b => b.business_id === selectedBusinessId)}
               />
             </div>
 
@@ -253,6 +311,7 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
                     shifts={weeklySchedule.shifts}
                     shiftTemplates={shiftTemplates}
                     mode="edit"
+                    business={businesses.find(b => b.business_id === selectedBusinessId)}
                     onShiftCreate={handleShiftCreate}
                     onShiftUpdate={handleShiftUpdate}
                     onShiftDelete={handleShiftDelete}
@@ -264,9 +323,15 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
                   />
                 )}
               </div>
-            ) : (
+            ) : !selectedBusinessId ? (
               <div className="bg-white rounded-lg shadow p-8 text-center">
                 <p className="text-gray-600">Select a business to view schedules</p>
+              </div>
+            ) : (
+              <div className="bg-white rounded-lg shadow p-8 text-center">
+                <p className="text-gray-600">
+                  Failed to load schedule data. Please try refreshing the page or contact support if the issue persists.
+                </p>
               </div>
             )}
           </>

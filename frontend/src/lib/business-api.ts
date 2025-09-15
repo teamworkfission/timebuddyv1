@@ -13,6 +13,11 @@ export interface Business {
   total_employees: number;
   created_at: string;
   updated_at: string;
+  // Server-resolved timezone information
+  latitude?: number;
+  longitude?: number;
+  timezone?: string;
+  timezone_resolved_at?: string;
 }
 
 export type BusinessType = 
