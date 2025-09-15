@@ -156,4 +156,84 @@ export class BusinessesService {
 
     return data || [];
   }
+
+  // Employee Management Methods
+
+  async getBusinessEmployees(businessId: string, employerId: string) {
+    // First verify business belongs to employer
+    await this.findOne(businessId, employerId);
+
+    const { data, error } = await this.supabase.admin
+      .from('business_employees')
+      .select(`
+        id,
+        role,
+        joined_at,
+        employees!inner(
+          id,
+          employee_gid,
+          full_name,
+          email,
+          phone,
+          city,
+          state,
+          skills,
+          transportation
+        )
+      `)
+      .eq('business_id', businessId)
+      .order('joined_at', { ascending: false });
+
+    if (error) {
+      throw new Error(`Failed to fetch business employees: ${error.message}`);
+    }
+
+    return (data || []).map(association => ({
+      association_id: association.id,
+      role: association.role,
+      joined_at: association.joined_at,
+      employee: association.employees,
+    }));
+  }
+
+  async removeEmployee(businessId: string, employeeId: string, employerId: string) {
+    // First verify business belongs to employer
+    await this.findOne(businessId, employerId);
+
+    const { error } = await this.supabase.admin
+      .from('business_employees')
+      .delete()
+      .eq('business_id', businessId)
+      .eq('employee_id', employeeId);
+
+    if (error) {
+      throw new Error(`Failed to remove employee: ${error.message}`);
+    }
+
+    return { message: 'Employee removed successfully' };
+  }
+
+  async updateEmployeeRole(
+    businessId: string, 
+    employeeId: string, 
+    role: string, 
+    employerId: string
+  ) {
+    // First verify business belongs to employer
+    await this.findOne(businessId, employerId);
+
+    const { data, error } = await this.supabase.admin
+      .from('business_employees')
+      .update({ role })
+      .eq('business_id', businessId)
+      .eq('employee_id', employeeId)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to update employee role: ${error.message}`);
+    }
+
+    return data;
+  }
 }

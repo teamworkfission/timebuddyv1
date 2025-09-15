@@ -2,7 +2,10 @@ import { useState, useEffect } from 'react';
 import { Button } from '../ui/Button';
 import { BusinessForm } from './BusinessForm';
 import { BusinessTile } from './BusinessTile';
+import { AddEmployeeModal } from './AddEmployeeModal';
+import { EmployeeList } from './EmployeeList';
 import { Business, getBusinesses, deleteBusiness } from '../../lib/business-api';
+import { joinRequestsApi } from '../../lib/join-requests-api';
 
 interface BusinessManagementProps {
   onBack?: () => void;
@@ -15,6 +18,11 @@ export function BusinessManagement({ onBack }: BusinessManagementProps) {
   const [showForm, setShowForm] = useState(false);
   const [editingBusiness, setEditingBusiness] = useState<Business | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
+  const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
+  const [addingEmployee, setAddingEmployee] = useState(false);
+  const [showEmployeeList, setShowEmployeeList] = useState(false);
+  const [employeeListBusiness, setEmployeeListBusiness] = useState<Business | null>(null);
 
   const loadBusinesses = async () => {
     try {
@@ -68,6 +76,60 @@ export function BusinessManagement({ onBack }: BusinessManagementProps) {
       setDeleting(null);
     }
   };
+
+  const handleAddEmployee = (business: Business) => {
+    setSelectedBusiness(business);
+    setShowAddEmployeeModal(true);
+  };
+
+  const handleAddEmployeeSubmit = async (gid: string, message?: string) => {
+    if (!selectedBusiness) return;
+
+    try {
+      setAddingEmployee(true);
+      await joinRequestsApi.sendJoinRequest({
+        business_id: selectedBusiness.business_id,
+        employee_gid: gid,
+        message,
+      });
+      
+      // Show success message (you might want to add a toast notification here)
+      alert('Join request sent successfully! The employee will receive a notification.');
+      
+    } catch (err) {
+      throw err; // Let the modal handle the error display
+    } finally {
+      setAddingEmployee(false);
+    }
+  };
+
+  const handleCloseAddEmployeeModal = () => {
+    setShowAddEmployeeModal(false);
+    setSelectedBusiness(null);
+  };
+
+  const handleViewEmployees = (business: Business) => {
+    setEmployeeListBusiness(business);
+    setShowEmployeeList(true);
+  };
+
+  const handleBackFromEmployeeList = () => {
+    setShowEmployeeList(false);
+    setEmployeeListBusiness(null);
+    // Reload businesses to get updated employee counts
+    loadBusinesses();
+  };
+
+  // Show employee list view
+  if (showEmployeeList && employeeListBusiness) {
+    return (
+      <EmployeeList
+        businessId={employeeListBusiness.business_id}
+        businessName={employeeListBusiness.name}
+        onBack={handleBackFromEmployeeList}
+      />
+    );
+  }
 
   if (loading) {
     return (
@@ -215,6 +277,8 @@ export function BusinessManagement({ onBack }: BusinessManagementProps) {
                     business={business}
                     onEdit={handleEditBusiness}
                     onDelete={deleting === business.business_id ? undefined : handleDeleteBusiness}
+                    onAddEmployee={handleAddEmployee}
+                    onViewEmployees={handleViewEmployees}
                   />
                   {deleting === business.business_id && (
                     <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center rounded-xl">
@@ -257,6 +321,15 @@ export function BusinessManagement({ onBack }: BusinessManagementProps) {
           </>
         )}
       </div>
+
+      {/* Add Employee Modal */}
+      <AddEmployeeModal
+        isOpen={showAddEmployeeModal}
+        onClose={handleCloseAddEmployeeModal}
+        onSubmit={handleAddEmployeeSubmit}
+        businessName={selectedBusiness?.name || ''}
+        loading={addingEmployee}
+      />
     </div>
   );
 }

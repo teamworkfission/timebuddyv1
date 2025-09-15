@@ -90,4 +90,39 @@ export class BusinessesController {
     const employerId = await this.getEmployerIdFromRequest(req);
     return this.businessesService.remove(id, employerId);
   }
+
+  // Employee Management Endpoints
+
+  @Get(':id/employees')
+  async getBusinessEmployees(@Param('id') businessId: string, @Request() req: any) {
+    const employerId = await this.getEmployerIdFromRequest(req);
+    return this.businessesService.getBusinessEmployees(businessId, employerId);
+  }
+
+  @Delete(':businessId/employees/:employeeId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async removeEmployee(
+    @Param('businessId') businessId: string,
+    @Param('employeeId') employeeId: string,
+    @Request() req: any,
+  ) {
+    const employerId = await this.getEmployerIdFromRequest(req);
+    return this.businessesService.removeEmployee(businessId, employeeId, employerId);
+  }
+
+  @Patch(':businessId/employees/:employeeId/role')
+  async updateEmployeeRole(
+    @Param('businessId') businessId: string,
+    @Param('employeeId') employeeId: string,
+    @Body() body: { role: string },
+    @Request() req: any,
+  ) {
+    const employerId = await this.getEmployerIdFromRequest(req);
+    return this.businessesService.updateEmployeeRole(
+      businessId, 
+      employeeId, 
+      body.role, 
+      employerId
+    );
+  }
 }

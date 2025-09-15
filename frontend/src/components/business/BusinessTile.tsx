@@ -5,9 +5,11 @@ interface BusinessTileProps {
   business: Business;
   onEdit?: (business: Business) => void;
   onDelete?: (business: Business) => void;
+  onAddEmployee?: (business: Business) => void;
+  onViewEmployees?: (business: Business) => void;
 }
 
-export function BusinessTile({ business, onEdit, onDelete }: BusinessTileProps) {
+export function BusinessTile({ business, onEdit, onDelete, onAddEmployee, onViewEmployees }: BusinessTileProps) {
   const getBusinessTypeIcon = (type: string) => {
     const icons: Record<string, string> = {
       restaurant: '🍽️',
@@ -96,13 +98,40 @@ export function BusinessTile({ business, onEdit, onDelete }: BusinessTileProps) 
           <div className="flex items-center justify-between pt-2 border-t border-gray-100">
             <div className="flex items-center space-x-2">
               <span className="text-gray-400 text-sm">👥</span>
-              <span className="text-xs sm:text-sm font-medium text-gray-700">
-                {business.total_employees} Employee{business.total_employees !== 1 ? 's' : ''}
-              </span>
+              {onViewEmployees ? (
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onViewEmployees(business);
+                  }}
+                  className="text-xs sm:text-sm font-medium text-blue-600 hover:text-blue-700 underline"
+                >
+                  {business.total_employees} Employee{business.total_employees !== 1 ? 's' : ''}
+                </button>
+              ) : (
+                <span className="text-xs sm:text-sm font-medium text-gray-700">
+                  {business.total_employees} Employee{business.total_employees !== 1 ? 's' : ''}
+                </span>
+              )}
             </div>
             
-            {/* Delete Button - Mobile Optimized */}
-            <div className="flex space-x-3">
+            {/* Action Buttons - Mobile Optimized */}
+            <div className="flex space-x-2">
+              {onAddEmployee && (
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onAddEmployee(business);
+                  }}
+                  className="text-xs font-medium text-blue-600 hover:text-blue-700 active:text-blue-800 min-h-[32px] px-2 py-1 rounded hover:bg-blue-50 touch-manipulation flex items-center space-x-1"
+                  aria-label={`Add employee to ${business.name}`}
+                >
+                  <span>➕</span>
+                  <span>Add Employee</span>
+                </button>
+              )}
               {onDelete && (
                 <button
                   onClick={(e) => {

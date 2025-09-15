@@ -3,6 +3,7 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { LocationFilter } from './LocationFilter';
 import { JobBrowse } from './JobBrowse';
+import { JoinRequests } from './JoinRequests';
 
 interface SearchParams {
   keywords: string;
@@ -88,6 +89,11 @@ export function EmployeeHome() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Join Requests Section */}
+      <div className="max-w-4xl mx-auto px-4 py-6">
+        <JoinRequests />
+      </div>
+
       {/* Hero Section with Logo and Messaging */}
       <div className="bg-white">
         <div className="max-w-4xl mx-auto px-4 py-12 text-center">

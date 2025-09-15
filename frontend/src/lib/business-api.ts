@@ -192,3 +192,72 @@ export async function getBusinessJobStats(): Promise<BusinessJobStats[]> {
 
   return response.json();
 }
+
+// Employee Management Functions
+
+export interface BusinessEmployee {
+  association_id: string;
+  role: string;
+  joined_at: string;
+  employee: {
+    id: string;
+    employee_gid: string;
+    full_name: string;
+    email: string;
+    phone: string;
+    city: string;
+    state: string;
+    skills: string[];
+    transportation: string;
+  };
+}
+
+export async function getBusinessEmployees(businessId: string): Promise<BusinessEmployee[]> {
+  const headers = await getAuthHeaders();
+  
+  const response = await fetch(`${API_BASE_URL}/businesses/${businessId}/employees`, {
+    headers,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+export async function removeBusinessEmployee(businessId: string, employeeId: string): Promise<void> {
+  const headers = await getAuthHeaders();
+  
+  const response = await fetch(`${API_BASE_URL}/businesses/${businessId}/employees/${employeeId}`, {
+    method: 'DELETE',
+    headers,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+  }
+}
+
+export async function updateEmployeeRole(
+  businessId: string, 
+  employeeId: string, 
+  role: string
+): Promise<BusinessEmployee> {
+  const headers = await getAuthHeaders();
+  
+  const response = await fetch(`${API_BASE_URL}/businesses/${businessId}/employees/${employeeId}/role`, {
+    method: 'PATCH',
+    headers,
+    body: JSON.stringify({ role }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+  }
+
+  return response.json();
+}
