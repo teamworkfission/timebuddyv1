@@ -45,7 +45,11 @@ export class JobsController {
 
   // Get all job posts for the employer
   @Get()
-  async findAll(@Request() req: any, @Query('status') status?: string) {
+  async findAll(
+    @Request() req: any, 
+    @Query('status') status?: string,
+    @Query('business_id') businessId?: string
+  ) {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
       throw new BadRequestException('Authorization header missing');
@@ -58,7 +62,7 @@ export class JobsController {
       throw new BadRequestException('Only employers can view job posts');
     }
 
-    return this.jobsService.findAllByEmployer(user.id, status);
+    return this.jobsService.findAllByEmployer(user.id, status, businessId);
   }
 
   // Get job statistics

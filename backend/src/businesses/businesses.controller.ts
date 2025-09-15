@@ -62,6 +62,12 @@ export class BusinessesController {
     return this.businessesService.getBusinessStats(employerId);
   }
 
+  @Get('job-stats')
+  async getJobStats(@Request() req: any) {
+    const employerId = await this.getEmployerIdFromRequest(req);
+    return this.businessesService.getBusinessJobStats(employerId);
+  }
+
   @Get(':id')
   async findOne(@Param('id') id: string, @Request() req: any) {
     const employerId = await this.getEmployerIdFromRequest(req);

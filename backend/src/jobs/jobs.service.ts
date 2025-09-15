@@ -82,7 +82,7 @@ export class JobsService {
     return data;
   }
 
-  async findAllByEmployer(employerId: string, status?: string): Promise<JobWithBusiness[]> {
+  async findAllByEmployer(employerId: string, status?: string, businessId?: string): Promise<JobWithBusiness[]> {
     let query = this.supabase.admin
       .from('job_posts')
       .select('*')
@@ -90,6 +90,10 @@ export class JobsService {
 
     if (status && ['draft', 'published', 'closed'].includes(status)) {
       query = query.eq('status', status);
+    }
+
+    if (businessId) {
+      query = query.eq('business_id', businessId);
     }
 
     const { data, error } = await query.order('created_at', { ascending: false });

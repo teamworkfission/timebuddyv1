@@ -43,6 +43,19 @@ export interface BusinessStats {
   total_employees: number;
 }
 
+export interface BusinessJobStats {
+  business_id: string;
+  business_name: string;
+  location: string;
+  business_type: string;
+  created_at: string;
+  total_jobs: number;
+  draft_jobs: number;
+  published_jobs: number;
+  closed_jobs: number;
+  total_applications: number;
+}
+
 export const BUSINESS_TYPE_LABELS: Record<BusinessType, string> = {
   restaurant: 'Restaurant',
   gas_station: 'Gas Station',
@@ -154,6 +167,21 @@ export async function getBusinessStats(): Promise<BusinessStats> {
   const headers = await getAuthHeaders();
   
   const response = await fetch(`${API_BASE_URL}/businesses/stats`, {
+    headers,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+export async function getBusinessJobStats(): Promise<BusinessJobStats[]> {
+  const headers = await getAuthHeaders();
+  
+  const response = await fetch(`${API_BASE_URL}/businesses/job-stats`, {
     headers,
   });
 

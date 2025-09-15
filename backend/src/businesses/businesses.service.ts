@@ -111,4 +111,49 @@ export class BusinessesService {
       total_employees: totalEmployees,
     };
   }
+
+  async getBusinessJobStats(employerId: string) {
+    const { data, error } = await this.supabase.admin
+      .rpc('get_business_job_stats', { employer_id: employerId });
+
+    if (error) {
+      // If RPC doesn't exist, fall back to manual query
+      const { data: businessData, error: businessError } = await this.supabase.admin
+        .from('businesses')
+        .select(`
+          business_id,
+          name,
+          location,
+          type,
+          created_at,
+          job_posts (
+            id,
+            status,
+            employee_job_application (id)
+          )
+        `)
+        .eq('employer_id', employerId);
+
+      if (businessError) {
+        throw new Error(`Failed to fetch business job stats: ${businessError.message}`);
+      }
+
+      // Transform the data to get counts
+      return (businessData || []).map(business => ({
+        business_id: business.business_id,
+        business_name: business.name,
+        location: business.location,
+        business_type: business.type,
+        created_at: business.created_at,
+        total_jobs: business.job_posts?.length || 0,
+        draft_jobs: business.job_posts?.filter(job => job.status === 'draft').length || 0,
+        published_jobs: business.job_posts?.filter(job => job.status === 'published').length || 0,
+        closed_jobs: business.job_posts?.filter(job => job.status === 'closed').length || 0,
+        total_applications: business.job_posts?.reduce((sum, job) => 
+          sum + (job.employee_job_application?.length || 0), 0) || 0,
+      }));
+    }
+
+    return data || [];
+  }
 }

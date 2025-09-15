@@ -9,22 +9,28 @@ import {
   JOB_TYPE_LABELS
 } from '../../lib/jobs-api';
 import { ApplicationsList } from './ApplicationsList';
+import { BusinessTileView } from './BusinessTileView';
 
 export function PostTracking() {
   const [jobs, setJobs] = useState<JobPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'draft' | 'published' | 'closed'>('all');
+  const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
+  const [selectedBusinessName, setSelectedBusinessName] = useState<string>('');
 
   useEffect(() => {
     loadJobs();
-  }, [filter]);
+  }, [filter, selectedBusinessId]);
 
   const loadJobs = async () => {
     try {
       setLoading(true);
       setError(null);
-      const jobData = await getJobPosts(filter === 'all' ? undefined : filter);
+      const jobData = await getJobPosts(
+        filter === 'all' ? undefined : filter,
+        selectedBusinessId || undefined
+      );
       setJobs(jobData);
     } catch (error) {
       console.error('Failed to load jobs:', error);
@@ -56,6 +62,16 @@ export function PostTracking() {
       console.error('Failed to delete job:', error);
       setError('Failed to delete job post. Please try again.');
     }
+  };
+
+  const handleBusinessSelect = (businessId: string, businessName: string) => {
+    setSelectedBusinessId(businessId);
+    setSelectedBusinessName(businessName);
+  };
+
+  const handleBackToBusinesses = () => {
+    setSelectedBusinessId(null);
+    setSelectedBusinessName('');
   };
 
   const formatPay = (job: JobPost) => {
@@ -95,27 +111,51 @@ export function PostTracking() {
       {/* Header with Filter */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Post Tracking</h2>
-          <p className="text-gray-600">Monitor your job posts and applicants</p>
-        </div>
-        
-        <div className="flex items-center space-x-4">
-          <div className="flex space-x-2">
-            {(['all', 'draft', 'published', 'closed'] as const).map((status) => (
-              <button
-                key={status}
-                onClick={() => setFilter(status)}
-                className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                  filter === status
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
+          <div className="flex items-center space-x-4">
+            {selectedBusinessId && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleBackToBusinesses}
+                className="flex items-center space-x-2"
               >
-                {status === 'all' ? 'All' : JOB_STATUS_LABELS[status]}
-              </button>
-            ))}
+                <span>←</span>
+                <span>All Businesses</span>
+              </Button>
+            )}
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">
+                {selectedBusinessId ? `${selectedBusinessName} - Post Tracking` : 'Post Tracking'}
+              </h2>
+              <p className="text-gray-600">
+                {selectedBusinessId 
+                  ? `Monitor job posts and applicants for ${selectedBusinessName}`
+                  : 'Monitor your job posts and applicants'
+                }
+              </p>
+            </div>
           </div>
         </div>
+        
+        {selectedBusinessId && (
+          <div className="flex items-center space-x-4">
+            <div className="flex space-x-2">
+              {(['all', 'draft', 'published', 'closed'] as const).map((status) => (
+                <button
+                  key={status}
+                  onClick={() => setFilter(status)}
+                  className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                    filter === status
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  {status === 'all' ? 'All' : JOB_STATUS_LABELS[status]}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Error Message */}
@@ -132,8 +172,10 @@ export function PostTracking() {
         </div>
       )}
 
-      {/* Job Posts List */}
-      {jobs.length === 0 ? (
+      {/* Business Tile View or Job Posts List */}
+      {!selectedBusinessId ? (
+        <BusinessTileView onBusinessSelect={handleBusinessSelect} />
+      ) : jobs.length === 0 ? (
         <div className="text-center py-12">
           <div className="text-gray-400 mb-4">
             <span className="text-6xl">📋</span>

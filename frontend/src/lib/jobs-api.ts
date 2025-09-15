@@ -135,12 +135,14 @@ export async function createJobPost(jobData: CreateJobData): Promise<JobPost> {
   return response.json();
 }
 
-export async function getJobPosts(status?: JobStatus): Promise<JobPost[]> {
+export async function getJobPosts(status?: JobStatus, businessId?: string): Promise<JobPost[]> {
   const headers = await getAuthHeaders();
   
-  const url = status 
-    ? `${API_BASE_URL}/jobs?status=${status}`
-    : `${API_BASE_URL}/jobs`;
+  const params = new URLSearchParams();
+  if (status) params.append('status', status);
+  if (businessId) params.append('business_id', businessId);
+  
+  const url = `${API_BASE_URL}/jobs${params.toString() ? `?${params.toString()}` : ''}`;
     
   const response = await fetch(url, { headers });
 
