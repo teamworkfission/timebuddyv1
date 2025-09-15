@@ -25,7 +25,7 @@ export interface JobApplicationData {
 export interface JobApplication extends JobApplicationData {
   id: string;
   employee_id: string;
-  status: 'applied' | 'reviewed' | 'interviewed' | 'hired' | 'rejected';
+  status: 'applied' | 'reviewed' | 'shortlisted' | 'interviewed' | 'hired' | 'rejected';
   safety_disclaimer_accepted_at: string;
   applied_at: string;
   status_updated_at: string;
@@ -51,12 +51,12 @@ export interface JobApplicationWithJobDetails extends JobApplication {
   language_preference?: string;
   transportation_requirement?: string;
   phone: string;
-  email?: string;
+  employer_email?: string; // Changed from email to employer_email to avoid conflict
   published_at: string;
 }
 
 export interface UpdateJobApplicationData {
-  status?: 'applied' | 'reviewed' | 'interviewed' | 'hired' | 'rejected';
+  status?: 'applied' | 'reviewed' | 'shortlisted' | 'interviewed' | 'hired' | 'rejected';
   cover_message?: string;
   show_phone?: boolean;
   show_email?: boolean;
@@ -79,6 +79,7 @@ async function getAuthHeaders() {
 export const APPLICATION_STATUS_LABELS: Record<string, string> = {
   applied: 'Applied',
   reviewed: 'Under Review',
+  shortlisted: 'Shortlisted',
   interviewed: 'Interviewed',
   hired: 'Hired',
   rejected: 'Rejected',
@@ -233,6 +234,8 @@ export function getStatusColorClass(status: string): string {
       return 'bg-blue-100 text-blue-800';
     case 'reviewed':
       return 'bg-yellow-100 text-yellow-800';
+    case 'shortlisted':
+      return 'bg-orange-100 text-orange-800';
     case 'interviewed':
       return 'bg-purple-100 text-purple-800';
     case 'hired':

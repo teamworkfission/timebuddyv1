@@ -80,7 +80,7 @@ export class CreateJobApplicationDto {
 
 export class UpdateJobApplicationDto {
   @IsOptional()
-  @IsIn(['applied', 'reviewed', 'interviewed', 'hired', 'rejected'])
+  @IsIn(['applied', 'reviewed', 'shortlisted', 'interviewed', 'hired', 'rejected'])
   status?: string;
 
   @IsOptional()

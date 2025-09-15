@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { 
   JobApplication, 
   getApplicationsByJobPost, 
+  updateJobApplication,
   APPLICATION_STATUS_LABELS, 
   TRANSPORTATION_LABELS,
   getStatusColorClass,
@@ -12,22 +13,29 @@ import { PDFPreviewModal } from '../ui/PDFPreviewModal';
 interface ApplicationsListProps {
   jobPostId: string;
   jobTitle: string;
+  statusFilter?: string[]; // Filter applications by status
+  showActionButtons?: boolean; // Show Shortlist/Hire buttons
 }
 
-export function ApplicationsList({ jobPostId, jobTitle }: ApplicationsListProps) {
+export function ApplicationsList({ jobPostId, jobTitle, statusFilter, showActionButtons = false }: ApplicationsListProps) {
   const [applications, setApplications] = useState<JobApplication[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [hiddenApplications, setHiddenApplications] = useState<Set<string>>(new Set());
   const [previewApplication, setPreviewApplication] = useState<{resumeUrl: string, applicantName: string} | null>(null);
+  const [updatingStatus, setUpdatingStatus] = useState<Set<string>>(new Set());
 
   const loadApplications = async () => {
     try {
       setLoading(true);
       setError(null);
       const data = await getApplicationsByJobPost(jobPostId);
-      setApplications(data);
+      // Filter applications based on statusFilter prop
+      const filteredData = statusFilter 
+        ? data.filter(app => statusFilter.includes(app.status))
+        : data;
+      setApplications(filteredData);
     } catch (err) {
       console.error('Failed to load applications:', err);
       // Show more specific error message
@@ -41,7 +49,31 @@ export function ApplicationsList({ jobPostId, jobTitle }: ApplicationsListProps)
   useEffect(() => {
     // Load applications immediately to show count
     loadApplications();
-  }, [jobPostId]);
+  }, [jobPostId, statusFilter]);
+
+  const handleStatusUpdate = async (applicationId: string, newStatus: 'shortlisted' | 'hired') => {
+    try {
+      setUpdatingStatus(prev => new Set([...prev, applicationId]));
+      await updateJobApplication(applicationId, { status: newStatus });
+      
+      // Remove from current list since it will move to different tab
+      setApplications(prev => prev.filter(app => app.id !== applicationId));
+      
+      // Show success message
+      const statusLabel = APPLICATION_STATUS_LABELS[newStatus];
+      console.log(`Application ${statusLabel} successfully`);
+      
+    } catch (err) {
+      console.error(`Failed to update application status to ${newStatus}:`, err);
+      setError(`Failed to update application status. Please try again.`);
+    } finally {
+      setUpdatingStatus(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(applicationId);
+        return newSet;
+      });
+    }
+  };
 
   const handleToggleExpanded = () => {
     setIsExpanded(!isExpanded);
@@ -297,7 +329,7 @@ export function ApplicationsList({ jobPostId, jobTitle }: ApplicationsListProps)
                     </div>
 
                     {/* Skills & Languages */}
-                    {(application.skills?.length > 0 || application.languages?.length > 0) && (
+                    {((application.skills?.length ?? 0) > 0 || (application.languages?.length ?? 0) > 0) && (
                       <div className="space-y-3">
                         {application.skills && application.skills.length > 0 && (
                           <div>
@@ -357,7 +389,7 @@ export function ApplicationsList({ jobPostId, jobTitle }: ApplicationsListProps)
                         <p className="text-sm font-medium text-gray-700 mb-3">📄 Resume</p>
                         <div 
                           className="border border-gray-200 rounded-lg p-3 bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors"
-                          onClick={() => handleViewResume(application.resume_url, application.full_name)}
+                          onClick={() => application.resume_url && handleViewResume(application.resume_url, application.full_name)}
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-2">
@@ -379,6 +411,49 @@ export function ApplicationsList({ jobPostId, jobTitle }: ApplicationsListProps)
                             </div>
                           </div>
                         </div>
+
+                        {/* Action Buttons - Show below resume if enabled */}
+                        {showActionButtons && (
+                          <div className="mt-4 flex items-center space-x-3">
+                            {/* Shortlist Button - Only show if not already shortlisted/interviewed/hired */}
+                            {!['shortlisted', 'interviewed', 'hired'].includes(application.status) && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleStatusUpdate(application.id, 'shortlisted');
+                                }}
+                                disabled={updatingStatus.has(application.id)}
+                                className="flex items-center space-x-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                              >
+                                {updatingStatus.has(application.id) ? (
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                ) : (
+                                  <span>✅</span>
+                                )}
+                                <span>Shortlist</span>
+                              </button>
+                            )}
+
+                            {/* Hire Button - Show for all statuses except hired */}
+                            {application.status !== 'hired' && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleStatusUpdate(application.id, 'hired');
+                                }}
+                                disabled={updatingStatus.has(application.id)}
+                                className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                              >
+                                {updatingStatus.has(application.id) ? (
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                ) : (
+                                  <span>🟩</span>
+                                )}
+                                <span>Hire</span>
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </div>
                     )}
 

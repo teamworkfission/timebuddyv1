@@ -10,7 +10,7 @@ import {
 } from '../../lib/jobs-api';
 import { ApplicationsList } from './ApplicationsList';
 
-export function Hired() {
+export function Shortlisted() {
   const [jobs, setJobs] = useState<JobPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -99,8 +99,8 @@ export function Hired() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
-        <span className="ml-2">Loading hired employees...</span>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+        <span className="ml-2">Loading shortlisted applications...</span>
       </div>
     );
   }
@@ -124,12 +124,12 @@ export function Hired() {
             )}
             <div>
               <h2 className="text-2xl font-bold text-gray-900">
-                {selectedBusinessId ? `${selectedBusinessName} - Hired Employees` : 'Hired Employees'}
+                {selectedBusinessId ? `${selectedBusinessName} - Shortlisted` : 'Shortlisted Applications'}
               </h2>
               <p className="text-gray-600">
                 {selectedBusinessId 
-                  ? `Manage hired employees and closed positions for ${selectedBusinessName}`
-                  : 'Manage your hired employees and closed job positions'
+                  ? `View shortlisted and interviewed candidates for ${selectedBusinessName}`
+                  : 'Manage your shortlisted and interviewed candidates'
                 }
               </p>
             </div>
@@ -145,7 +145,7 @@ export function Hired() {
                   onClick={() => setFilter(status)}
                   className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
                     filter === status
-                      ? 'bg-green-600 text-white'
+                      ? 'bg-orange-600 text-white'
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }`}
                 >
@@ -173,17 +173,17 @@ export function Hired() {
 
       {/* Business Tile View or Job Posts List */}
       {!selectedBusinessId ? (
-        <HiredBusinessTileView onBusinessSelect={handleBusinessSelect} />
+        <ShortlistedBusinessTileView onBusinessSelect={handleBusinessSelect} />
       ) : jobs.length === 0 ? (
         <div className="text-center py-12">
           <div className="text-gray-400 mb-4">
-            <span className="text-6xl">✅</span>
+            <span className="text-6xl">📥</span>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No hired employees found</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No shortlisted applications found</h3>
           <p className="text-gray-500 mb-6">
             {filter === 'all' 
-              ? "No employees have been hired yet."
-              : `No hired employees found for ${filter} job posts.`
+              ? "No applications have been shortlisted yet."
+              : `No shortlisted applications found for ${filter} job posts.`
             }
           </p>
           <Button variant="primary" onClick={() => window.location.reload()}>
@@ -208,8 +208,8 @@ export function Hired() {
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(job.status)}`}>
                         {JOB_STATUS_LABELS[job.status as keyof typeof JOB_STATUS_LABELS]}
                       </span>
-                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        Hired
+                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                        Shortlisted
                       </span>
                     </div>
                     <div className="flex items-center text-sm text-gray-600 space-x-4">
@@ -225,9 +225,9 @@ export function Hired() {
                         <span>💼</span>
                         <span>{JOB_TYPE_LABELS[job.job_type as keyof typeof JOB_TYPE_LABELS]}</span>
                       </span>
-            </div>
-          </div>
-
+                    </div>
+                  </div>
+                  
                   {/* Action Buttons */}
                   <div className="flex items-center space-x-2 mt-4 sm:mt-0">
                     {job.status === 'draft' && (
@@ -240,22 +240,22 @@ export function Hired() {
                       </Button>
                     )}
                     {job.status === 'published' && (
-            <Button 
-              variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={() => handleStatusChange(job.id, 'closed')}
-            >
+                      >
                         Close
-            </Button>
+                      </Button>
                     )}
-            <Button 
+                    <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleDelete(job.id, job.job_title)}
                       className="text-red-600 border-red-200 hover:bg-red-50"
                     >
                       Delete
-            </Button>
+                    </Button>
                   </div>
                 </div>
 
@@ -323,8 +323,8 @@ export function Hired() {
                   )}
                 </div>
 
-                {/* Hired Applications - Only show hired applications */}
-                <HiredApplicationsList jobPostId={job.id} jobTitle={job.job_title} />
+                {/* Shortlisted Applications - Only show shortlisted and interviewed */}
+                <ShortlistedApplicationsList jobPostId={job.id} jobTitle={job.job_title} />
               </div>
             </div>
           ))}
@@ -334,29 +334,29 @@ export function Hired() {
   );
 }
 
-// Custom Business Tile View for Hired - only shows businesses with hired applications or closed jobs
-function HiredBusinessTileView({ onBusinessSelect }: { onBusinessSelect: (businessId: string, businessName: string) => void }) {
+// Custom Business Tile View for Shortlisted - only shows businesses with shortlisted/interviewed applications
+function ShortlistedBusinessTileView({ onBusinessSelect }: { onBusinessSelect: (businessId: string, businessName: string) => void }) {
   const [businessStats, setBusinessStats] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadHiredBusinessStats();
+    loadShortlistedBusinessStats();
   }, []);
 
-  const loadHiredBusinessStats = async () => {
+  const loadShortlistedBusinessStats = async () => {
     try {
       setLoading(true);
       setError(null);
-      // This would need a new API endpoint to get businesses with hired applications
+      // This would need a new API endpoint to get businesses with shortlisted applications
       // For now, we'll use the existing one and filter client-side
       const { getBusinessJobStats } = await import('../../lib/business-api');
       const data = await getBusinessJobStats();
-      // Filter to only show businesses that have hired applications or closed jobs
+      // Filter to only show businesses that have shortlisted or interviewed applications
       // This is a placeholder - in a real implementation, we'd filter on the backend
       setBusinessStats(data);
     } catch (err) {
-      console.error('Failed to load hired business stats:', err);
+      console.error('Failed to load shortlisted business stats:', err);
       setError(err instanceof Error ? err.message : 'Failed to load business statistics');
     } finally {
       setLoading(false);
@@ -385,8 +385,8 @@ function HiredBusinessTileView({ onBusinessSelect }: { onBusinessSelect: (busine
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading hired employees...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading shortlisted applications...</p>
         </div>
       </div>
     );
@@ -411,11 +411,11 @@ function HiredBusinessTileView({ onBusinessSelect }: { onBusinessSelect: (busine
     return (
       <div className="text-center py-12">
         <div className="text-gray-400 mb-4">
-          <span className="text-6xl">✅</span>
+          <span className="text-6xl">📥</span>
         </div>
-        <h3 className="text-lg font-medium text-gray-900 mb-2">No hired employees yet</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">No shortlisted applications yet</h3>
         <p className="text-gray-500 mb-6">
-          When you hire candidates from your job posts, they'll appear here organized by business.
+          When you shortlist candidates from your job posts, they'll appear here organized by business.
         </p>
       </div>
     );
@@ -426,28 +426,28 @@ function HiredBusinessTileView({ onBusinessSelect }: { onBusinessSelect: (busine
       {/* Summary Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
-          <div className="text-2xl font-bold text-green-600 mb-1">{businessStats.length}</div>
+          <div className="text-2xl font-bold text-orange-600 mb-1">{businessStats.length}</div>
           <div className="text-sm text-gray-600 font-medium">
             Business{businessStats.length !== 1 ? 'es' : ''}
           </div>
         </div>
         <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
-          <div className="text-2xl font-bold text-blue-600 mb-1">
-            {businessStats.reduce((sum, b) => sum + (b.hired_applications || 0), 0)}
-          </div>
-          <div className="text-sm text-gray-600 font-medium">Hired</div>
-        </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
-          <div className="text-2xl font-bold text-red-600 mb-1">
-            {businessStats.reduce((sum, b) => sum + b.closed_jobs, 0)}
-          </div>
-          <div className="text-sm text-gray-600 font-medium">Closed Jobs</div>
-        </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
           <div className="text-2xl font-bold text-purple-600 mb-1">
-            {businessStats.reduce((sum, b) => sum + b.total_jobs, 0)}
+            {businessStats.reduce((sum, b) => sum + (b.shortlisted_applications || 0), 0)}
           </div>
-          <div className="text-sm text-gray-600 font-medium">Total Jobs</div>
+          <div className="text-sm text-gray-600 font-medium">Shortlisted</div>
+        </div>
+        <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
+          <div className="text-2xl font-bold text-blue-600 mb-1">
+            {businessStats.reduce((sum, b) => sum + (b.interviewed_applications || 0), 0)}
+          </div>
+          <div className="text-sm text-gray-600 font-medium">Interviewed</div>
+        </div>
+        <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
+          <div className="text-2xl font-bold text-green-600 mb-1">
+            {businessStats.reduce((sum, b) => sum + b.published_jobs, 0)}
+          </div>
+          <div className="text-sm text-gray-600 font-medium">Active Jobs</div>
         </div>
       </div>
 
@@ -457,17 +457,17 @@ function HiredBusinessTileView({ onBusinessSelect }: { onBusinessSelect: (busine
           <div
             key={business.business_id}
             onClick={() => onBusinessSelect(business.business_id, business.business_name)}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg hover:border-green-300 transition-all duration-200 cursor-pointer overflow-hidden"
+            className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg hover:border-orange-300 transition-all duration-200 cursor-pointer overflow-hidden"
           >
             {/* Header with Business Type */}
-            <div className="bg-gradient-to-r from-green-500 to-green-600 p-4">
+            <div className="bg-gradient-to-r from-orange-500 to-orange-600 p-4">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center flex-shrink-0">
                   <span className="text-lg">{getBusinessTypeIcon(business.business_type)}</span>
                 </div>
                 <div className="min-w-0 flex-1">
                   <h3 className="text-lg font-semibold text-white truncate">{business.business_name}</h3>
-                  <p className="text-green-100 text-sm truncate">
+                  <p className="text-orange-100 text-sm truncate">
                     {business.business_type?.replace('_', ' ') || 'Business'}
                   </p>
                 </div>
@@ -483,29 +483,29 @@ function HiredBusinessTileView({ onBusinessSelect }: { onBusinessSelect: (busine
                   <span className="truncate">{business.location}</span>
                 </div>
 
-                {/* Hired Statistics */}
+                {/* Shortlisted Statistics */}
                 <div className="grid grid-cols-2 gap-3 pt-2">
                   <div className="text-center">
-                    <div className="text-xl font-bold text-green-600">{business.hired_applications || 0}</div>
-                    <div className="text-xs text-gray-600">Hired</div>
+                    <div className="text-xl font-bold text-orange-600">{business.shortlisted_applications || 0}</div>
+                    <div className="text-xs text-gray-600">Shortlisted</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-xl font-bold text-red-600">{business.closed_jobs || 0}</div>
-                    <div className="text-xs text-gray-600">Closed Jobs</div>
+                    <div className="text-xl font-bold text-purple-600">{business.interviewed_applications || 0}</div>
+                    <div className="text-xs text-gray-600">Interviewed</div>
                   </div>
                 </div>
 
                 {/* Status Breakdown */}
                 <div className="pt-2 border-t border-gray-100">
                   <div className="flex justify-between text-xs text-gray-600">
-                    <span>Total Jobs: {business.total_jobs}</span>
+                    <span>Jobs: {business.total_jobs}</span>
                     <span>Published: {business.published_jobs}</span>
                   </div>
                 </div>
 
                 {/* Click Indicator */}
                 <div className="pt-2 text-center">
-                  <span className="text-xs text-green-600 font-medium">Click to view employees →</span>
+                  <span className="text-xs text-orange-600 font-medium">Click to view candidates →</span>
                 </div>
               </div>
             </div>
@@ -516,14 +516,14 @@ function HiredBusinessTileView({ onBusinessSelect }: { onBusinessSelect: (busine
   );
 }
 
-// Custom Applications List for Hired - only shows hired applications
-function HiredApplicationsList({ jobPostId, jobTitle }: { jobPostId: string; jobTitle: string }) {
+// Custom Applications List for Shortlisted - only shows shortlisted and interviewed applications
+function ShortlistedApplicationsList({ jobPostId, jobTitle }: { jobPostId: string; jobTitle: string }) {
   return (
     <ApplicationsList 
       jobPostId={jobPostId} 
       jobTitle={jobTitle}
-      statusFilter={['hired']}
-      showActionButtons={false}
+      statusFilter={['shortlisted', 'interviewed']}
+      showActionButtons={true}
     />
   );
 }

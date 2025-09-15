@@ -321,8 +321,13 @@ export function PostTracking() {
                   )}
                 </div>
 
-                {/* Job Applications */}
-                <ApplicationsList jobPostId={job.id} jobTitle={job.job_title} />
+                {/* Job Applications - Only show applied and reviewed, with action buttons */}
+                <ApplicationsList 
+                  jobPostId={job.id} 
+                  jobTitle={job.job_title}
+                  statusFilter={['applied', 'reviewed']}
+                  showActionButtons={true}
+                />
               </div>
             </div>
           ))}
