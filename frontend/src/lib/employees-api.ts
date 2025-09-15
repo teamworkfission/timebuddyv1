@@ -6,6 +6,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 export interface Employee {
   id: string;
   user_id: string;
+  employee_gid: string;
   full_name: string;
   phone: string;
   email: string;

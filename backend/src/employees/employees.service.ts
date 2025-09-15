@@ -6,6 +6,7 @@ import { UpdateEmployeeDto } from './dto/update-employee.dto';
 export interface Employee {
   id: string;
   user_id: string;
+  employee_gid: string;
   full_name: string;
   phone: string;
   email: string;

@@ -11,11 +11,12 @@ interface EmployeeDashboardTabsProps {
   onJobProfile?: () => void;
   isProfileComplete?: boolean;
   profileCompletionPercentage?: number;
+  employeeGid?: string;
 }
 
 type TabType = 'home' | 'myjobs' | 'schedule' | 'earnings';
 
-export function EmployeeDashboardTabs({ userEmail, onLogout, onJobProfile, isProfileComplete, profileCompletionPercentage }: EmployeeDashboardTabsProps) {
+export function EmployeeDashboardTabs({ userEmail, onLogout, onJobProfile, isProfileComplete, profileCompletionPercentage, employeeGid }: EmployeeDashboardTabsProps) {
   const [activeTab, setActiveTab] = useState<TabType>('home');
 
   const tabs = [
@@ -55,6 +56,7 @@ export function EmployeeDashboardTabs({ userEmail, onLogout, onJobProfile, isPro
               onJobProfile={onJobProfile}
               isProfileComplete={isProfileComplete}
               profileCompletionPercentage={profileCompletionPercentage}
+              employeeGid={employeeGid}
             />
           </div>
         </div>

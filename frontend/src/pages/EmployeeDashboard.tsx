@@ -86,7 +86,11 @@ export function EmployeeDashboard() {
                 <h1 className="text-2xl font-bold text-blue-600">PtimeBuddy</h1>
               </div>
               <div className="flex items-center">
-                <ProfileDropdown email={profile?.email || ''} onLogout={logout} />
+                <ProfileDropdown 
+                  email={profile?.email || ''} 
+                  onLogout={logout} 
+                  employeeGid={employeeProfile?.employee_gid}
+                />
               </div>
             </div>
           </div>
@@ -142,6 +146,7 @@ export function EmployeeDashboard() {
           onJobProfile={() => setShowJobProfile(true)}
           isProfileComplete={Boolean(isProfileComplete)}
           profileCompletionPercentage={profileCompletion.percentage}
+          employeeGid={employeeProfile?.employee_gid}
         />
       )}
     </>

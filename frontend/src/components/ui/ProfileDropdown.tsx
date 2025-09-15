@@ -7,6 +7,7 @@ interface ProfileDropdownProps {
   onJobProfile?: () => void;
   isProfileComplete?: boolean;
   profileCompletionPercentage?: number;
+  employeeGid?: string;
   className?: string;
 }
 
@@ -16,6 +17,7 @@ export function ProfileDropdown({
   onJobProfile, 
   isProfileComplete = false, 
   profileCompletionPercentage = 0,
+  employeeGid,
   className = '' 
 }: ProfileDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -73,6 +75,41 @@ export function ProfileDropdown({
                 </div>
               </div>
             </div>
+
+            {/* Employee GID Display */}
+            {employeeGid && (
+              <div className="px-4 py-3 border-b border-gray-100 bg-blue-50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-6 h-6 bg-blue-200 rounded flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs font-bold text-blue-700">ID</span>
+                    </div>
+                    <div>
+                      <p className="text-xs text-blue-600 font-medium">Employee GID</p>
+                      <p className="text-sm font-mono font-bold text-blue-800">{employeeGid}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(employeeGid);
+                        // You could add a toast notification here
+                        alert('GID copied to clipboard!');
+                      } catch (err) {
+                        console.error('Failed to copy GID:', err);
+                      }
+                    }}
+                    className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded transition-colors"
+                    title="Copy GID to clipboard"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                  </button>
+                </div>
+                
+              </div>
+            )}
 
             {/* Profile Button */}
             {onJobProfile && (
