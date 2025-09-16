@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { X, Plus, Edit2, Trash2, Clock, Palette } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
+import { AMPMTimeInput } from '../ui/AMPMTimeInput';
 import { 
   ShiftTemplate, 
   CreateShiftTemplateDto, 
   SchedulesApi, 
-  formatTime 
+  formatTemplateTime 
 } from '../../lib/schedules-api';
 
 interface ShiftTemplateManagerProps {
@@ -64,10 +65,13 @@ export function ShiftTemplateManager({
   const handleEdit = (template: ShiftTemplate) => {
     setEditingTemplate(template);
     setShowCreateForm(true);
+    
+    // Use AM/PM labels if available, fallback to converting legacy time
+    const templateTime = formatTemplateTime(template);
     setFormData({
       name: template.name,
-      start_time: template.start_time.substring(0, 5),
-      end_time: template.end_time.substring(0, 5),
+      start_time: templateTime.start,
+      end_time: templateTime.end,
       color: template.color
     });
     setError(null);
@@ -177,30 +181,18 @@ export function ShiftTemplateManager({
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Start Time *
-                  </label>
-                  <Input
-                    type="time"
-                    value={formData.start_time}
-                    onChange={(e) => setFormData(prev => ({ ...prev, start_time: e.target.value }))}
-                    className="w-full"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    End Time *
-                  </label>
-                  <Input
-                    type="time"
-                    value={formData.end_time}
-                    onChange={(e) => setFormData(prev => ({ ...prev, end_time: e.target.value }))}
-                    className="w-full"
-                    required
-                  />
-                </div>
+                <AMPMTimeInput
+                  label="Start Time *"
+                  value={formData.start_time}
+                  onChange={(value) => setFormData(prev => ({ ...prev, start_time: value }))}
+                  placeholder="Select start time..."
+                />
+                <AMPMTimeInput
+                  label="End Time *"
+                  value={formData.end_time}
+                  onChange={(value) => setFormData(prev => ({ ...prev, end_time: value }))}
+                  placeholder="Select end time..."
+                />
               </div>
 
               <div>
@@ -293,7 +285,7 @@ export function ShiftTemplateManager({
                       <div className="text-sm text-gray-600 flex items-center space-x-1">
                         <Clock className="h-3 w-3" />
                         <span>
-                          {formatTime(template.start_time)} - {formatTime(template.end_time)}
+                          {formatTemplateTime(template).start} - {formatTemplateTime(template).end}
                         </span>
                       </div>
                     </div>

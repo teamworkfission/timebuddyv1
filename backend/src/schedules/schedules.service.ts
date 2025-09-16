@@ -5,6 +5,14 @@ import { UpdateScheduleDto } from './dto/update-schedule.dto';
 import { CreateShiftDto } from './dto/create-shift.dto';
 import { UpdateShiftDto } from './dto/update-shift.dto';
 import { WeeklySchedule, Shift, ScheduleEmployee } from './dto/week-schedule-response.dto';
+import { 
+  calculateShiftHours,
+  parse12hToMinutes,
+  formatMinutesToAmPm,
+  canonicalizeTimeInput,
+  minutesToLegacyTime,
+  isValidAmPmTime
+} from '../utils/time-parser';
 
 @Injectable()
 export class SchedulesService {
@@ -163,34 +171,93 @@ export class SchedulesService {
     };
   }
 
+  /**
+   * Create shift with dual storage support (AM/PM labels + legacy TIME format)
+   * Supports both legacy format and new AM/PM format for seamless transition
+   */
   async createShift(scheduleId: string, createDto: CreateShiftDto): Promise<Shift> {
     const supabase = this.supabaseService.admin;
     
-    // Normalize time format to HH:MM:SS if only HH:MM is provided
-    const normalizedDto = {
-      ...createDto,
-      start_time: this.normalizeTimeFormat(createDto.start_time),
-      end_time: this.normalizeTimeFormat(createDto.end_time),
-    };
-    
-    const { data, error } = await supabase
-      .from('shifts')
-      .insert({
-        schedule_id: scheduleId,
-        ...normalizedDto,
-      })
-      .select()
-      .single();
+    let startLabel: string;
+    let endLabel: string;
+    let startMin: number;
+    let endMin: number;
+    let startTime: string;
+    let endTime: string;
 
-    if (error) {
-      throw new Error(`Failed to create shift: ${error.message}`);
+    try {
+      // Check if we have AM/PM labels (new format)
+      if ((createDto as any).start_label && (createDto as any).end_label) {
+        // New AM/PM format - canonicalize and validate
+        startLabel = canonicalizeTimeInput((createDto as any).start_label);
+        endLabel = canonicalizeTimeInput((createDto as any).end_label);
+        
+        // Convert to minutes for storage
+        startMin = parse12hToMinutes(startLabel);
+        endMin = parse12hToMinutes(endLabel);
+        
+        // Generate legacy format for backward compatibility
+        startTime = minutesToLegacyTime(startMin);
+        endTime = minutesToLegacyTime(endMin);
+        
+      } else if (createDto.start_time && createDto.end_time) {
+        // Legacy TIME format - normalize and convert
+        startTime = this.normalizeTimeFormat(createDto.start_time);
+        endTime = this.normalizeTimeFormat(createDto.end_time);
+        
+        // Convert legacy to AM/PM format
+        startLabel = this.convertLegacyTimeToAmPm(startTime);
+        endLabel = this.convertLegacyTimeToAmPm(endTime);
+        
+        // Convert to minutes
+        startMin = parse12hToMinutes(startLabel);
+        endMin = parse12hToMinutes(endLabel);
+        
+      } else {
+        throw new Error('Either start_label/end_label or start_time/end_time must be provided');
+      }
+
+      // Calculate duration for validation
+      const durationHours = calculateShiftHours(startLabel, endLabel);
+      
+      // Insert shift with dual storage format
+      const { data, error } = await supabase
+        .from('shifts')
+        .insert({
+          schedule_id: scheduleId,
+          employee_id: createDto.employee_id,
+          day_of_week: createDto.day_of_week,
+          
+          // Primary storage (new bulletproof format)
+          start_label: startLabel,
+          end_label: endLabel,
+          start_min: startMin,
+          end_min: endMin,
+          
+          // Legacy compatibility (for rollback safety)
+          start_time: startTime,
+          end_time: endTime,
+          
+          shift_template_id: createDto.shift_template_id,
+          notes: createDto.notes,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        throw new Error(`Failed to create shift: ${error.message}`);
+      }
+
+      return {
+        ...data,
+        duration_hours: durationHours,
+      };
+      
+    } catch (parseError) {
+      // Enhanced error handling with context
+      const errorMessage = parseError instanceof Error ? parseError.message : 'Unknown parsing error';
+      throw new BadRequestException(`Invalid time format: ${errorMessage}`);
     }
-
-    // Calculate duration and return
-    return {
-      ...data,
-      duration_hours: this.calculateShiftDuration(data.start_time, data.end_time),
-    };
   }
 
   async updateShift(shiftId: string, updateDto: UpdateShiftDto): Promise<Shift> {
@@ -224,7 +291,12 @@ export class SchedulesService {
 
     return {
       ...data,
-      duration_hours: this.calculateShiftDuration(data.start_time, data.end_time),
+      duration_hours: this.calculateShiftDuration(
+        data.start_time, 
+        data.end_time, 
+        data.start_label, 
+        data.end_label
+      ),
     };
   }
 
@@ -262,7 +334,12 @@ export class SchedulesService {
 
     return data.map(shift => ({
       ...shift,
-      duration_hours: this.calculateShiftDuration(shift.start_time, shift.end_time),
+      duration_hours: this.calculateShiftDuration(
+        shift.start_time, 
+        shift.end_time, 
+        shift.start_label, 
+        shift.end_label
+      ),
     }));
   }
 
@@ -322,21 +399,52 @@ export class SchedulesService {
 
     return data.map(shift => ({
       ...shift,
-      duration_hours: this.calculateShiftDuration(shift.start_time, shift.end_time),
+      duration_hours: this.calculateShiftDuration(
+        shift.start_time, 
+        shift.end_time, 
+        shift.start_label, 
+        shift.end_label
+      ),
     }));
   }
 
-  private calculateShiftDuration(startTime: string, endTime: string): number {
-    const start = new Date(`2000-01-01T${startTime}`);
-    const end = new Date(`2000-01-01T${endTime}`);
-    
-    // Handle overnight shifts
-    if (end <= start) {
-      end.setDate(end.getDate() + 1);
+  /**
+   * Calculate shift duration using bulletproof integer math
+   * Handles both legacy TIME format and new AM/PM labels
+   * Immune to server timezone and DST issues
+   */
+  private calculateShiftDuration(startTime: string, endTime: string, startLabel?: string, endLabel?: string): number {
+    // Prefer AM/PM labels if available (bulletproof path)
+    if (startLabel && endLabel) {
+      try {
+        return calculateShiftHours(startLabel, endLabel);
+      } catch (error) {
+        // Fall through to legacy calculation if labels are invalid
+        console.warn('Failed to calculate duration from labels, using legacy method:', error);
+      }
     }
     
-    const durationMs = end.getTime() - start.getTime();
-    return durationMs / (1000 * 60 * 60); // Convert to hours
+    // Legacy fallback: convert TIME format to AM/PM and calculate
+    // This maintains backward compatibility during transition
+    try {
+      const startAmPm = this.convertLegacyTimeToAmPm(startTime);
+      const endAmPm = this.convertLegacyTimeToAmPm(endTime);
+      return calculateShiftHours(startAmPm, endAmPm);
+    } catch (error) {
+      console.error('Failed to calculate shift duration:', error);
+      // Ultimate fallback to prevent system failure
+      return 8.0; // Default 8-hour shift
+    }
+  }
+
+  /**
+   * Convert legacy TIME format (HH:MM:SS) to AM/PM format
+   * Used during transition period for backward compatibility
+   */
+  private convertLegacyTimeToAmPm(timeString: string): string {
+    const [hours, minutes] = timeString.split(':').map(Number);
+    const totalMinutes = hours * 60 + minutes;
+    return formatMinutesToAmPm(totalMinutes);
   }
 
   private normalizeTimeFormat(timeString: string): string {

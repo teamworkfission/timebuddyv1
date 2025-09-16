@@ -14,10 +14,21 @@ export interface ShiftTemplate {
   id: string;
   business_id: string;
   name: string;
-  start_time: string;
-  end_time: string;
+  
+  // Dual format storage
+  start_label: string;      // "7:00 AM"
+  end_label: string;        // "3:00 PM"
+  start_min: number;        // 420
+  end_min: number;          // 900
+  
   color: string;
   is_active: boolean;
+  
+  // Legacy (deprecated but maintained for compatibility)
+  /** @deprecated Use start_label */
+  start_time: string;
+  /** @deprecated Use end_label */
+  end_time: string;
 }
 
 export interface ScheduleEmployee {
@@ -31,11 +42,27 @@ export interface Shift {
   schedule_id: string;
   employee_id: string;
   day_of_week: number;
-  start_time: string;
-  end_time: string;
+  
+  // Primary format (human-readable AM/PM)
+  start_label: string;      // "9:00 AM"
+  end_label: string;        // "5:00 PM"
+  
+  // Computation format (fast server math)
+  start_min: number;        // 540
+  end_min: number;          // 1020
+  
+  // Calculated fields
+  duration_hours: number;   // 8.00 (from bulletproof integer math)
+  
+  // Metadata
   shift_template_id?: string;
   notes?: string;
-  duration_hours: number;
+  
+  // Legacy fields (deprecated but maintained for compatibility)
+  /** @deprecated Use start_label for display */
+  start_time: string;       // "09:00:00"
+  /** @deprecated Use end_label for display */
+  end_time: string;         // "17:00:00"
 }
 
 export interface WeeklySchedule {
@@ -59,16 +86,30 @@ export interface CreateShiftTemplateDto {
 export interface CreateShiftDto {
   employee_id: string;
   day_of_week: number;
-  start_time: string;
-  end_time: string;
+  
+  // NEW: AM/PM format fields (primary input method)
+  start_label?: string;     // "9:00 AM" 
+  end_label?: string;       // "5:00 PM"
+  
+  // LEGACY: TIME format fields (backward compatibility)
+  start_time?: string;      // "09:00:00"
+  end_time?: string;        // "17:00:00"
+  
   shift_template_id?: string;
   notes?: string;
 }
 
 export interface UpdateShiftDto {
   day_of_week?: number;
-  start_time?: string;
-  end_time?: string;
+  
+  // NEW: AM/PM format fields (primary input method)
+  start_label?: string;     // "9:00 AM" 
+  end_label?: string;       // "5:00 PM"
+  
+  // LEGACY: TIME format fields (backward compatibility)
+  start_time?: string;      // "09:00:00"
+  end_time?: string;        // "17:00:00"
+  
   shift_template_id?: string;
   notes?: string;
 }
@@ -409,9 +450,26 @@ export function formatWeekRange(weekStart: string, business?: Business): string 
 }
 
 /**
- * Format time string with timezone awareness
+ * Format time for display - now supports both AM/PM labels and legacy TIME format
+ * Prioritizes AM/PM labels when available for better user experience
  */
-export function formatTime(timeString: string, business?: Business, format: 'short' | 'long' = 'short'): string {
+export function formatTime(
+  timeString: string | { start_label?: string; end_label?: string; start_time?: string; end_time?: string },
+  business?: Business, 
+  format: 'short' | 'long' = 'short'
+): string {
+  // If we receive an object with labels, use the AM/PM format directly
+  if (typeof timeString === 'object') {
+    // This shouldn't be called with an object, but handle gracefully
+    return 'Invalid time format';
+  }
+
+  // Check if this looks like an AM/PM format already (contains AM/PM)
+  if (timeString.match(/\s?(AM|PM)$/i)) {
+    return timeString; // Already in AM/PM format, return as-is
+  }
+
+  // Legacy TIME format conversion
   if (business) {
     const timezoneInfo = getTimezoneFromLocation(business.location);
     if (timezoneInfo) {
@@ -419,12 +477,33 @@ export function formatTime(timeString: string, business?: Business, format: 'sho
     }
   }
   
-  // Fallback to simple format
+  // Fallback: Convert TIME format to AM/PM
   const [hours, minutes] = timeString.split(':');
   const hour = parseInt(hours);
   const ampm = hour >= 12 ? 'PM' : 'AM';
   const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
   return `${displayHour}:${minutes} ${ampm}`;
+}
+
+/**
+ * Format shift time for display - uses new AM/PM labels when available
+ * This is the preferred method for displaying shift times
+ */
+export function formatShiftTime(shift: Shift): { start: string; end: string } {
+  return {
+    start: shift.start_label || formatTime(shift.start_time),
+    end: shift.end_label || formatTime(shift.end_time)
+  };
+}
+
+/**
+ * Format shift template time for display - uses new AM/PM labels when available
+ */
+export function formatTemplateTime(template: ShiftTemplate): { start: string; end: string } {
+  return {
+    start: template.start_label || formatTime(template.start_time),
+    end: template.end_label || formatTime(template.end_time)
+  };
 }
 
 export function getNextWeek(weekStart: string): string {

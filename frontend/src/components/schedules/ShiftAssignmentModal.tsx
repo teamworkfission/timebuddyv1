@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Clock, Plus, Edit2, Trash2, FileText } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
-import { Input } from '../ui/Input';
+import { AMPMTimeInput } from '../ui/AMPMTimeInput';
 import { 
   Shift, 
   ShiftTemplate, 
   CreateShiftDto, 
   UpdateShiftDto, 
-  formatTime 
+  formatShiftTime,
+  formatTemplateTime
 } from '../../lib/schedules-api';
 
 interface ShiftAssignmentModalProps {
@@ -77,8 +78,11 @@ export function ShiftAssignmentModal({
     const shift: CreateShiftDto = {
       employee_id: employeeId,
       day_of_week: dayOfWeek,
-      start_time: template.start_time,
-      end_time: template.end_time,
+      // Use AM/PM labels if available, fallback to legacy format
+      start_label: template.start_label,
+      end_label: template.end_label,
+      start_time: template.start_time, // Legacy fallback
+      end_time: template.end_time,     // Legacy fallback
       shift_template_id: template.id,
       notes: notes.trim() || undefined
     };
@@ -92,20 +96,13 @@ export function ShiftAssignmentModal({
       return;
     }
 
-    // Validate time format and logic
-    const startTime = new Date(`2000-01-01T${customTime.start}:00`);
-    const endTime = new Date(`2000-01-01T${customTime.end}:00`);
-    
-    if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
-      setError('Please enter valid times');
-      return;
-    }
-
+    // Create shift using AM/PM format (no Date object validation needed)
     const shift: CreateShiftDto = {
       employee_id: employeeId,
       day_of_week: dayOfWeek,
-      start_time: `${customTime.start}:00`,
-      end_time: `${customTime.end}:00`,
+      // Primary: AM/PM labels
+      start_label: customTime.start, // e.g., "9:00 AM"
+      end_label: customTime.end,     // e.g., "5:00 PM"
       notes: notes.trim() || undefined
     };
 
@@ -115,9 +112,12 @@ export function ShiftAssignmentModal({
   const handleEditShift = (shift: Shift) => {
     setEditingShift(shift);
     setMode('edit');
+    
+    // Use AM/PM labels if available, fallback to converting legacy time
+    const shiftTime = formatShiftTime(shift);
     setCustomTime({
-      start: shift.start_time.substring(0, 5),
-      end: shift.end_time.substring(0, 5)
+      start: shiftTime.start,
+      end: shiftTime.end
     });
     setNotes(shift.notes || '');
     
@@ -136,8 +136,9 @@ export function ShiftAssignmentModal({
     }
 
     const update: UpdateShiftDto = {
-      start_time: `${customTime.start}:00`,
-      end_time: `${customTime.end}:00`,
+      // Primary: AM/PM labels
+      start_label: customTime.start, // e.g., "9:00 AM"
+      end_label: customTime.end,     // e.g., "5:00 PM"
       notes: notes.trim() || undefined
     };
 
@@ -199,7 +200,7 @@ export function ShiftAssignmentModal({
                         <div className="text-xs text-gray-600 flex items-center space-x-1">
                           <Clock className="h-3 w-3" />
                           <span>
-                            {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
+                            {formatShiftTime(shift).start} - {formatShiftTime(shift).end}
                           </span>
                           <span>({shift.duration_hours.toFixed(1)}h)</span>
                         </div>
@@ -285,7 +286,7 @@ export function ShiftAssignmentModal({
                       <div className="text-sm text-gray-600 flex items-center space-x-1">
                         <Clock className="h-3 w-3" />
                         <span>
-                          {formatTime(template.start_time)} - {formatTime(template.end_time)}
+                          {formatTemplateTime(template).start} - {formatTemplateTime(template).end}
                         </span>
                       </div>
                     </div>
@@ -303,28 +304,20 @@ export function ShiftAssignmentModal({
               {mode === 'edit' ? 'Edit Shift Time' : 'Set Custom Time'}
             </h3>
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Start Time
-                </label>
-                <Input
-                  type="time"
-                  value={customTime.start}
-                  onChange={(e) => handleCustomTimeChange('start', e.target.value)}
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  End Time
-                </label>
-                <Input
-                  type="time"
-                  value={customTime.end}
-                  onChange={(e) => handleCustomTimeChange('end', e.target.value)}
-                  className="w-full"
-                />
-              </div>
+              <AMPMTimeInput
+                label="Start Time"
+                value={customTime.start}
+                onChange={(value) => handleCustomTimeChange('start', value)}
+                placeholder="Select start time..."
+                error={error && !customTime.start ? 'Start time required' : ''}
+              />
+              <AMPMTimeInput
+                label="End Time"
+                value={customTime.end}
+                onChange={(value) => handleCustomTimeChange('end', value)}
+                placeholder="Select end time..."
+                error={error && !customTime.end ? 'End time required' : ''}
+              />
             </div>
           </div>
         )}

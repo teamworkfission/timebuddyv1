@@ -19,11 +19,27 @@ export interface Shift {
   schedule_id: string;
   employee_id: string;
   day_of_week: number;
-  start_time: string;
-  end_time: string;
+  
+  // Primary format (human-readable AM/PM)
+  start_label: string;      // "9:00 AM"
+  end_label: string;        // "5:00 PM"
+  
+  // Computation format (fast server math)
+  start_min: number;        // 540
+  end_min: number;          // 1020
+  
+  // Calculated fields
+  duration_hours: number;   // 8.00 (from bulletproof integer math)
+  
+  // Metadata
   shift_template_id?: string;
   notes?: string;
-  duration_hours: number;
+  
+  // Legacy fields (deprecated but maintained for compatibility)
+  /** @deprecated Use start_label for display */
+  start_time: string;       // "09:00:00"
+  /** @deprecated Use end_label for display */
+  end_time: string;         // "17:00:00"
 }
 
 export interface WeeklySchedule {
