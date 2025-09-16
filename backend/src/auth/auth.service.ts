@@ -30,19 +30,42 @@ export class AuthService {
   }
 
   async verifyToken(bearer?: string) {
+    console.log('🔐 Backend: Token verification started', {
+      hasBearerHeader: !!bearer,
+      bearerLength: bearer?.length
+    });
+
     if (!bearer) throw new Error('Missing authorization header');
     
     const token = bearer.replace('Bearer ', '');
+    console.log('🔑 Backend: Extracted token', {
+      tokenLength: token.length,
+      tokenStart: token.substring(0, 20) + '...',
+      tokenEnd: '...' + token.substring(token.length - 20)
+    });
     
     try {
-      // Use Supabase client to verify the token
-      const { data: user, error } = await this.supabase.admin.auth.getUser(token);
+      // Use Supabase user client to verify the token (same as frontend)
+      console.log('🔍 Backend: Calling Supabase user.auth.getUser...');
+      const { data: user, error } = await this.supabase.user.auth.getUser(token);
+      
+      console.log('📊 Backend: Supabase getUser result', {
+        hasUser: !!user?.user,
+        userId: user?.user?.id,
+        userEmail: user?.user?.email,
+        error: error ? {
+          message: error.message,
+          status: error.status,
+          code: error.code
+        } : null
+      });
       
       if (error || !user?.user) {
+        console.error('❌ Backend: Token verification failed', error);
         throw new Error('Invalid token');
       }
       
-      // Fetch user profile to get role information
+      // Fetch user profile to get role information (if exists)
       const { data: profile, error: profileError } = await this.supabase.admin
         .from('profiles')
         .select('id, email, role')
@@ -54,15 +77,19 @@ export class AuthService {
         throw new Error('Failed to fetch user profile');
       }
 
-      if (!profile) {
-        throw new Error('User profile not found');
-      }
+      // For /auth/complete endpoint, profile may not exist yet (new users)
+      // Return user data regardless of profile existence
+      console.log('🔍 Backend: Profile lookup result', {
+        profileExists: !!profile,
+        profileId: profile?.id,
+        profileRole: profile?.role
+      });
       
       return {
-        id: profile.id,
+        id: profile?.id || user.user.id, // Use auth ID if no profile yet
         userId: user.user.id,
-        email: profile.email || user.user.email || undefined,
-        role: profile.role,
+        email: profile?.email || user.user.email || undefined,
+        role: profile?.role, // undefined for new users (will be set during completion)
       };
     } catch (error) {
       console.error('Token verification failed:', error);
@@ -76,6 +103,12 @@ export class AuthService {
     intendedRole?: 'employee' | 'employer'
   ) {
     const normalizedEmail = (email ?? '').toLowerCase().trim();
+    console.log('🔐 Backend: Profile completion started', {
+      userId,
+      email: normalizedEmail,
+      intendedRole,
+      timestamp: new Date().toISOString()
+    });
 
     // Check if profile already exists
     const { data: existing } = await this.supabase.admin
@@ -84,8 +117,11 @@ export class AuthService {
       .eq('id', userId)
       .maybeSingle();
 
+    console.log('🔍 Backend: Existing profile check result:', existing);
+
     if (existing) {
       // Return existing profile (role is locked)
+      console.log('✅ Backend: Returning existing profile');
       return { 
         id: existing.id, 
         email: existing.email, 
@@ -95,6 +131,13 @@ export class AuthService {
 
     // Create new profile with role lock - handle race conditions
     const role = intendedRole ?? 'employee';
+    console.log('🚀 Backend: Creating new profile', {
+      userId,
+      email: normalizedEmail,
+      role,
+      timestamp: new Date().toISOString()
+    });
+    
     const { data: newProfile, error } = await this.supabase.admin
       .from('profiles')
       .insert({
@@ -105,6 +148,12 @@ export class AuthService {
       })
       .select('id, email, role')
       .single();
+
+    console.log('📊 Backend: Profile creation result', {
+      success: !error,
+      data: newProfile,
+      error: error
+    });
 
     // Handle race condition: if profile was created by concurrent request
     if (error) {

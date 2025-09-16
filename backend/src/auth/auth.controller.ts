@@ -55,21 +55,36 @@ export class AuthController {
     @Headers('authorization') authHeader: string,
     @Body() dto: CompleteAuthDto
   ) {
+    console.log('🎯 Backend: Received auth completion request', {
+      hasAuthHeader: !!authHeader,
+      authHeaderLength: authHeader?.length,
+      intendedRole: dto.intendedRole,
+      timestamp: new Date().toISOString()
+    });
+
     try {
-      const { userId, email } = await this.authService.verifyToken(authHeader);
+      const { userId, email, role: existingRole } = await this.authService.verifyToken(authHeader);
+      console.log('🔓 Backend: Token verification successful', {
+        userId,
+        email,
+        hasExistingProfile: !!existingRole,
+        existingRole
+      });
+
       const profile = await this.authService.completeAuth(
         userId,
         email,
         dto.intendedRole
       );
 
+      console.log('✅ Backend: Auth completion successful', profile);
       return {
         id: profile.id,
         email: profile.email,
         role: profile.role,
       };
     } catch (error) {
-      console.error('Auth completion error:', error);
+      console.error('❌ Backend: Auth completion error:', error);
       
       if (error instanceof ThrottlerException) {
         throw new HttpException('Too many attempts, please try again later', HttpStatus.TOO_MANY_REQUESTS);

@@ -101,7 +101,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       try {
         const intendedRole = sessionStorage.getItem('intendedRole') as 'employee' | 'employer' | null;
+        console.log('🔐 Auth completion started:', {
+          userId: session.user.id,
+          email: session.user.email,
+          intendedRole,
+          accessToken: session.access_token ? 'Present' : 'Missing'
+        });
+        
         const profileData = await completeAuth(session.access_token, intendedRole || undefined);
+        console.log('✅ Profile creation successful:', profileData);
         
         setProfile(profileData);
         
@@ -113,10 +121,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         // Navigate to appropriate dashboard
         const dashboardPath = profileData.role === 'employer' ? '/app/employer' : '/app/employee';
+        console.log('🚀 Navigating to dashboard:', dashboardPath);
         navigate(dashboardPath, { replace: true });
         
       } catch (error) {
-        console.error('Auth completion failed:', error);
+        console.error('❌ Auth completion failed:', error);
+        console.error('❌ Error details:', {
+          message: error.message,
+          stack: error.stack,
+          userId: session.user?.id,
+          email: session.user?.email
+        });
         
         // Only sign out for actual auth errors, not network errors
         const errorMessage = error instanceof Error ? error.message : String(error);

@@ -49,6 +49,13 @@ export function checkEmail(email: string, context: 'signup' | 'signin') {
 }
 
 export function completeAuth(token: string, intendedRole?: 'employee' | 'employer') {
+  console.log('🌐 Frontend: Making auth completion API call', {
+    hasToken: !!token,
+    tokenLength: token?.length,
+    intendedRole,
+    apiUrl: `${API_BASE_URL}/auth/complete`
+  });
+  
   return apiPost<CompleteAuthResponse>(
     '/auth/complete',
     { intendedRole },
