@@ -38,12 +38,12 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
     loadBusinesses();
   }, []);
 
-  // Load schedule data when business or week changes
+  // Load schedule data when business, week, or active tab changes
   useEffect(() => {
     if (selectedBusinessId) {
       loadScheduleData();
     }
-  }, [selectedBusinessId, currentWeek]);
+  }, [selectedBusinessId, currentWeek, activeTab]);
 
   const loadBusinesses = async () => {
     try {
@@ -64,18 +64,38 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
     try {
       console.log('Loading schedule data for business:', selectedBusinessId);
       console.log('Current week:', currentWeek);
+      console.log('Active tab:', activeTab);
       
       // Check what day of the week this is (using local time to avoid timezone issues)
       const weekDate = new Date(currentWeek + 'T00:00:00');
       console.log('Week start date day of week:', weekDate.getDay(), '(0=Sun, 6=Sat)');
       
-      // Load schedule and templates in parallel
+      // Load schedule based on active tab and templates in parallel
+      // Edit tab shows draft schedules, Posted tab shows posted schedules
+      const targetStatus = activeTab === 'edit' ? 'draft' : 'posted';
+      
       const [schedule, templates] = await Promise.all([
-        SchedulesApi.getWeeklySchedule(selectedBusinessId, currentWeek),
+        SchedulesApi.getWeeklyScheduleByStatus(selectedBusinessId, currentWeek, targetStatus),
         SchedulesApi.getShiftTemplates(selectedBusinessId)
       ]);
 
-      setWeeklySchedule(schedule);
+      console.log(`Loaded ${targetStatus} schedule:`, schedule ? 'Found' : 'Not found');
+      
+      // Handle special case: User is on Edit tab but only posted schedule exists
+      if (!schedule && activeTab === 'edit') {
+        // Check if there's a posted schedule that needs to be converted to draft
+        const postedSchedule = await SchedulesApi.getWeeklyScheduleByStatus(selectedBusinessId, currentWeek, 'posted');
+        if (postedSchedule) {
+          console.log('Found posted schedule, user may want to unpost for editing');
+          setWeeklySchedule(postedSchedule);
+        } else {
+          // No schedule at all - user can create new draft
+          setWeeklySchedule(null);
+        }
+      } else {
+        setWeeklySchedule(schedule);
+      }
+      
       setShiftTemplates(templates);
 
       // If no templates exist, create defaults

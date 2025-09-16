@@ -65,6 +65,46 @@ export class SchedulesService {
     };
   }
 
+  /**
+   * Get weekly schedule only if it matches the specified status
+   * This enables proper separation between draft and posted schedule views
+   */
+  async getWeeklyScheduleByStatus(businessId: string, weekStart: string, status: 'draft' | 'posted'): Promise<WeeklySchedule | null> {
+    const supabase = this.supabaseService.admin;
+    
+    // Get the schedule filtered by status
+    const { data: scheduleData, error: scheduleError } = await supabase
+      .from('weekly_schedules')
+      .select('*')
+      .eq('business_id', businessId)
+      .eq('week_start_date', weekStart)
+      .eq('status', status)
+      .single();
+
+    if (scheduleError) {
+      if (scheduleError.code === 'PGRST116') {
+        return null; // Schedule not found or doesn't match status
+      }
+      throw new Error(`Failed to fetch weekly schedule: ${scheduleError.message}`);
+    }
+
+    // Get employees for this business
+    const employees = await this.getBusinessEmployees(businessId);
+
+    // Get shifts for this schedule
+    const shifts = await this.getScheduleShifts(scheduleData.id);
+
+    // Calculate total hours
+    const totalHours = await this.calculateEmployeeHours(scheduleData.id);
+
+    return {
+      ...scheduleData,
+      employees,
+      shifts,
+      total_hours_by_employee: totalHours,
+    };
+  }
+
   async createWeeklySchedule(createDto: CreateScheduleDto, userId: string): Promise<WeeklySchedule> {
     const supabase = this.supabaseService.admin;
     
@@ -220,6 +260,9 @@ export class SchedulesService {
       // Calculate duration for validation
       const durationHours = calculateShiftHours(startLabel, endLabel);
       
+      // Check for duplicate shifts before inserting
+      await this.checkForDuplicateShift(scheduleId, createDto.employee_id, createDto.day_of_week, startMin, endMin, startLabel, endLabel);
+      
       // Insert shift with dual storage format
       const { data, error } = await supabase
         .from('shifts')
@@ -245,6 +288,14 @@ export class SchedulesService {
         .single();
 
       if (error) {
+        // Handle database constraint violations with helpful messages
+        if (error.code === '23505' && error.message.includes('unique_employee_day_times')) {
+          // This should be rare since we check beforehand, but provides backup protection
+          throw new BadRequestException(
+            `Duplicate shift detected: Employee already has an identical shift at this time on this day. ` +
+            `Please choose different times or remove the existing shift first.`
+          );
+        }
         throw new Error(`Failed to create shift: ${error.message}`);
       }
 
@@ -454,5 +505,53 @@ export class SchedulesService {
     }
     // If already in HH:MM:SS format, return as is
     return timeString;
+  }
+
+  /**
+   * Check for duplicate shifts and provide clear error messages
+   * Prevents creating identical shifts (same employee, same day, same exact times)
+   */
+  private async checkForDuplicateShift(
+    scheduleId: string, 
+    employeeId: string, 
+    dayOfWeek: number, 
+    startMin: number, 
+    endMin: number,
+    startLabel: string,
+    endLabel: string
+  ): Promise<void> {
+    const supabase = this.supabaseService.admin;
+    
+    // Check if duplicate shift already exists
+    const { data: existingShift, error } = await supabase
+      .from('shifts')
+      .select(`
+        id,
+        shift_template_id,
+        shift_templates!inner(name)
+      `)
+      .eq('schedule_id', scheduleId)
+      .eq('employee_id', employeeId)
+      .eq('day_of_week', dayOfWeek)
+      .eq('start_min', startMin)
+      .eq('end_min', endMin)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      // Unexpected error (not "not found")
+      throw new Error(`Failed to check for duplicate shift: ${error.message}`);
+    }
+
+    if (existingShift) {
+      // Duplicate found - create helpful error message
+      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const dayName = dayNames[dayOfWeek];
+      const templateName = existingShift.shift_templates?.name || 'Unknown';
+      
+      throw new BadRequestException(
+        `Duplicate shift detected: Employee already has a ${templateName} shift (${startLabel} - ${endLabel}) on ${dayName}. ` +
+        `Please choose different times or remove the existing shift first.`
+      );
+    }
   }
 }

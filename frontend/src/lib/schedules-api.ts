@@ -201,6 +201,28 @@ export class SchedulesApi {
     return response.json();
   }
 
+  /**
+   * Get weekly schedule filtered by status (draft or posted)
+   * Enables proper separation between Edit Schedule and Posted Schedule tabs
+   */
+  static async getWeeklyScheduleByStatus(businessId: string, weekStart: string, status: 'draft' | 'posted'): Promise<WeeklySchedule | null> {
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${API_BASE_URL}/schedules/businesses/${businessId}/weeks/${weekStart}/${status}`, {
+      headers,
+    });
+
+    if (response.status === 404) {
+      // No schedule found for this status - return null
+      return null;
+    }
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ${status} schedule: ${response.statusText}`);
+    }
+
+    return response.json();
+  }
+
   static async createWeeklySchedule(businessId: string, weekStart: string): Promise<WeeklySchedule> {
     const headers = await getAuthHeaders();
     const response = await fetch(`${API_BASE_URL}/schedules/businesses/${businessId}/weeks/${weekStart}`, {

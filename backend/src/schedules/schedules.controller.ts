@@ -73,6 +73,28 @@ export class SchedulesController {
     );
   }
 
+  /**
+   * Get weekly schedule filtered by status (draft or posted)
+   * Enables proper separation between Edit Schedule and Posted Schedule tabs
+   */
+  @Get('businesses/:businessId/weeks/:weekStart/:status')
+  async getWeeklyScheduleByStatus(
+    @Param('businessId') businessId: string,
+    @Param('weekStart') weekStart: string,
+    @Param('status') status: 'draft' | 'posted',
+  ) {
+    // Validate status parameter
+    if (!['draft', 'posted'].includes(status)) {
+      throw new Error('Status must be either "draft" or "posted"');
+    }
+    
+    return this.schedulesService.getWeeklyScheduleByStatus(
+      businessId,
+      weekStart,
+      status,
+    );
+  }
+
   @Post('businesses/:businessId/weeks/:weekStart')
   async createWeeklySchedule(
     @Param('businessId') businessId: string,
