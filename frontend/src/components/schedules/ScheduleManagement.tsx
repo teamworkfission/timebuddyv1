@@ -9,7 +9,6 @@ import { PostedScheduleView } from './PostedScheduleView';
 import { 
   SchedulesApi, 
   getCurrentWeekStart, 
-  getCurrentWeekStartForBusiness,
   isWeekInEditableWindow,
   WeeklySchedule, 
   ShiftTemplate, 
@@ -171,7 +170,7 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
     
     // Only allow navigation within the 4-week window
     try {
-      if (selectedBusiness && !(await isWeekInEditableWindow(weekStart, selectedBusiness))) {
+      if (selectedBusiness && !isWeekInEditableWindow(weekStart)) {
         console.warn('Cannot navigate to week outside the 4-week scheduling window');
         return;
       }
@@ -197,11 +196,11 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
           const savedWeek = localStorage.getItem('schedule_current_week');
           if (savedWeek) {
             const selectedBusiness = businesses.find(b => b.business_id === selectedBusinessId);
-            if (selectedBusiness && await isWeekInEditableWindow(savedWeek, selectedBusiness)) {
+            if (selectedBusiness && isWeekInEditableWindow(savedWeek)) {
               setCurrentWeek(savedWeek);
             } else if (selectedBusiness) {
               // If saved week is outside window, use current week
-              const currentWeekForBusiness = await getCurrentWeekStartForBusiness(selectedBusiness);
+              const currentWeekForBusiness = getCurrentWeekStart();
               setCurrentWeek(currentWeekForBusiness);
               localStorage.setItem('schedule_current_week', currentWeekForBusiness);
             }

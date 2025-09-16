@@ -16,7 +16,7 @@ import { Business } from '../../lib/business-api';
 interface WeekNavigatorProps {
   currentWeek: string;
   onWeekChange: (weekStart: string) => void;
-  business?: Business; // For timezone-aware calculations
+  business?: Business; // Optional for display purposes only
 }
 
 export function WeekNavigator({ currentWeek, onWeekChange, business }: WeekNavigatorProps) {
@@ -34,10 +34,10 @@ export function WeekNavigator({ currentWeek, onWeekChange, business }: WeekNavig
         setNavigationState(prev => ({ ...prev, loading: true }));
         
         const previousWeek = getPreviousWeek(currentWeek);
-        const windowStart = await getScheduleWindowStart(business);
+        const windowStart = getScheduleWindowStart();
         const canGoPrevious = previousWeek >= windowStart;
         
-        const canGoNext = await canNavigateToNextWeek(currentWeek, business);
+        const canGoNext = canNavigateToNextWeek(currentWeek);
         const isCurrentWeek = currentWeek === windowStart;
 
         setNavigationState({
@@ -74,7 +74,7 @@ export function WeekNavigator({ currentWeek, onWeekChange, business }: WeekNavig
 
   const handleThisWeek = async () => {
     try {
-      const thisWeek = await getScheduleWindowStart(business);
+      const thisWeek = getScheduleWindowStart();
       onWeekChange(thisWeek);
     } catch (error) {
       console.error('Error getting current week:', error);
@@ -115,7 +115,7 @@ export function WeekNavigator({ currentWeek, onWeekChange, business }: WeekNavig
           <Calendar className="h-5 w-5 text-gray-500" />
           <div className="text-center">
             <h2 className="text-lg font-semibold text-gray-900">
-              Week of {formatWeekRange(currentWeek, business)}
+              Week of {formatWeekRange(currentWeek)}
             </h2>
             {business && (
               <p className="text-xs text-gray-500 mt-1">

@@ -4,10 +4,8 @@ import {
   getNextWeek, 
   getPreviousWeek,
   canNavigateToNextWeek,
-  getCurrentWeekStartForBusiness,
-  hasResolvedTimezone,
-  getTimezoneDisplayInfo
-} from '../../lib/simplified-timezone';
+  getCurrentWeekStart
+} from '../../lib/schedules-api';
 import { Button } from '../ui/Button';
 import { Business } from '../../lib/business-api';
 
@@ -20,12 +18,12 @@ interface WeekNavigatorProps {
 export function WeekNavigatorV2({ currentWeek, onWeekChange, business }: WeekNavigatorProps) {
   const canGoPrevious = () => {
     const previousWeek = getPreviousWeek(currentWeek);
-    const windowStart = getCurrentWeekStartForBusiness(business);
+    const windowStart = getCurrentWeekStart();
     return previousWeek >= windowStart;
   };
 
   const canGoNext = () => {
-    return canNavigateToNextWeek(currentWeek, business);
+    return canNavigateToNextWeek(currentWeek);
   };
 
   const handlePreviousWeek = () => {
@@ -41,15 +39,11 @@ export function WeekNavigatorV2({ currentWeek, onWeekChange, business }: WeekNav
   };
 
   const handleThisWeek = () => {
-    const thisWeek = getCurrentWeekStartForBusiness(business);
+    const thisWeek = getCurrentWeekStart();
     onWeekChange(thisWeek);
   };
 
-  const isCurrentWeek = currentWeek === getCurrentWeekStartForBusiness(business);
-  const timezoneInfo = getTimezoneDisplayInfo(business);
-  
-  // Show warning if timezone is not resolved
-  const showTimezoneWarning = !hasResolvedTimezone(business);
+  const isCurrentWeek = currentWeek === getCurrentWeekStart();
 
   return (
     <div className="bg-white rounded-lg shadow p-4">
@@ -83,15 +77,10 @@ export function WeekNavigatorV2({ currentWeek, onWeekChange, business }: WeekNav
           <Calendar className="h-5 w-5 text-gray-500" />
           <div className="text-center">
             <h2 className="text-lg font-semibold text-gray-900">
-              Week of {formatWeekRange(currentWeek, business)}
+              Week of {formatWeekRange(currentWeek)}
             </h2>
             <div className="flex items-center justify-center space-x-1 text-xs text-gray-500 mt-1">
-              <span>Sun-Sat • {timezoneInfo.abbreviation} Time</span>
-              {showTimezoneWarning && (
-                <div className="flex items-center text-amber-600 ml-1" title="Timezone not resolved - using UTC fallback">
-                  <AlertCircle className="h-3 w-3" />
-                </div>
-              )}
+              <span>Sun-Sat • US Schedule</span>
             </div>
           </div>
         </div>

@@ -1,12 +1,4 @@
 import { supabase } from './supabase';
-import { 
-  getTimezoneFromLocation, 
-  TimezoneInfo, 
-  getBusinessWeekStart, 
-  formatTimeInBusinessTimezone,
-  DEFAULT_TIMEZONE
-} from './timezone-utils';
-import { getWeekStartWithGoogleTimezone } from './google-timezone-api';
 import { Business } from './business-api';
 
 // Types
@@ -328,9 +320,10 @@ export class SchedulesApi {
 export const SCHEDULE_WINDOW_WEEKS = 4;
 
 // Utility functions
+
 /**
- * Get current week start (Sunday) in UTC
- * Fixed to return Sunday-based weeks for US scheduling
+ * Get current week start (Sunday) - BULLETPROOF VERSION
+ * No timezone complexity - simple and reliable
  */
 export function getCurrentWeekStart(): string {
   const now = new Date();
@@ -338,109 +331,67 @@ export function getCurrentWeekStart(): string {
   const daysToSunday = -dayOfWeek; // Always go back to Sunday
   const sunday = new Date(now);
   sunday.setDate(now.getDate() + daysToSunday);
-  sunday.setHours(0, 0, 0, 0); // Start of day
-  return sunday.toISOString().split('T')[0];
-}
-
-/**
- * Get current week start in business timezone
- * Now supports Google Timezone API for better accuracy
- */
-export async function getCurrentWeekStartForBusiness(business: Business): Promise<string> {
-  // Try Google API first (if API key is configured)
-  try {
-    const googleWeekStart = await getWeekStartWithGoogleTimezone(business.location);
-    console.log('Using Google Timezone API result:', googleWeekStart);
-    return googleWeekStart;
-  } catch (error) {
-    console.warn('Google API failed, falling back to hardcoded mapping:', error);
-  }
-
-  // Fallback to hardcoded state mapping
-  const timezoneInfo = getTimezoneFromLocation(business.location);
-  if (!timezoneInfo) {
-    console.warn('No timezone info found, using UTC fallback');
-    return getCurrentWeekStart();
-  }
-  
-  // SIMPLE APPROACH: Get current time in business timezone and find Sunday
-  const now = new Date();
-  const businessTime = new Date(now.toLocaleString('en-US', { timeZone: timezoneInfo.iana }));
-  const dayOfWeek = businessTime.getDay(); // 0=Sunday
-  const daysToSunday = -dayOfWeek; // Go back to Sunday
-  const sunday = new Date(businessTime);
-  sunday.setDate(businessTime.getDate() + daysToSunday);
   sunday.setHours(0, 0, 0, 0);
-  
   return sunday.toISOString().split('T')[0];
 }
 
 /**
- * Get the start of the scheduling window (current Sunday)
+ * Get the start of the scheduling window (current Sunday) - BULLETPROOF VERSION
+ * No timezone complexity - always returns current Sunday
  */
-export async function getScheduleWindowStart(business?: Business): Promise<string> {
-  if (business) {
-    return await getCurrentWeekStartForBusiness(business);
-  }
+export function getScheduleWindowStart(): string {
   return getCurrentWeekStart();
 }
 
 /**
- * Get the end of the scheduling window (4 weeks from current Sunday)
+ * Get the end of the scheduling window (4 weeks from current Sunday) - BULLETPROOF VERSION
  */
-export async function getScheduleWindowEnd(business?: Business): Promise<string> {
-  const startDate = await getScheduleWindowStart(business);
+export function getScheduleWindowEnd(): string {
+  const startDate = getScheduleWindowStart();
   const start = new Date(startDate);
   start.setDate(start.getDate() + (SCHEDULE_WINDOW_WEEKS * 7));
   return start.toISOString().split('T')[0];
 }
 
 /**
- * Check if a week is within the editable 4-week window
+ * Check if a week is within the editable 4-week window - BULLETPROOF VERSION
  */
-export async function isWeekInEditableWindow(weekStart: string, business?: Business): Promise<boolean> {
-  const windowStart = await getScheduleWindowStart(business);
-  const windowEnd = await getScheduleWindowEnd(business);
+export function isWeekInEditableWindow(weekStart: string): boolean {
+  const windowStart = getScheduleWindowStart();
+  const windowEnd = getScheduleWindowEnd();
   return weekStart >= windowStart && weekStart < windowEnd;
 }
 
 /**
- * Check if a week is in the past
+ * Check if a week is in the past - BULLETPROOF VERSION
  */
-export async function isWeekInPast(weekStart: string, business?: Business): Promise<boolean> {
-  const windowStart = await getScheduleWindowStart(business);
+export function isWeekInPast(weekStart: string): boolean {
+  const windowStart = getScheduleWindowStart();
   return weekStart < windowStart;
 }
 
 /**
- * Check if it's safe to navigate to next week (within window)
+ * Check if it's safe to navigate to next week (within window) - BULLETPROOF VERSION
  */
-export async function canNavigateToNextWeek(currentWeek: string, business?: Business): Promise<boolean> {
+export function canNavigateToNextWeek(currentWeek: string): boolean {
   const nextWeek = getNextWeek(currentWeek);
-  const windowEnd = await getScheduleWindowEnd(business);
+  const windowEnd = getScheduleWindowEnd();
   return nextWeek < windowEnd;
 }
 
 /**
- * Format week range for display (Sunday to Saturday)
+ * Format week range for display (Sunday to Saturday) - BULLETPROOF VERSION
+ * No timezone complexity - what you see is what you get
  */
-export function formatWeekRange(weekStart: string, business?: Business): string {
+export function formatWeekRange(weekStart: string): string {
   const start = new Date(weekStart);
   const end = new Date(start);
   end.setDate(start.getDate() + 6); // Sunday + 6 = Saturday
   
-  let options: Intl.DateTimeFormatOptions = { 
+  const options: Intl.DateTimeFormatOptions = { 
     month: 'short', 
     day: 'numeric' 
   };
-  
-  // If business has timezone info, format in that timezone
-  if (business) {
-    const timezoneInfo = getTimezoneFromLocation(business.location);
-    if (timezoneInfo) {
-      options = { ...options, timeZone: timezoneInfo.iana };
-    }
-  }
   
   const startStr = start.toLocaleDateString('en-US', options);
   const endStr = end.toLocaleDateString('en-US', options);
@@ -450,34 +401,16 @@ export function formatWeekRange(weekStart: string, business?: Business): string 
 }
 
 /**
- * Format time for display - now supports both AM/PM labels and legacy TIME format
- * Prioritizes AM/PM labels when available for better user experience
+ * Format time for display - BULLETPROOF VERSION
+ * Prioritizes AM/PM labels, converts legacy TIME format without timezone complexity
  */
-export function formatTime(
-  timeString: string | { start_label?: string; end_label?: string; start_time?: string; end_time?: string },
-  business?: Business, 
-  format: 'short' | 'long' = 'short'
-): string {
-  // If we receive an object with labels, use the AM/PM format directly
-  if (typeof timeString === 'object') {
-    // This shouldn't be called with an object, but handle gracefully
-    return 'Invalid time format';
-  }
-
+export function formatTime(timeString: string): string {
   // Check if this looks like an AM/PM format already (contains AM/PM)
   if (timeString.match(/\s?(AM|PM)$/i)) {
     return timeString; // Already in AM/PM format, return as-is
   }
-
-  // Legacy TIME format conversion
-  if (business) {
-    const timezoneInfo = getTimezoneFromLocation(business.location);
-    if (timezoneInfo) {
-      return formatTimeInBusinessTimezone(timeString, timezoneInfo, format);
-    }
-  }
   
-  // Fallback: Convert TIME format to AM/PM
+  // Convert legacy TIME format (HH:MM:SS or HH:MM) to AM/PM
   const [hours, minutes] = timeString.split(':');
   const hour = parseInt(hours);
   const ampm = hour >= 12 ? 'PM' : 'AM';

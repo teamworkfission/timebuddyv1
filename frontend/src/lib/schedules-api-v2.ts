@@ -1,7 +1,7 @@
 import { supabase } from './supabase';
 import { Business } from './business-api';
 import {
-  getCurrentWeekStartForBusiness,
+  getCurrentWeekStart,
   getScheduleWindowEnd,
   isWeekInEditableWindow,
   isWeekInPast,
@@ -9,9 +9,8 @@ import {
   formatWeekRange,
   formatTime,
   getNextWeek,
-  getPreviousWeek,
-  getCurrentWeekStartInTimezone
-} from './simplified-timezone';
+  getPreviousWeek
+} from './schedules-api';
 
 // Re-export types from existing schedules API
 export interface ShiftTemplate {
@@ -290,9 +289,9 @@ export class SchedulesApi {
 // Schedule window configuration
 export const SCHEDULE_WINDOW_WEEKS = 4;
 
-// Export simplified timezone functions
+// Export bulletproof functions
 export {
-  getCurrentWeekStartForBusiness,
+  getCurrentWeekStart,
   getScheduleWindowEnd,
   isWeekInEditableWindow,
   isWeekInPast,
