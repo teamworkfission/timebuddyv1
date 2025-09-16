@@ -19,6 +19,7 @@ interface ShiftAssignmentModalProps {
   employeeName: string;
   dayName: string;
   dayOfWeek: number;
+  weekStartDate: string;
   existingShifts: Shift[];
   shiftTemplates: ShiftTemplate[];
   onAssignShift: (shift: CreateShiftDto) => void;
@@ -33,6 +34,7 @@ export function ShiftAssignmentModal({
   employeeName,
   dayName,
   dayOfWeek,
+  weekStartDate,
   existingShifts,
   shiftTemplates,
   onAssignShift,
@@ -45,6 +47,42 @@ export function ShiftAssignmentModal({
   const [notes, setNotes] = useState('');
   const [editingShift, setEditingShift] = useState<Shift | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Check if this day is in the past
+  const isShiftDayInPast = (): boolean => {
+    // Calculate the actual date of this shift
+    const weekStart = new Date(weekStartDate + 'T00:00:00');
+    const shiftDate = new Date(weekStart);
+    shiftDate.setDate(weekStart.getDate() + dayOfWeek);
+    
+    // Get current date (local time, no timezone complexity)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to start of day for comparison
+    
+    return shiftDate < today;
+  };
+
+  const validateNotPastDay = (): boolean => {
+    if (isShiftDayInPast()) {
+      const weekStart = new Date(weekStartDate + 'T00:00:00');
+      const shiftDate = new Date(weekStart);
+      shiftDate.setDate(weekStart.getDate() + dayOfWeek);
+      const shiftDateString = shiftDate.toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+      });
+      
+      setError(
+        `Cannot schedule shifts for past days. ` +
+        `${dayName} (${shiftDateString}) has already passed. ` +
+        `Please select a current or future date.`
+      );
+      return false;
+    }
+    return true;
+  };
 
   // Reset form when modal opens
   useEffect(() => {
@@ -69,6 +107,11 @@ export function ShiftAssignmentModal({
   };
 
   const handleAssignTemplate = () => {
+    // PAST DAY VALIDATION: Prevent scheduling shifts for past days
+    if (!validateNotPastDay()) {
+      return;
+    }
+    
     const template = shiftTemplates.find(t => t.id === selectedTemplate);
     if (!template) {
       setError('Please select a shift template');
@@ -91,6 +134,11 @@ export function ShiftAssignmentModal({
   };
 
   const handleAssignCustom = () => {
+    // PAST DAY VALIDATION: Prevent scheduling shifts for past days
+    if (!validateNotPastDay()) {
+      return;
+    }
+    
     if (!customTime.start || !customTime.end) {
       setError('Please enter both start and end times');
       return;

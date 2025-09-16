@@ -36,7 +36,7 @@ const DAYS = [
 ];
 
 export function WeeklyScheduleView({
-  businessId,
+  businessId: _businessId,
   weekStartDate,
   employees,
   shifts,
@@ -199,6 +199,7 @@ export function WeeklyScheduleView({
           employeeName={selectedCell.employeeName}
           dayName={selectedCell.dayName}
           dayOfWeek={selectedCell.dayOfWeek}
+          weekStartDate={weekStartDate}
           existingShifts={getShiftsForCell(selectedCell.employeeId, selectedCell.dayOfWeek)}
           shiftTemplates={shiftTemplates}
           onAssignShift={handleShiftAssign}

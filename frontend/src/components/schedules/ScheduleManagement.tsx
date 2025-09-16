@@ -70,29 +70,70 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
       const weekDate = new Date(currentWeek + 'T00:00:00');
       console.log('Week start date day of week:', weekDate.getDay(), '(0=Sun, 6=Sat)');
       
-      // Load schedule based on active tab and templates in parallel
-      // Edit tab shows draft schedules, Posted tab shows posted schedules
+      // Load schedule based on active tab and templates with improved error handling
       const targetStatus = activeTab === 'edit' ? 'draft' : 'posted';
+      let schedule: WeeklySchedule | null = null;
+      let templates: ShiftTemplate[] = [];
       
-      const [schedule, templates] = await Promise.all([
-        SchedulesApi.getWeeklyScheduleByStatus(selectedBusinessId, currentWeek, targetStatus),
-        SchedulesApi.getShiftTemplates(selectedBusinessId)
-      ]);
-
-      console.log(`Loaded ${targetStatus} schedule:`, schedule ? 'Found' : 'Not found');
+      try {
+        // Load templates first - they're needed regardless
+        templates = await SchedulesApi.getShiftTemplates(selectedBusinessId);
+      } catch (templatesError) {
+        console.warn('Failed to load templates, will try to create defaults:', templatesError);
+        // Templates will be handled after schedule loading
+      }
+      
+      try {
+        // Load the primary schedule for the target status
+        console.log(`📅 API Request: business=${selectedBusinessId}, week=${currentWeek}, status=${targetStatus}`);
+        schedule = await SchedulesApi.getWeeklyScheduleByStatus(selectedBusinessId, currentWeek, targetStatus);
+        console.log(`✅ Loaded ${targetStatus} schedule for week ${currentWeek}:`, schedule ? 'Found' : 'Not found');
+        if (schedule) {
+          console.log(`📊 Schedule details:`, {
+            id: schedule.id,
+            week_start_date: schedule.week_start_date,
+            status: schedule.status,
+            shift_count: schedule.shifts.length
+          });
+        }
+      } catch (scheduleError) {
+        console.warn(`Failed to load ${targetStatus} schedule:`, scheduleError);
+        
+        // For certain errors (like JSON parsing), try the fallback approach
+        const errorMessage = scheduleError instanceof Error ? scheduleError.message : String(scheduleError);
+        if (errorMessage.includes('JSON') || errorMessage.includes('SyntaxError')) {
+          console.log('JSON parsing error detected, attempting fallback approach');
+          
+          // Try the general schedule endpoint as fallback
+          try {
+            const fallbackSchedule = await SchedulesApi.getWeeklySchedule(selectedBusinessId, currentWeek);
+            if (fallbackSchedule && fallbackSchedule.status === targetStatus) {
+              schedule = fallbackSchedule;
+              console.log('Successfully loaded schedule using fallback method');
+            }
+          } catch (fallbackError) {
+            console.warn('Fallback method also failed:', fallbackError);
+          }
+        }
+      }
       
       // Handle special case: User is on Edit tab but only posted schedule exists
       if (!schedule && activeTab === 'edit') {
-        // Check if there's a posted schedule that needs to be converted to draft
-        const postedSchedule = await SchedulesApi.getWeeklyScheduleByStatus(selectedBusinessId, currentWeek, 'posted');
-        if (postedSchedule) {
-          console.log('Found posted schedule, user may want to unpost for editing');
-          setWeeklySchedule(postedSchedule);
-        } else {
-          // No schedule at all - user can create new draft
+        try {
+          const postedSchedule = await SchedulesApi.getWeeklyScheduleByStatus(selectedBusinessId, currentWeek, 'posted');
+          if (postedSchedule) {
+            console.log('Found posted schedule, user may want to unpost for editing');
+            setWeeklySchedule(postedSchedule);
+          } else {
+            // No schedule at all - user can create new draft
+            setWeeklySchedule(null);
+          }
+        } catch (postedError) {
+          console.warn('Failed to check for posted schedule:', postedError);
           setWeeklySchedule(null);
         }
       } else {
+        console.log(`🎯 Setting weekly schedule for week ${currentWeek}:`, schedule ? `Schedule ID: ${schedule.id}` : 'null');
         setWeeklySchedule(schedule);
       }
       
@@ -100,12 +141,28 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
 
       // If no templates exist, create defaults
       if (templates.length === 0) {
-        const defaultTemplates = await SchedulesApi.createDefaultShiftTemplates(selectedBusinessId);
-        setShiftTemplates(defaultTemplates);
+        try {
+          const defaultTemplates = await SchedulesApi.createDefaultShiftTemplates(selectedBusinessId);
+          setShiftTemplates(defaultTemplates);
+        } catch (defaultError) {
+          console.warn('Failed to create default templates:', defaultError);
+          // Continue without templates - user can create them manually
+        }
       }
+      
+      // Clear any previous errors on successful load
+      setError(null);
+      
     } catch (err) {
-      setError('Failed to load schedule data');
+      // This catch block handles truly unexpected errors
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
       console.error('Error loading schedule data:', err);
+      
+      if (errorMessage.includes('JSON') || errorMessage.includes('SyntaxError')) {
+        setError('Failed to load schedule data due to server communication issue. Please refresh the page.');
+      } else {
+        setError('Failed to load schedule data. Please try refreshing the page or contact support if the issue persists.');
+      }
     } finally {
       setLoading(false);
     }
@@ -186,6 +243,7 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
   };
 
   const handleWeekChange = async (weekStart: string) => {
+    console.log(`🗓️ Week change requested: ${currentWeek} → ${weekStart}`);
     const selectedBusiness = businesses.find(b => b.business_id === selectedBusinessId);
     
     // Only allow navigation within the 4-week window
@@ -198,6 +256,13 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
       console.error('Error checking week editability:', error);
       return;
     }
+    
+    console.log(`🔄 Changing current week state to: ${weekStart}`);
+    
+    // Clear previous schedule data when changing weeks to prevent duplication
+    console.log('🧹 Clearing previous schedule data to prevent persistence');
+    setWeeklySchedule(null);
+    setError(null);
     
     setCurrentWeek(weekStart);
     // Save current week to localStorage for session memory (with error handling)

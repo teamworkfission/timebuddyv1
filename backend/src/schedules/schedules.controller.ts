@@ -9,6 +9,7 @@ import {
   Query,
   UseGuards,
   Request,
+  BadRequestException,
 } from '@nestjs/common';
 import { SchedulesService } from './schedules.service';
 import { ShiftTemplatesService } from './shift-templates.service';
@@ -85,7 +86,7 @@ export class SchedulesController {
   ) {
     // Validate status parameter
     if (!['draft', 'posted'].includes(status)) {
-      throw new Error('Status must be either "draft" or "posted"');
+      throw new BadRequestException('Status must be either "draft" or "posted"');
     }
     
     return this.schedulesService.getWeeklyScheduleByStatus(

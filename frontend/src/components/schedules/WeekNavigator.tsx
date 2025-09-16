@@ -3,12 +3,9 @@ import { ChevronLeft, ChevronRight, Calendar, AlertCircle } from 'lucide-react';
 import { 
   formatWeekRange, 
   getNextWeek, 
-  getPreviousWeek, 
-  getCurrentWeekStart,
+  getPreviousWeek,
   canNavigateToNextWeek,
-  isWeekInPast,
-  getScheduleWindowStart,
-  getScheduleWindowEnd 
+  getScheduleWindowStart
 } from '../../lib/schedules-api';
 import { Button } from '../ui/Button';
 import { Business } from '../../lib/business-api';

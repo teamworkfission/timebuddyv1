@@ -218,6 +218,9 @@ export class SchedulesService {
   async createShift(scheduleId: string, createDto: CreateShiftDto): Promise<Shift> {
     const supabase = this.supabaseService.admin;
     
+    // PAST DAY VALIDATION: Prevent scheduling shifts in the past
+    await this.validateShiftNotInPast(scheduleId, createDto.day_of_week);
+    
     let startLabel: string;
     let endLabel: string;
     let startMin: number;
@@ -313,6 +316,22 @@ export class SchedulesService {
 
   async updateShift(shiftId: string, updateDto: UpdateShiftDto): Promise<Shift> {
     const supabase = this.supabaseService.admin;
+    
+    // PAST DAY VALIDATION: If changing day_of_week, ensure it's not in the past
+    if (updateDto.day_of_week !== undefined) {
+      // Get the schedule_id for this shift
+      const { data: shiftData, error: shiftError } = await supabase
+        .from('shifts')
+        .select('schedule_id')
+        .eq('id', shiftId)
+        .single();
+        
+      if (shiftError || !shiftData) {
+        throw new NotFoundException(`Shift with ID ${shiftId} not found`);
+      }
+      
+      await this.validateShiftNotInPast(shiftData.schedule_id, updateDto.day_of_week);
+    }
     
     // Normalize time formats if provided
     const normalizedDto = { ...updateDto };
@@ -546,11 +565,58 @@ export class SchedulesService {
       // Duplicate found - create helpful error message
       const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
       const dayName = dayNames[dayOfWeek];
-      const templateName = existingShift.shift_templates?.name || 'Unknown';
+      // Handle the nested shift_templates object safely
+      const templateName = (existingShift as any).shift_templates?.name || 'Unknown';
       
       throw new BadRequestException(
         `Duplicate shift detected: Employee already has a ${templateName} shift (${startLabel} - ${endLabel}) on ${dayName}. ` +
         `Please choose different times or remove the existing shift first.`
+      );
+    }
+  }
+
+  /**
+   * Validate that a shift is not being scheduled for a past day
+   * Prevents users from creating shifts for days that have already passed
+   */
+  private async validateShiftNotInPast(scheduleId: string, dayOfWeek: number): Promise<void> {
+    const supabase = this.supabaseService.admin;
+    
+    // Get the weekly schedule to find the week_start_date
+    const { data: schedule, error: scheduleError } = await supabase
+      .from('weekly_schedules')
+      .select('week_start_date')
+      .eq('id', scheduleId)
+      .single();
+    
+    if (scheduleError || !schedule) {
+      throw new NotFoundException('Weekly schedule not found');
+    }
+    
+    // Calculate the actual date of this shift
+    const weekStartDate = new Date(schedule.week_start_date + 'T00:00:00');
+    const shiftDate = new Date(weekStartDate);
+    shiftDate.setDate(weekStartDate.getDate() + dayOfWeek);
+    
+    // Get current date (local time, no timezone complexity)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to start of day for comparison
+    
+    // Check if shift date is in the past
+    if (shiftDate < today) {
+      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const dayName = dayNames[dayOfWeek];
+      const shiftDateString = shiftDate.toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+      });
+      
+      throw new BadRequestException(
+        `Cannot schedule shifts for past days. ` +
+        `${dayName} (${shiftDateString}) has already passed. ` +
+        `Please select a current or future date.`
       );
     }
   }
