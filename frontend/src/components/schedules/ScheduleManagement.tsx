@@ -15,7 +15,7 @@ import {
   CreateShiftDto, 
   UpdateShiftDto 
 } from '../../lib/schedules-api';
-import { BusinessesApi, Business } from '../../lib/business-api';
+import { BusinessesApi, Business, BusinessEmployee } from '../../lib/business-api';
 import { Button } from '../ui/Button';
 
 interface ScheduleManagementProps {
@@ -33,6 +33,28 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
   const [error, setError] = useState<string | null>(null);
   const [showTemplateManager, setShowTemplateManager] = useState(false);
   const [hasPostedVersion, setHasPostedVersion] = useState(false);
+
+  // Helper function to convert BusinessEmployee to ScheduleEmployee format
+  const convertToScheduleEmployees = (businessEmployees: BusinessEmployee[]) => {
+    return businessEmployees.map(emp => ({
+      id: emp.employee.id,
+      full_name: emp.employee.full_name,
+      employee_gid: emp.employee.employee_gid,
+    }));
+  };
+
+  // Helper function to create empty schedule structure for current/future weeks
+  const createEmptySchedule = (businessId: string, weekStart: string, employees: BusinessEmployee[]): WeeklySchedule => {
+    return {
+      id: '', // No actual schedule exists yet
+      business_id: businessId,
+      week_start_date: weekStart,
+      status: 'draft' as const,
+      shifts: [],
+      employees: convertToScheduleEmployees(employees),
+      total_hours_by_employee: {},
+    };
+  };
 
   // Load businesses on mount
   useEffect(() => {
@@ -129,16 +151,58 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
             setWeeklySchedule({ ...postedSchedule, __isPostedReference: true } as any);
             setHasPostedVersion(false); // Will be "Post Schedule" after they unpost to edit
           } else {
-            // No schedule at all - user can create new draft
-            console.log('No schedule found - user can create new draft');
-            setWeeklySchedule(null);
-            setHasPostedVersion(false);
+            // No schedule at all - check if this week is editable
+            if (isWeekInEditableWindow(currentWeek)) {
+              console.log('No schedule found for editable week - creating empty schedule view');
+              try {
+                // Fetch employees for empty schedule
+                const businessEmployees = await BusinessesApi.getBusinessEmployees(selectedBusinessId);
+                const emptySchedule = createEmptySchedule(selectedBusinessId, currentWeek, businessEmployees);
+                setWeeklySchedule(emptySchedule);
+                console.log('Created empty schedule with', businessEmployees.length, 'employees');
+              } catch (employeeError) {
+                console.warn('Failed to load employees for empty schedule:', employeeError);
+                // Create completely empty schedule if employees fail to load
+                const emptySchedule = createEmptySchedule(selectedBusinessId, currentWeek, []);
+                setWeeklySchedule(emptySchedule);
+              }
+              setHasPostedVersion(false);
+            } else {
+              // Week is not editable (past) - show error
+              console.log('No schedule found for non-editable week');
+              setWeeklySchedule(null);
+              setHasPostedVersion(false);
+            }
           }
         } catch (postedError) {
           console.warn('Failed to check for posted schedule:', postedError);
-          setWeeklySchedule(null);
+          // Still try to create empty schedule if week is editable
+          if (isWeekInEditableWindow(currentWeek)) {
+            try {
+              const businessEmployees = await BusinessesApi.getBusinessEmployees(selectedBusinessId);
+              const emptySchedule = createEmptySchedule(selectedBusinessId, currentWeek, businessEmployees);
+              setWeeklySchedule(emptySchedule);
+              console.log('Created empty schedule after posted check failed');
+            } catch (employeeError) {
+              console.warn('Failed to load employees after posted check failed:', employeeError);
+              setWeeklySchedule(null);
+            }
+          } else {
+            setWeeklySchedule(null);
+          }
           setHasPostedVersion(false);
         }
+      } else if (!schedule && activeTab === 'posted') {
+        // No posted schedule - check if week is editable for better UX
+        if (isWeekInEditableWindow(currentWeek)) {
+          console.log('No posted schedule found for editable week');
+          // For posted tab with no schedule, we still show null (user should switch to edit tab)
+          setWeeklySchedule(null);
+        } else {
+          console.log('No posted schedule found for non-editable week');
+          setWeeklySchedule(null);
+        }
+        setHasPostedVersion(false);
       } else {
         console.log(`🎯 Setting weekly schedule for week ${currentWeek}:`, schedule ? `Schedule ID: ${schedule.id}` : 'null');
         setWeeklySchedule(schedule);
@@ -179,10 +243,10 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
   const handleShiftCreate = async (shift: CreateShiftDto) => {
     let targetSchedule = weeklySchedule;
 
-    // If no schedule exists, create a new one
-    if (!weeklySchedule) {
+    // If no schedule exists or if it's an empty schedule placeholder, create a new one
+    if (!weeklySchedule || !weeklySchedule.id) {
       try {
-        console.log('No schedule exists, creating new draft schedule...');
+        console.log('No real schedule exists, creating new draft schedule...');
         targetSchedule = await SchedulesApi.createWeeklySchedule(selectedBusinessId, currentWeek);
         setWeeklySchedule(targetSchedule);
         console.log('Successfully created new draft schedule:', targetSchedule.id);
@@ -212,7 +276,7 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
   };
 
   const handleShiftUpdate = async (shiftId: string, shift: UpdateShiftDto) => {
-    if (!weeklySchedule) return;
+    if (!weeklySchedule || !weeklySchedule.id) return; // Cannot update shifts in empty schedule
 
     let targetSchedule = weeklySchedule;
 
@@ -236,7 +300,7 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
   };
 
   const handleShiftDelete = async (shiftId: string) => {
-    if (!weeklySchedule) return;
+    if (!weeklySchedule || !weeklySchedule.id) return; // Cannot delete shifts in empty schedule
 
     let targetSchedule = weeklySchedule;
 
@@ -480,6 +544,36 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
             ) : !selectedBusinessId ? (
               <div className="bg-white rounded-lg shadow p-8 text-center">
                 <p className="text-gray-600">Select a business to view schedules</p>
+              </div>
+            ) : activeTab === 'posted' ? (
+              <div className="bg-white rounded-lg shadow p-8 text-center">
+                <div className="max-w-md mx-auto">
+                  <div className="text-gray-400 mb-4">
+                    <span className="text-6xl">📅</span>
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Posted Schedule</h3>
+                  <p className="text-gray-600 mb-4">
+                    No schedule has been posted for this week yet. Switch to the Edit Schedule tab to create one.
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setActiveTab('edit')}
+                  >
+                    Create Schedule
+                  </Button>
+                </div>
+              </div>
+            ) : !isWeekInEditableWindow(currentWeek) ? (
+              <div className="bg-white rounded-lg shadow p-8 text-center">
+                <div className="max-w-md mx-auto">
+                  <div className="text-amber-400 mb-4">
+                    <span className="text-6xl">🔒</span>
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Week Not Editable</h3>
+                  <p className="text-gray-600">
+                    This week is outside the current 4-week scheduling window and cannot be edited.
+                  </p>
+                </div>
               </div>
             ) : (
               <div className="bg-white rounded-lg shadow p-8 text-center">

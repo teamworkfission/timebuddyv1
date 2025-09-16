@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { SchedulesService } from './schedules.service';
 import { ShiftTemplatesService } from './shift-templates.service';
+import { AuthService } from '../auth/auth.service';
 import { CreateScheduleDto } from './dto/create-schedule.dto';
 import { UpdateScheduleDto } from './dto/update-schedule.dto';
 import { CreateShiftDto } from './dto/create-shift.dto';
@@ -25,7 +26,20 @@ export class SchedulesController {
   constructor(
     private readonly schedulesService: SchedulesService,
     private readonly shiftTemplatesService: ShiftTemplatesService,
+    private readonly authService: AuthService,
   ) {}
+
+  private async getUserIdFromRequest(request: any): Promise<string> {
+    const authHeader = request.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      throw new Error('Missing or invalid authorization header');
+    }
+
+    const token = authHeader.substring(7);
+    const { id: userId } = await this.authService.verifyToken(token);
+    
+    return userId;
+  }
 
   // Shift Templates Endpoints
   @Get('businesses/:businessId/shift-templates')
@@ -67,10 +81,11 @@ export class SchedulesController {
     @Param('weekStart') weekStart: string,
     @Request() req: any,
   ) {
+    const userId = await this.getUserIdFromRequest(req);
     return this.schedulesService.getOrCreateWeeklySchedule(
       businessId,
       weekStart,
-      req.user?.id,
+      userId,
     );
   }
 
@@ -102,11 +117,12 @@ export class SchedulesController {
     @Param('weekStart') weekStart: string,
     @Request() req: any,
   ) {
+    const userId = await this.getUserIdFromRequest(req);
     const createDto: CreateScheduleDto = {
       business_id: businessId,
       week_start_date: weekStart,
     };
-    return this.schedulesService.createWeeklySchedule(createDto, req.user?.id);
+    return this.schedulesService.createWeeklySchedule(createDto, userId);
   }
 
   @Put('schedules/:scheduleId/post')
