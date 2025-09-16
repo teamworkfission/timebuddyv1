@@ -9,7 +9,9 @@ import {
   HttpStatus,
   HttpCode,
   NotFoundException,
-  BadRequestException
+  BadRequestException,
+  Inject,
+  forwardRef
 } from '@nestjs/common';
 import { EmployeesService, Employee } from './employees.service';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
@@ -20,6 +22,7 @@ import { AuthService } from '../auth/auth.service';
 export class EmployeesController {
   constructor(
     private readonly employeesService: EmployeesService,
+    @Inject(forwardRef(() => AuthService))
     private readonly authService: AuthService
   ) {}
 
