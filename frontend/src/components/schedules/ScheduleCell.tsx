@@ -32,28 +32,25 @@ export function ScheduleCell({
   const [isEditable, setIsEditable] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   
-  const totalHours = shifts.reduce((sum, shift) => sum + shift.duration_hours, 0);
+  // Calculate total hours for potential future use (currently not displayed)
+  // const totalHours = shifts.reduce((sum, shift) => sum + shift.duration_hours, 0);
   
   // Check if this week is editable (within 4-week window)
   useEffect(() => {
-    const checkEditability = async () => {
-      setIsLoading(true);
-      try {
-        if (mode === 'edit' && business) {
-          const editable = await isWeekInEditableWindow(weekStartDate, business);
-          setIsEditable(editable);
-        } else {
-          setIsEditable(false);
-        }
-      } catch (error) {
-        console.error('Error checking week editability:', error);
+    setIsLoading(true);
+    try {
+      if (mode === 'edit' && business) {
+        const editable = isWeekInEditableWindow(weekStartDate);
+        setIsEditable(editable);
+      } else {
         setIsEditable(false);
-      } finally {
-        setIsLoading(false);
       }
-    };
-
-    checkEditability();
+    } catch (error) {
+      console.error('Error checking week editability:', error);
+      setIsEditable(false);
+    } finally {
+      setIsLoading(false);
+    }
   }, [mode, business, weekStartDate]);
 
   const getShiftTemplate = (templateId?: string) => {
@@ -61,10 +58,10 @@ export function ScheduleCell({
   };
 
   return (
-    <div 
-      className={`min-h-[80px] w-full border border-gray-200 rounded-md p-2 transition-colors ${
+    <button 
+      className={`w-full rounded-xl border border-gray-200 bg-white p-2 text-left min-h-[88px] transition-colors ${
         isEditable && !isLoading
-          ? 'cursor-pointer hover:bg-blue-50 hover:border-blue-300' 
+          ? 'cursor-pointer hover:border-gray-300' 
           : mode === 'edit' && (!isEditable || isLoading)
           ? 'cursor-not-allowed bg-gray-50 border-gray-300'
           : 'cursor-default'
@@ -75,24 +72,20 @@ export function ScheduleCell({
     >
       {shifts.length === 0 ? (
         // Empty cell
-        <div className="h-full flex items-center justify-center">
+        <div className="flex h-16 items-center justify-center text-gray-400">
           {isLoading && mode === 'edit' ? (
-            <div className="text-gray-300" title="Loading...">
-              <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-transparent rounded-full"></div>
-            </div>
+            <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-transparent rounded-full"></div>
           ) : isEditable ? (
-            <div className="text-gray-400 hover:text-blue-500 transition-colors">
-              <Plus className="h-5 w-5" />
-            </div>
+            <Plus className="h-5 w-5 transition-colors hover:text-blue-500" />
           ) : mode === 'edit' && !isEditable ? (
-            <div className="text-gray-300" title="Outside scheduling window">
-              <Lock className="h-4 w-4" />
-            </div>
-          ) : null}
+            <Lock className="h-4 w-4 text-gray-300" />
+          ) : (
+            <Plus className="h-5 w-5" />
+          )}
         </div>
       ) : (
         // Shifts display
-        <div className="space-y-1">
+        <div className="space-y-2">
           {shifts.map((shift) => {
             const template = getShiftTemplate(shift.shift_template_id);
             return (
@@ -104,15 +97,8 @@ export function ScheduleCell({
               />
             );
           })}
-          
-          {/* Total hours for the day */}
-          {totalHours > 0 && (
-            <div className="text-xs text-gray-500 mt-2 pt-1 border-t border-gray-100">
-              {totalHours.toFixed(1)}h total
-            </div>
-          )}
         </div>
       )}
-    </div>
+    </button>
   );
 }

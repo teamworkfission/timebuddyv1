@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { ScheduleCell } from './ScheduleCell';
 import { ShiftAssignmentModal } from './ShiftAssignmentModal';
@@ -104,60 +104,53 @@ export function WeeklyScheduleView({
       {/* Desktop/Tablet View */}
       <div className="hidden md:block">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="sticky left-0 z-10 bg-gray-50 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
-                  Employee
-                </th>
-                {DAYS.map((day) => (
-                  <th
-                    key={day.key}
-                    className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]"
-                  >
-                    <div>
-                      <div className="font-semibold">{day.label}</div>
-                      <div className="text-xs text-gray-400 mt-1">
-                        {new Date(new Date(weekStartDate + 'T00:00:00').getTime() + day.key * 24 * 60 * 60 * 1000).getDate()}
-                      </div>
-                    </div>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {employees.map((employee) => (
-                <tr key={employee.id} className="hover:bg-gray-50">
-                  <td className="sticky left-0 z-10 bg-white px-6 py-4 whitespace-nowrap border-r border-gray-200">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">
-                        {employee.full_name}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        ID: {employee.employee_gid}
-                      </div>
-                    </div>
-                  </td>
-                  {DAYS.map((day) => (
-                    <td key={day.key} className="px-3 py-4 relative">
-                      <ScheduleCell
-                        employeeId={employee.id}
-                        employeeName={employee.full_name}
-                        dayOfWeek={day.key}
-                        dayLabel={day.fullLabel}
-                        shifts={getShiftsForCell(employee.id, day.key)}
-                        shiftTemplates={shiftTemplates}
-                        mode={mode}
-                        business={business}
-                        weekStartDate={weekStartDate}
-                        onCellClick={() => handleCellClick(employee.id, employee.full_name, day.key, day.fullLabel)}
-                      />
-                    </td>
-                  ))}
-                </tr>
+          {/* Header */}
+          <div className="grid grid-cols-[180px_repeat(7,minmax(120px,1fr))] gap-2 px-3 py-3 bg-gray-50 border-b border-gray-200">
+            <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+              Employee
+            </div>
+            {DAYS.map((day) => (
+              <div key={day.key} className="text-xs font-medium text-gray-500 uppercase tracking-wide text-center">
+                <div className="font-semibold">{day.label}</div>
+                <div className="text-gray-400 mt-1">
+                  {new Date(new Date(weekStartDate + 'T00:00:00').getTime() + day.key * 24 * 60 * 60 * 1000).getDate()}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Rows */}
+          {employees.map((employee) => (
+            <div key={employee.id} className="grid grid-cols-[180px_repeat(7,minmax(120px,1fr))] gap-2 px-3 py-3 items-start border-b border-gray-200 hover:bg-gray-50">
+              {/* Employee cell */}
+              <div className="pr-3">
+                <div className="font-medium text-gray-900 line-clamp-2 leading-snug">
+                  {employee.full_name}
+                </div>
+                <div className="text-xs text-gray-400">
+                  ID: {employee.employee_gid}
+                </div>
+              </div>
+
+              {/* 7 day cells */}
+              {DAYS.map((day) => (
+                <div key={day.key} className="min-h-[88px]">
+                  <ScheduleCell
+                    employeeId={employee.id}
+                    employeeName={employee.full_name}
+                    dayOfWeek={day.key}
+                    dayLabel={day.fullLabel}
+                    shifts={getShiftsForCell(employee.id, day.key)}
+                    shiftTemplates={shiftTemplates}
+                    mode={mode}
+                    business={business}
+                    weekStartDate={weekStartDate}
+                    onCellClick={() => handleCellClick(employee.id, employee.full_name, day.key, day.fullLabel)}
+                  />
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -185,6 +178,8 @@ export function WeeklyScheduleView({
                       shifts={getShiftsForCell(employee.id, day.key)}
                       shiftTemplates={shiftTemplates}
                       mode={mode}
+                      business={business}
+                      weekStartDate={weekStartDate}
                       onCellClick={() => handleCellClick(employee.id, employee.full_name, day.key, day.fullLabel)}
                     />
                   </div>
