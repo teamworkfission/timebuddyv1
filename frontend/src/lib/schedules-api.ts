@@ -348,7 +348,7 @@ export function getScheduleWindowStart(): string {
  */
 export function getScheduleWindowEnd(): string {
   const startDate = getScheduleWindowStart();
-  const start = new Date(startDate);
+  const start = new Date(startDate + 'T00:00:00');
   start.setDate(start.getDate() + (SCHEDULE_WINDOW_WEEKS * 7));
   return start.toISOString().split('T')[0];
 }
@@ -382,9 +382,11 @@ export function canNavigateToNextWeek(currentWeek: string): boolean {
 /**
  * Format week range for display (Sunday to Saturday) - BULLETPROOF VERSION
  * No timezone complexity - what you see is what you get
+ * Fixed: Properly handles date parsing to avoid timezone offset issues
  */
 export function formatWeekRange(weekStart: string): string {
-  const start = new Date(weekStart);
+  // Fix timezone parsing issue: ensure date is interpreted in local time
+  const start = new Date(weekStart + 'T00:00:00');
   const end = new Date(start);
   end.setDate(start.getDate() + 6); // Sunday + 6 = Saturday
   
@@ -440,13 +442,13 @@ export function formatTemplateTime(template: ShiftTemplate): { start: string; en
 }
 
 export function getNextWeek(weekStart: string): string {
-  const date = new Date(weekStart);
+  const date = new Date(weekStart + 'T00:00:00');
   date.setDate(date.getDate() + 7);
   return date.toISOString().split('T')[0];
 }
 
 export function getPreviousWeek(weekStart: string): string {
-  const date = new Date(weekStart);
+  const date = new Date(weekStart + 'T00:00:00');
   date.setDate(date.getDate() - 7);
   return date.toISOString().split('T')[0];
 }

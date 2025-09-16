@@ -118,7 +118,7 @@ export function WeeklyScheduleView({
                     <div>
                       <div className="font-semibold">{day.label}</div>
                       <div className="text-xs text-gray-400 mt-1">
-                        {new Date(new Date(weekStartDate).getTime() + (day.key === 0 ? 6 : day.key - 1) * 24 * 60 * 60 * 1000).getDate()}
+                        {new Date(new Date(weekStartDate + 'T00:00:00').getTime() + day.key * 24 * 60 * 60 * 1000).getDate()}
                       </div>
                     </div>
                   </th>
@@ -175,7 +175,7 @@ export function WeeklyScheduleView({
                 {DAYS.map((day) => (
                   <div key={day.key} className="bg-white rounded p-2 border">
                     <div className="text-xs font-medium text-gray-500 mb-1">
-                      {day.label} {new Date(new Date(weekStartDate).getTime() + (day.key === 0 ? 6 : day.key - 1) * 24 * 60 * 60 * 1000).getDate()}
+                      {day.label} {new Date(new Date(weekStartDate + 'T00:00:00').getTime() + day.key * 24 * 60 * 60 * 1000).getDate()}
                     </div>
                     <ScheduleCell
                       employeeId={employee.id}

@@ -113,7 +113,7 @@ export function PostedScheduleView({ weeklySchedule, shiftTemplates }: PostedSch
         <div className="space-y-6">
           {DAYS.map((day) => {
             const dayShifts = getShiftsForDay(day.key);
-            const dayDate = new Date(weeklySchedule.week_start_date);
+            const dayDate = new Date(weeklySchedule.week_start_date + 'T00:00:00');
             dayDate.setDate(dayDate.getDate() + day.key); // Sunday=0, Monday=1, etc.
             
             return (
