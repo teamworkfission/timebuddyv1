@@ -32,6 +32,7 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showTemplateManager, setShowTemplateManager] = useState(false);
+  const [hasPostedVersion, setHasPostedVersion] = useState(false);
 
   // Load businesses on mount
   useEffect(() => {
@@ -117,24 +118,31 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
         }
       }
       
-      // Handle special case: User is on Edit tab but only posted schedule exists
+      // Handle proper draft/posted separation
       if (!schedule && activeTab === 'edit') {
+        // No draft exists - check if there's a posted schedule user might want to edit
         try {
           const postedSchedule = await SchedulesApi.getWeeklyScheduleByStatus(selectedBusinessId, currentWeek, 'posted');
           if (postedSchedule) {
-            console.log('Found posted schedule, user may want to unpost for editing');
-            setWeeklySchedule(postedSchedule);
+            console.log('Found posted schedule but no draft exists - user can unpost to edit');
+            // Store reference to posted schedule for potential unposting
+            setWeeklySchedule({ ...postedSchedule, __isPostedReference: true } as any);
+            setHasPostedVersion(false); // Will be "Post Schedule" after they unpost to edit
           } else {
             // No schedule at all - user can create new draft
+            console.log('No schedule found - user can create new draft');
             setWeeklySchedule(null);
+            setHasPostedVersion(false);
           }
         } catch (postedError) {
           console.warn('Failed to check for posted schedule:', postedError);
           setWeeklySchedule(null);
+          setHasPostedVersion(false);
         }
       } else {
         console.log(`🎯 Setting weekly schedule for week ${currentWeek}:`, schedule ? `Schedule ID: ${schedule.id}` : 'null');
         setWeeklySchedule(schedule);
+        setHasPostedVersion(false);
       }
       
       setShiftTemplates(templates);
@@ -169,10 +177,30 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
   };
 
   const handleShiftCreate = async (shift: CreateShiftDto) => {
-    if (!weeklySchedule) return;
+    let targetSchedule = weeklySchedule;
+
+    // If no schedule exists, create a new one
+    if (!weeklySchedule) {
+      try {
+        console.log('No schedule exists, creating new draft schedule...');
+        targetSchedule = await SchedulesApi.createWeeklySchedule(selectedBusinessId, currentWeek);
+        setWeeklySchedule(targetSchedule);
+        console.log('Successfully created new draft schedule:', targetSchedule.id);
+      } catch (err) {
+        setError('Failed to create schedule');
+        console.error('Error creating schedule:', err);
+        return;
+      }
+    }
+    // If user is trying to edit a posted schedule reference, unpost it first
+    else if ((weeklySchedule as any).__isPostedReference) {
+      const draftSchedule = await handleCreateDraftFromPosted();
+      if (!draftSchedule) return; // Failed to convert to draft
+      targetSchedule = draftSchedule;
+    }
 
     try {
-      const newShift = await SchedulesApi.createShift(weeklySchedule.id, shift);
+      const newShift = await SchedulesApi.createShift(targetSchedule.id, shift);
       setWeeklySchedule(prev => prev ? {
         ...prev,
         shifts: [...prev.shifts, newShift]
@@ -184,6 +212,17 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
   };
 
   const handleShiftUpdate = async (shiftId: string, shift: UpdateShiftDto) => {
+    if (!weeklySchedule) return;
+
+    let targetSchedule = weeklySchedule;
+
+    // If user is trying to edit a posted schedule reference, unpost it first
+    if ((weeklySchedule as any).__isPostedReference) {
+      const draftSchedule = await handleCreateDraftFromPosted();
+      if (!draftSchedule) return; // Failed to convert to draft
+      targetSchedule = draftSchedule;
+    }
+
     try {
       const updatedShift = await SchedulesApi.updateShift(shiftId, shift);
       setWeeklySchedule(prev => prev ? {
@@ -197,6 +236,17 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
   };
 
   const handleShiftDelete = async (shiftId: string) => {
+    if (!weeklySchedule) return;
+
+    let targetSchedule = weeklySchedule;
+
+    // If user is trying to edit a posted schedule reference, unpost it first
+    if ((weeklySchedule as any).__isPostedReference) {
+      const draftSchedule = await handleCreateDraftFromPosted();
+      if (!draftSchedule) return; // Failed to convert to draft
+      targetSchedule = draftSchedule;
+    }
+
     try {
       await SchedulesApi.deleteShift(shiftId);
       setWeeklySchedule(prev => prev ? {
@@ -232,6 +282,24 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
     } catch (err) {
       setError('Failed to unpost schedule');
       console.error('Error unposting schedule:', err);
+    }
+  };
+
+  const handleCreateDraftFromPosted = async (): Promise<WeeklySchedule | null> => {
+    if (!weeklySchedule || !(weeklySchedule as any).__isPostedReference) return null;
+
+    try {
+      console.log('Converting posted schedule to draft for editing...');
+      // Instead of creating new schedule, unpost the existing one to make it editable
+      const draftSchedule = await SchedulesApi.unpostSchedule(weeklySchedule.id);
+      setWeeklySchedule(draftSchedule);
+      setHasPostedVersion(false); // No longer a posted version after unposting
+      console.log('Successfully converted to draft schedule:', draftSchedule.id);
+      return draftSchedule;
+    } catch (err) {
+      setError('Failed to convert schedule to draft mode');
+      console.error('Error converting to draft:', err);
+      return null;
     }
   };
 
@@ -376,6 +444,8 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
                 onPostSchedule={handlePostSchedule}
                 onUnpostSchedule={handleUnpostSchedule}
                 loading={loading}
+                shiftCount={weeklySchedule?.shifts?.length || 0}
+                hasPostedVersion={hasPostedVersion}
               />
             </div>
 

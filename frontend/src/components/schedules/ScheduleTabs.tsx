@@ -9,6 +9,8 @@ interface ScheduleTabsProps {
   onPostSchedule: () => void;
   onUnpostSchedule: () => void;
   loading?: boolean;
+  shiftCount?: number;
+  hasPostedVersion?: boolean;
 }
 
 export function ScheduleTabs({
@@ -17,7 +19,9 @@ export function ScheduleTabs({
   scheduleStatus,
   onPostSchedule,
   onUnpostSchedule,
-  loading = false
+  loading = false,
+  shiftCount = 0,
+  hasPostedVersion = false
 }: ScheduleTabsProps) {
   return (
     <div className="bg-white rounded-lg shadow">
@@ -77,11 +81,13 @@ export function ScheduleTabs({
             {activeTab === 'edit' && scheduleStatus === 'draft' && (
               <Button
                 onClick={onPostSchedule}
-                disabled={loading}
+                disabled={loading || shiftCount === 0}
                 className="flex items-center space-x-2"
               >
                 <Send className="h-4 w-4" />
-                <span>Post Schedule</span>
+                <span>
+                  {hasPostedVersion ? 'Send Updated Schedule' : 'Post Schedule'}
+                </span>
               </Button>
             )}
 
@@ -99,9 +105,18 @@ export function ScheduleTabs({
           </div>
         </div>
 
-        {scheduleStatus === 'draft' && (
+        {scheduleStatus === 'draft' && shiftCount === 0 && (
+          <p className="mt-2 text-sm text-amber-600">
+            Assign at least one shift to enable posting this schedule.
+          </p>
+        )}
+
+        {scheduleStatus === 'draft' && shiftCount > 0 && (
           <p className="mt-2 text-sm text-gray-600">
-            Make changes to your schedule and post it when ready for employees to view.
+            {hasPostedVersion 
+              ? 'Review your changes and send the updated schedule when ready.' 
+              : 'Review your schedule and post it when ready for employees to view.'
+            }
           </p>
         )}
 

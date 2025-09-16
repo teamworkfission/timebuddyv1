@@ -220,7 +220,18 @@ export class SchedulesApi {
       throw new Error(`Failed to fetch ${status} schedule: ${response.statusText}`);
     }
 
-    return response.json();
+    // Check if response has content before parsing JSON
+    const text = await response.text();
+    if (!text || text.trim() === '' || text === 'null') {
+      return null;
+    }
+
+    try {
+      return JSON.parse(text);
+    } catch (error) {
+      console.warn('Failed to parse schedule response:', text);
+      return null;
+    }
   }
 
   static async createWeeklySchedule(businessId: string, weekStart: string): Promise<WeeklySchedule> {
