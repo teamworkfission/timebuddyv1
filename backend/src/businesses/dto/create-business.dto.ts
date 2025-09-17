@@ -42,22 +42,32 @@ export class CreateBusinessDto {
   @MaxLength(150)
   location: string;
 
-  // Timezone-related fields (automatically populated by timezone service)
+  // Individual address components (optional - can be populated manually if lookup fails)
   @IsOptional()
-  @IsNumber()
-  latitude?: number;
-
-  @IsOptional()
-  @IsNumber()
-  longitude?: number;
+  @IsString()
+  @MaxLength(50)
+  state?: string;
 
   @IsOptional()
   @IsString()
-  timezone?: string;
+  @MaxLength(100)
+  city?: string;
 
   @IsOptional()
-  @IsDateString()
-  timezone_resolved_at?: string;
+  @IsString()
+  @MaxLength(100)
+  county?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  zip_code?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  street_address?: string;
+
 
 }
 

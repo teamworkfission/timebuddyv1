@@ -1,6 +1,5 @@
 import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
 import { SupabaseService } from '../config/supabase.service';
-import { TimezoneService } from '../config/timezone.service';
 import { CreateBusinessDto } from './dto/create-business.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
 
@@ -9,30 +8,13 @@ export class BusinessesService {
   private readonly logger = new Logger(BusinessesService.name);
 
   constructor(
-    private readonly supabase: SupabaseService,
-    private readonly timezoneService: TimezoneService
+    private readonly supabase: SupabaseService
   ) {}
 
   async create(createBusinessDto: CreateBusinessDto, employerId: string) {
-    // Resolve timezone information for the business location
-    let timezoneInfo = null;
-    try {
-      timezoneInfo = await this.timezoneService.resolveTimezone(createBusinessDto.location);
-      this.logger.log(`Resolved timezone for new business: ${createBusinessDto.location} -> ${timezoneInfo.timezone}`);
-    } catch (error) {
-      this.logger.warn(`Failed to resolve timezone for ${createBusinessDto.location}: ${error.message}`);
-      // Continue without timezone info - it can be resolved later
-    }
-
     const businessData = {
       ...createBusinessDto,
-      employer_id: employerId,
-      ...(timezoneInfo && {
-        latitude: timezoneInfo.latitude,
-        longitude: timezoneInfo.longitude,
-        timezone: timezoneInfo.timezone,
-        timezone_resolved_at: new Date().toISOString()
-      })
+      employer_id: employerId
     };
 
     const { data, error } = await this.supabase.admin
@@ -82,31 +64,11 @@ export class BusinessesService {
 
   async update(id: string, updateBusinessDto: UpdateBusinessDto, employerId: string) {
     // First check if business exists and belongs to employer
-    const existingBusiness = await this.findOne(id, employerId);
-
-    let updateData = { ...updateBusinessDto };
-
-    // If location is being updated, resolve new timezone
-    if (updateBusinessDto.location && updateBusinessDto.location !== existingBusiness.location) {
-      try {
-        const timezoneInfo = await this.timezoneService.resolveTimezone(updateBusinessDto.location);
-        updateData = {
-          ...updateData,
-          latitude: timezoneInfo.latitude,
-          longitude: timezoneInfo.longitude,
-          timezone: timezoneInfo.timezone,
-          timezone_resolved_at: new Date().toISOString()
-        };
-        this.logger.log(`Updated timezone for business ${id}: ${updateBusinessDto.location} -> ${timezoneInfo.timezone}`);
-      } catch (error) {
-        this.logger.warn(`Failed to resolve timezone for updated location ${updateBusinessDto.location}: ${error.message}`);
-        // Continue with update without timezone changes
-      }
-    }
+    await this.findOne(id, employerId);
 
     const { data, error } = await this.supabase.admin
       .from('businesses')
-      .update(updateData)
+      .update(updateBusinessDto)
       .eq('business_id', id)
       .eq('employer_id', employerId)
       .select()

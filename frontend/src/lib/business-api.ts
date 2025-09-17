@@ -13,11 +13,12 @@ export interface Business {
   total_employees: number;
   created_at: string;
   updated_at: string;
-  // Server-resolved timezone information
-  latitude?: number;
-  longitude?: number;
-  timezone?: string;
-  timezone_resolved_at?: string;
+  // Individual address components
+  state?: string;
+  city?: string;
+  county?: string;
+  zip_code?: string;
+  street_address?: string;
 }
 
 export type BusinessType = 
@@ -40,6 +41,12 @@ export interface CreateBusinessData {
   email: string;
   phone: string;
   location: string;
+  // Individual address components (optional - can be populated manually if lookup fails)
+  state?: string;
+  city?: string;
+  county?: string;
+  zip_code?: string;
+  street_address?: string;
 }
 
 export interface BusinessStats {

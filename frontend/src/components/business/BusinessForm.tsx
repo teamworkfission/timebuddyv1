@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { GooglePlacesAutocomplete } from '../ui/GooglePlacesAutocomplete';
+import { StateDropdown, getStateCodeFromName } from '../ui/StateDropdown';
 import { createBusiness, updateBusiness, BUSINESS_TYPES, BUSINESS_TYPE_LABELS, CreateBusinessData, Business } from '../../lib/business-api';
 
 interface BusinessFormProps {
@@ -18,14 +19,11 @@ export function BusinessForm({ onSuccess, onCancel, initialData, mode = 'create'
     email: '',
     phone: '',
     location: '',
-  });
-
-  const [manualAddress, setManualAddress] = useState({
-    street: '',
-    city: '',
     state: '',
+    city: '',
     county: '',
-    zipcode: '',
+    zip_code: '',
+    street_address: '',
   });
 
   const [loading, setLoading] = useState(false);
@@ -40,19 +38,12 @@ export function BusinessForm({ onSuccess, onCancel, initialData, mode = 'create'
         email: initialData.email,
         phone: initialData.phone,
         location: initialData.location,
+        state: initialData.state || '',
+        city: initialData.city || '',
+        county: initialData.county || '',
+        zip_code: initialData.zip_code || '',
+        street_address: initialData.street_address || '',
       });
-
-      // Parse address components if available
-      const addressParts = initialData.location.split(', ');
-      if (addressParts.length >= 4) {
-        setManualAddress({
-          street: addressParts[0] || '',
-          city: addressParts[1] || '',
-          state: addressParts[2]?.split(' ')[0] || '',
-          county: '',
-          zipcode: addressParts[2]?.split(' ')[1] || '',
-        });
-      }
     }
   }, [mode, initialData]);
 
@@ -64,34 +55,45 @@ export function BusinessForm({ onSuccess, onCancel, initialData, mode = 'create'
     }));
   };
 
-  const handleManualAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setManualAddress(prev => ({
-      ...prev,
-      [name]: value,
-    }));
+  const handleStateChange = (stateCode: string) => {
+    const updatedData = { ...formData, state: stateCode };
+    setFormData(updatedData);
+    updateLocationFromComponents(updatedData);
+  };
+
+  const updateLocationFromComponents = (data: CreateBusinessData) => {
+    // Build location string from individual components
+    const parts = [
+      data.street_address,
+      data.city,
+      data.state && data.zip_code ? `${data.state} ${data.zip_code}` : data.state || data.zip_code,
+    ].filter(Boolean);
     
-    // Update the main location field with combined address
-    const fullAddress = Object.values({ ...manualAddress, [name]: value })
-      .filter(Boolean)
-      .join(', ');
-    setFormData(prev => ({ ...prev, location: fullAddress }));
+    if (parts.length > 0) {
+      setFormData(prev => ({ ...prev, location: parts.join(', ') }));
+    }
   };
 
   const handlePlaceSelect = (place: { address: string; city?: string; state?: string; county?: string; postalCode?: string }) => {
-    setFormData(prev => ({ ...prev, location: place.address }));
+    const streetAddress = place.address.split(',')[0] || '';
     
-    // Auto-populate manual fields if available
-    if (place.city || place.state || place.county || place.postalCode) {
-      setManualAddress(prev => ({
-        ...prev,
-        city: place.city || prev.city,
-        state: place.state || prev.state,
-        county: place.county || prev.county,
-        zipcode: place.postalCode || prev.zipcode,
-        street: place.address.split(',')[0] || prev.street,
-      }));
-    }
+    // Convert state name to state code (Google Places returns full names like "Alabama", we need "AL")
+    const stateCode = place.state ? getStateCodeFromName(place.state) : formData.state;
+    
+    const updatedData = {
+      ...formData,
+      location: place.address,
+      street_address: streetAddress,
+      city: place.city || formData.city,
+      state: stateCode,
+      county: place.county || formData.county,
+      zip_code: place.postalCode || formData.zip_code,
+    };
+    
+    setFormData(updatedData);
+    
+    // Also update the location string to reflect the new combined address if manual fields are filled
+    updateLocationFromComponents(updatedData);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -223,71 +225,76 @@ export function BusinessForm({ onSuccess, onCancel, initialData, mode = 'create'
         </div>
 
         {/* Manual Address Fields - Mobile Optimized */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-          <div>
-            <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-2">
-              State
-            </label>
-            <Input
-              id="state"
-              name="state"
-              type="text"
-              value={manualAddress.state}
-              onChange={handleManualAddressChange}
-              placeholder="NY"
-            />
+        <div className="space-y-4">
+          <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg border border-blue-200">
+            <p className="font-medium text-blue-800 mb-1">Manual Address Entry</p>
+            <p>If the address lookup above doesn't work or find your location, you can manually enter the address components below. The state dropdown is searchable for your convenience.</p>
           </div>
-          <div>
-            <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-2">
-              City/Town
-            </label>
-            <Input
-              id="city"
-              name="city"
-              type="text"
-              value={manualAddress.city}
-              onChange={handleManualAddressChange}
-              placeholder="New York"
-            />
-          </div>
-          <div>
-            <label htmlFor="county" className="block text-sm font-medium text-gray-700 mb-2">
-              County
-            </label>
-            <Input
-              id="county"
-              name="county"
-              type="text"
-              value={manualAddress.county}
-              onChange={handleManualAddressChange}
-              placeholder="Manhattan"
-            />
-          </div>
-          <div>
-            <label htmlFor="zipcode" className="block text-sm font-medium text-gray-700 mb-2">
-              ZIP Code
-            </label>
-            <Input
-              id="zipcode"
-              name="zipcode"
-              type="text"
-              value={manualAddress.zipcode}
-              onChange={handleManualAddressChange}
-              placeholder="10001"
-            />
-          </div>
-          <div className="sm:col-span-2">
-            <label htmlFor="street" className="block text-sm font-medium text-gray-700 mb-2">
-              Street Address
-            </label>
-            <Input
-              id="street"
-              name="street"
-              type="text"
-              value={manualAddress.street}
-              onChange={handleManualAddressChange}
-              placeholder="123 Main St"
-            />
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div>
+              <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-2">
+                State *
+              </label>
+              <StateDropdown
+                value={formData.state || ''}
+                onChange={handleStateChange}
+                placeholder="Select state..."
+                className="w-full"
+              />
+            </div>
+            <div>
+              <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-2">
+                City/Town
+              </label>
+              <Input
+                id="city"
+                name="city"
+                type="text"
+                value={formData.city || ''}
+                onChange={handleInputChange}
+                placeholder="New York"
+              />
+            </div>
+            <div>
+              <label htmlFor="county" className="block text-sm font-medium text-gray-700 mb-2">
+                County
+              </label>
+              <Input
+                id="county"
+                name="county"
+                type="text"
+                value={formData.county || ''}
+                onChange={handleInputChange}
+                placeholder="Manhattan"
+              />
+            </div>
+            <div>
+              <label htmlFor="zip_code" className="block text-sm font-medium text-gray-700 mb-2">
+                ZIP Code
+              </label>
+              <Input
+                id="zip_code"
+                name="zip_code"
+                type="text"
+                value={formData.zip_code || ''}
+                onChange={handleInputChange}
+                placeholder="10001"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label htmlFor="street_address" className="block text-sm font-medium text-gray-700 mb-2">
+                Street Address
+              </label>
+              <Input
+                id="street_address"
+                name="street_address"
+                type="text"
+                value={formData.street_address || ''}
+                onChange={handleInputChange}
+                placeholder="123 Main St"
+              />
+            </div>
           </div>
         </div>
 
