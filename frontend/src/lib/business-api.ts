@@ -221,6 +221,13 @@ export interface BusinessEmployee {
     skills: string[];
     transportation: string;
   };
+  // Rate information
+  current_rate?: {
+    id: string;
+    hourly_rate: number;
+    effective_from: string;
+    updated_at: string;
+  };
 }
 
 export async function getBusinessEmployees(businessId: string): Promise<BusinessEmployee[]> {
@@ -273,6 +280,30 @@ export async function updateEmployeeRole(
   return response.json();
 }
 
+// Employee Rate Management Functions
+export async function setEmployeeRate(
+  businessId: string,
+  employeeId: string, 
+  hourlyRate: number
+): Promise<void> {
+  const headers = await getAuthHeaders();
+  
+  const response = await fetch(`${API_BASE_URL}/payments/rates`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      business_id: businessId,
+      employee_id: employeeId,
+      hourly_rate: hourlyRate,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+  }
+}
+
 // BusinessesApi class for compatibility with schedules component
 export class BusinessesApi {
   static async getBusinesses(): Promise<Business[]> {
@@ -305,5 +336,9 @@ export class BusinessesApi {
 
   static async updateEmployeeRole(businessId: string, employeeId: string, role: string): Promise<BusinessEmployee> {
     return updateEmployeeRole(businessId, employeeId, role);
+  }
+
+  static async setEmployeeRate(businessId: string, employeeId: string, hourlyRate: number): Promise<void> {
+    return setEmployeeRate(businessId, employeeId, hourlyRate);
   }
 }

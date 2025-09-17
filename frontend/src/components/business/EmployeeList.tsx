@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Button } from '../ui/Button';
-import { BusinessEmployee, getBusinessEmployees, removeBusinessEmployee, updateEmployeeRole } from '../../lib/business-api';
+import { BusinessEmployee, getBusinessEmployees, removeBusinessEmployee, updateEmployeeRole, setEmployeeRate } from '../../lib/business-api';
+import { getCurrentEmployeeRates } from '../../lib/payments-api';
+import { EmployeeRateEditor } from './EmployeeRateEditor';
 
 interface EmployeeListProps {
   businessId: string;
@@ -15,13 +17,25 @@ export function EmployeeList({ businessId, businessName, onBack }: EmployeeListP
   const [removing, setRemoving] = useState<string | null>(null);
   const [updatingRole, setUpdatingRole] = useState<string | null>(null);
   const [copySuccess, setCopySuccess] = useState<string | null>(null);
+  const [currentRates, setCurrentRates] = useState<Record<string, number>>({});
 
   const loadEmployees = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await getBusinessEmployees(businessId);
-      setEmployees(data);
+      const [employeesData, ratesData] = await Promise.all([
+        getBusinessEmployees(businessId),
+        getCurrentEmployeeRates(businessId).catch(() => []) // Don't fail if rates can't be loaded
+      ]);
+      
+      setEmployees(employeesData);
+      
+      // Convert rates array to lookup object
+      const ratesLookup = ratesData.reduce((acc, rate) => {
+        acc[rate.employee_id] = rate.hourly_rate;
+        return acc;
+      }, {} as Record<string, number>);
+      setCurrentRates(ratesLookup);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load employees');
     } finally {
@@ -72,6 +86,24 @@ export function EmployeeList({ businessId, businessName, onBack }: EmployeeListP
       setTimeout(() => setCopySuccess(null), 2000);
     } catch (err) {
       console.error('Failed to copy to clipboard:', err);
+    }
+  };
+
+  const handleSaveRate = async (employeeId: string, rate: number) => {
+    try {
+      await setEmployeeRate(businessId, employeeId, rate);
+      
+      // Update local state
+      setCurrentRates(prev => ({
+        ...prev,
+        [employeeId]: rate
+      }));
+      
+      // Show success message
+      setCopySuccess('Rate updated successfully!');
+      setTimeout(() => setCopySuccess(null), 2000);
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : 'Failed to save rate');
     }
   };
 
@@ -206,7 +238,7 @@ export function EmployeeList({ businessId, businessName, onBack }: EmployeeListP
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                         <div>
                           <h4 className="text-sm font-medium text-gray-900 mb-2">Contact Information</h4>
                           <div className="space-y-2 text-sm">
@@ -294,6 +326,16 @@ export function EmployeeList({ businessId, businessName, onBack }: EmployeeListP
                               </div>
                             )}
                           </div>
+                        </div>
+
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-900 mb-2">Pay Information</h4>
+                          <EmployeeRateEditor
+                            employeeId={employee.employee.id}
+                            employeeName={employee.employee.full_name}
+                            currentRate={currentRates[employee.employee.id]}
+                            onSaveRate={handleSaveRate}
+                          />
                         </div>
                       </div>
 
