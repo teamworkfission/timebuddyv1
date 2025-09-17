@@ -7,9 +7,10 @@ interface BusinessTileProps {
   onDelete?: (business: Business) => void;
   onAddEmployee?: (business: Business) => void;
   onViewEmployees?: (business: Business) => void;
+  onPaymentsReports?: (business: Business) => void;
 }
 
-export function BusinessTile({ business, onEdit, onDelete, onAddEmployee, onViewEmployees }: BusinessTileProps) {
+export function BusinessTile({ business, onEdit, onDelete, onAddEmployee, onViewEmployees, onPaymentsReports }: BusinessTileProps) {
   const getBusinessTypeIcon = (type: string) => {
     const icons: Record<string, string> = {
       restaurant: '🍽️',
@@ -129,7 +130,7 @@ export function BusinessTile({ business, onEdit, onDelete, onAddEmployee, onView
             </div>
             
             {/* Action Buttons - Mobile Optimized */}
-            <div className="flex space-x-2">
+            <div className="flex flex-wrap gap-2">
               {onAddEmployee && (
                 <button
                   onClick={(e) => {
@@ -142,6 +143,20 @@ export function BusinessTile({ business, onEdit, onDelete, onAddEmployee, onView
                 >
                   <span>➕</span>
                   <span>Add Employee</span>
+                </button>
+              )}
+              {onPaymentsReports && (
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onPaymentsReports(business);
+                  }}
+                  className="text-xs font-medium text-green-600 hover:text-green-700 active:text-green-800 min-h-[32px] px-2 py-1 rounded hover:bg-green-50 touch-manipulation flex items-center space-x-1"
+                  aria-label={`Payments and reports for ${business.name}`}
+                >
+                  <span>💰</span>
+                  <span>Payments</span>
                 </button>
               )}
               {onDelete && (

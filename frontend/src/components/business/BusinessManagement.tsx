@@ -4,6 +4,7 @@ import { BusinessForm } from './BusinessForm';
 import { BusinessTile } from './BusinessTile';
 import { AddEmployeeModal } from './AddEmployeeModal';
 import { EmployeeList } from './EmployeeList';
+import { PaymentsReportsModal } from '../payments/PaymentsReportsModal';
 import { Business, getBusinesses, deleteBusiness } from '../../lib/business-api';
 import { joinRequestsApi } from '../../lib/join-requests-api';
 
@@ -23,6 +24,8 @@ export function BusinessManagement({ onBack }: BusinessManagementProps) {
   const [addingEmployee, setAddingEmployee] = useState(false);
   const [showEmployeeList, setShowEmployeeList] = useState(false);
   const [employeeListBusiness, setEmployeeListBusiness] = useState<Business | null>(null);
+  const [showPaymentsModal, setShowPaymentsModal] = useState(false);
+  const [paymentsModalBusiness, setPaymentsModalBusiness] = useState<Business | null>(null);
 
   const loadBusinesses = async () => {
     try {
@@ -118,6 +121,16 @@ export function BusinessManagement({ onBack }: BusinessManagementProps) {
     setEmployeeListBusiness(null);
     // Reload businesses to get updated employee counts
     loadBusinesses();
+  };
+
+  const handlePaymentsReports = (business: Business) => {
+    setPaymentsModalBusiness(business);
+    setShowPaymentsModal(true);
+  };
+
+  const handleClosePaymentsModal = () => {
+    setShowPaymentsModal(false);
+    setPaymentsModalBusiness(null);
   };
 
   // Show employee list view
@@ -279,6 +292,7 @@ export function BusinessManagement({ onBack }: BusinessManagementProps) {
                     onDelete={deleting === business.business_id ? undefined : handleDeleteBusiness}
                     onAddEmployee={handleAddEmployee}
                     onViewEmployees={handleViewEmployees}
+                    onPaymentsReports={handlePaymentsReports}
                   />
                   {deleting === business.business_id && (
                     <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center rounded-xl">
@@ -330,6 +344,14 @@ export function BusinessManagement({ onBack }: BusinessManagementProps) {
         businessName={selectedBusiness?.name || ''}
         loading={addingEmployee}
       />
+
+      {/* Payments & Reports Modal */}
+      {showPaymentsModal && paymentsModalBusiness && (
+        <PaymentsReportsModal
+          business={paymentsModalBusiness}
+          onClose={handleClosePaymentsModal}
+        />
+      )}
     </div>
   );
 }
