@@ -453,6 +453,125 @@ export class SchedulesService {
     })).filter(Boolean);
   }
 
+  // Employee Schedule Methods
+
+  async getEmployeeSchedules(employeeUserId: string, weekStart: string): Promise<{
+    schedules: Array<WeeklySchedule & { business_name: string }>;
+    businesses: Array<{ business_id: string; name: string }>;
+  }> {
+    const supabase = this.supabaseService.admin;
+    
+    // First get the employee record from user_id
+    const { data: employee, error: empError } = await supabase
+      .from('employees')
+      .select('id')
+      .eq('user_id', employeeUserId)
+      .single();
+      
+    if (empError || !employee) {
+      throw new NotFoundException('Employee profile not found');
+    }
+
+    // Get all businesses this employee works for
+    const { data: businessEmployees, error: beError } = await supabase
+      .from('business_employees')
+      .select(`
+        business_id,
+        businesses!inner(
+          business_id,
+          name
+        )
+      `)
+      .eq('employee_id', employee.id) as any;
+      
+    if (beError) {
+      throw new Error(`Failed to fetch employee businesses: ${beError.message}`);
+    }
+
+    if (!businessEmployees || businessEmployees.length === 0) {
+      return { schedules: [], businesses: [] };
+    }
+
+    const businesses = businessEmployees.map(be => ({
+      business_id: be.businesses?.business_id,
+      name: be.businesses?.name
+    }));
+
+    const businessIds = businesses.map(b => b.business_id);
+    
+    // Get posted schedules for this week across all businesses
+    const { data: weeklySchedules, error: wsError } = await supabase
+      .from('weekly_schedules')
+      .select(`
+        *,
+        businesses!inner(
+          name
+        )
+      `)
+      .in('business_id', businessIds)
+      .eq('week_start_date', weekStart)
+      .eq('status', 'posted') as any; // Only show posted schedules to employees
+      
+    if (wsError) {
+      throw new Error(`Failed to fetch weekly schedules: ${wsError.message}`);
+    }
+
+    // Get shifts for each schedule
+    const schedulesWithShifts = await Promise.all(
+      (weeklySchedules || []).map(async (schedule) => {
+        const shifts = await this.getEmployeeScheduleShifts(schedule.id, employee.id);
+        const employees = [{ 
+          id: employee.id, 
+          full_name: 'You', // Simple display for employee view
+          employee_gid: '' 
+        }];
+        
+        return {
+          ...schedule,
+          business_name: schedule.businesses?.name,
+          shifts,
+          employees,
+          total_hours_by_employee: { [employee.id]: this.calculateTotalHours(shifts) },
+        };
+      })
+    );
+
+    return {
+      schedules: schedulesWithShifts,
+      businesses
+    };
+  }
+
+  private async getEmployeeScheduleShifts(scheduleId: string, employeeId: string): Promise<Shift[]> {
+    const supabase = this.supabaseService.admin;
+    
+    const { data, error } = await supabase
+      .from('shifts')
+      .select('*')
+      .eq('schedule_id', scheduleId)
+      .eq('employee_id', employeeId) // Only shifts for this employee
+      .order('day_of_week')
+      .order('start_time');
+
+    if (error) {
+      throw new Error(`Failed to fetch employee shifts: ${error.message}`);
+    }
+
+    return data.map(shift => ({
+      ...shift,
+      duration_hours: this.calculateShiftDuration(
+        shift.start_time, 
+        shift.end_time, 
+        shift.start_label, 
+        shift.end_label
+      ),
+    }));
+  }
+
+  private calculateTotalHours(shifts: Shift[]): number {
+    return shifts.reduce((total, shift) => total + shift.duration_hours, 0);
+  }
+
   private async getScheduleShifts(scheduleId: string): Promise<Shift[]> {
     const supabase = this.supabaseService.admin;
     

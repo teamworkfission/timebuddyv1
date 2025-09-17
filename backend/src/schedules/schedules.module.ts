@@ -3,11 +3,12 @@ import { SchedulesController } from './schedules.controller';
 import { SchedulesService } from './schedules.service';
 import { ShiftTemplatesService } from './shift-templates.service';
 import { SupabaseService } from '../config/supabase.service';
-import { AuthService } from '../auth/auth.service';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
+  imports: [AuthModule],
   controllers: [SchedulesController],
-  providers: [SchedulesService, ShiftTemplatesService, SupabaseService, AuthService],
+  providers: [SchedulesService, ShiftTemplatesService, SupabaseService],
   exports: [SchedulesService, ShiftTemplatesService],
 })
 export class SchedulesModule {}

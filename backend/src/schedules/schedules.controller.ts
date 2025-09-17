@@ -171,4 +171,14 @@ export class SchedulesController {
   async calculateEmployeeHours(@Param('scheduleId') scheduleId: string) {
     return this.schedulesService.calculateEmployeeHours(scheduleId);
   }
+
+  // Employee Schedule Endpoints
+  @Get('employee/schedules/week/:weekStart')
+  async getEmployeeWeeklySchedules(
+    @Param('weekStart') weekStart: string,
+    @Request() req: any,
+  ) {
+    const userId = await this.getUserIdFromRequest(req);
+    return this.schedulesService.getEmployeeSchedules(userId, weekStart);
+  }
 }

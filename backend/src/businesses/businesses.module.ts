@@ -3,11 +3,12 @@ import { BusinessesService } from './businesses.service';
 import { BusinessesController } from './businesses.controller';
 import { SupabaseService } from '../config/supabase.service';
 import { TimezoneService } from '../config/timezone.service';
-import { AuthService } from '../auth/auth.service';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
+  imports: [AuthModule],
   controllers: [BusinessesController],
-  providers: [BusinessesService, SupabaseService, TimezoneService, AuthService],
+  providers: [BusinessesService, SupabaseService, TimezoneService],
   exports: [BusinessesService],
 })
 export class BusinessesModule {}

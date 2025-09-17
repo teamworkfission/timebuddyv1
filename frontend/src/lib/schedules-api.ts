@@ -485,3 +485,26 @@ export function getPreviousWeek(weekStart: string): string {
   date.setDate(date.getDate() - 7);
   return date.toISOString().split('T')[0];
 }
+
+// Employee Schedule API Functions
+
+export interface EmployeeScheduleResponse {
+  schedules: Array<WeeklySchedule & { business_name: string }>;
+  businesses: Array<{ business_id: string; name: string }>;
+}
+
+export class EmployeeSchedulesAPI {
+  static async getEmployeeWeeklySchedules(weekStart: string): Promise<EmployeeScheduleResponse> {
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${API_BASE_URL}/schedules/employee/schedules/week/${weekStart}`, {
+      method: 'GET',
+      headers,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch employee schedules: ${response.statusText}`);
+    }
+
+    return response.json();
+  }
+}

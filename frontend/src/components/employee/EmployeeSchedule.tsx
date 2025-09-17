@@ -1,16 +1,69 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '../ui/Button';
 import { JoinRequests } from './JoinRequests';
+import { EmployeeWeeklyScheduleView } from './EmployeeWeeklyScheduleView';
+import { EmployeeScheduleFilter } from './EmployeeScheduleFilter';
+import { EmployeeSchedulesAPI, getCurrentWeekStart, formatWeekRange, getPreviousWeek, getNextWeek } from '../../lib/schedules-api';
+import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 
 type ScheduleTabType = 'schedule' | 'join-requests';
 
 export function EmployeeSchedule() {
   const [activeTab, setActiveTab] = useState<ScheduleTabType>('schedule');
+  const [currentWeek, setCurrentWeek] = useState(getCurrentWeekStart());
+  const [scheduleData, setScheduleData] = useState<any>(null);
+  const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const tabs = [
     { id: 'schedule' as ScheduleTabType, label: 'My Schedule', icon: '📅' },
     { id: 'join-requests' as ScheduleTabType, label: 'Join Requests', icon: '📨' }
   ];
+
+  // Load employee schedules
+  const loadScheduleData = async (weekStart: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await EmployeeSchedulesAPI.getEmployeeWeeklySchedules(weekStart);
+      setScheduleData(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load schedule');
+      console.error('Failed to load employee schedules:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load initial data
+  useEffect(() => {
+    loadScheduleData(currentWeek);
+  }, [currentWeek]);
+
+  // Week navigation
+  const handlePreviousWeek = () => {
+    const prevWeek = getPreviousWeek(currentWeek);
+    setCurrentWeek(prevWeek);
+  };
+
+  const handleNextWeek = () => {
+    const nextWeek = getNextWeek(currentWeek);
+    setCurrentWeek(nextWeek);
+  };
+
+  // Get aggregated shifts from all schedules
+  const getAllShifts = () => {
+    if (!scheduleData?.schedules) return [];
+    return scheduleData.schedules.flatMap((schedule: any) => 
+      schedule.shifts.map((shift: any) => ({
+        ...shift,
+        business_name: schedule.business_name,
+        business_id: schedule.business_id,
+        schedule_id: schedule.id
+      }))
+    );
+  };
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -23,46 +76,108 @@ export function EmployeeSchedule() {
       case 'schedule':
       default:
         return (
-          <div className="max-w-4xl mx-auto px-4 py-8">
-            <div className="text-center">
-              <div className="mb-8">
-                <div className="inline-flex items-center justify-center w-20 h-20 bg-blue-100 rounded-full mb-4">
-                  <span className="text-4xl">📅</span>
+          <div className="max-w-6xl mx-auto px-4 py-6">
+            {/* Mobile-Friendly Week Navigation */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <button
+                  onClick={handlePreviousWeek}
+                  className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={loading}
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1" />
+                  <span className="hidden sm:inline">Previous</span>
+                </button>
+                
+                <div className="flex items-center text-center">
+                  <Calendar className="h-5 w-5 text-gray-400 mr-2" />
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    {formatWeekRange(currentWeek)}
+                  </h2>
+                </div>
+                
+                <button
+                  onClick={handleNextWeek}
+                  className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={loading}
+                >
+                  <span className="hidden sm:inline">Next</span>
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </button>
+              </div>
+
+              {/* Employer Filter */}
+              {scheduleData?.businesses && scheduleData.businesses.length > 1 && (
+                <EmployeeScheduleFilter
+                  businesses={scheduleData.businesses}
+                  selectedBusinessId={selectedBusinessId}
+                  onBusinessSelect={setSelectedBusinessId}
+                />
+              )}
+            </div>
+
+            {/* Loading State */}
+            {loading && (
+              <div className="bg-white rounded-lg shadow p-8 text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading your schedule...</p>
+              </div>
+            )}
+
+            {/* Error State */}
+            {error && !loading && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-red-800">Error loading schedule</h3>
+                    <p className="mt-2 text-sm text-red-700">{error}</p>
+                    <div className="mt-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => loadScheduleData(currentWeek)}
+                      >
+                        Try Again
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </div>
-              
-              <h1 className="text-3xl font-bold text-gray-900 mb-4">
-                Schedule Management
-              </h1>
-              
-              <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
-                View your work schedule, manage shift preferences, and coordinate with local employers. 
-                This feature is coming soon to help you organize your gig work efficiently.
-              </p>
+            )}
 
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 max-w-2xl mx-auto mb-8">
-                <h3 className="text-lg font-medium text-blue-900 mb-3">
-                  Coming Soon Features
-                </h3>
-                <ul className="text-sm text-blue-700 space-y-2 text-left">
-                  <li>• View and manage your work schedule</li>
-                  <li>• Set availability preferences</li>
-                  <li>• Coordinate shifts with multiple employers</li>
-                  <li>• Receive schedule notifications</li>
-                  <li>• Request time off or schedule changes</li>
-                  <li>• Track your working hours</li>
-                </ul>
-              </div>
+            {/* Schedule Content */}
+            {!loading && !error && scheduleData && (
+              <EmployeeWeeklyScheduleView
+                weekStartDate={currentWeek}
+                allShifts={getAllShifts()}
+                businesses={scheduleData.businesses || []}
+                selectedBusinessId={selectedBusinessId}
+              />
+            )}
 
-              <div className="space-x-4">
+            {/* No Business Association State */}
+            {!loading && !error && scheduleData && scheduleData.businesses.length === 0 && (
+              <div className="bg-white rounded-lg shadow p-8 text-center">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
+                  <span className="text-2xl">🏢</span>
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No employers yet</h3>
+                <p className="text-gray-500 max-w-sm mx-auto mb-6">
+                  You haven't been added to any business schedules yet. Ask your employer to send you a join request.
+                </p>
                 <Button
-                  variant="outline"
-                  onClick={() => window.history.back()}
+                  onClick={() => setActiveTab('join-requests')}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
                 >
-                  ← Go Back
+                  View Join Requests
                 </Button>
               </div>
-            </div>
+            )}
           </div>
         );
     }

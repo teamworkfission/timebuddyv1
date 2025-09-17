@@ -383,15 +383,30 @@ export class JobsService {
     for (let i = 0; i < parts.length; i++) {
       const part = parts[i];
       
-      // Check if this part is a 2-letter state code
+      // Check if this part is exactly a 2-letter state code
       if (part.length === 2 && this.stateCodeToName[part.toUpperCase()]) {
         return this.stateCodeToName[part.toUpperCase()];
+      }
+      
+      // Check if this part contains a 2-letter state code (handle cases like "AL 35205")
+      const words = part.split(/\s+/);
+      for (const word of words) {
+        if (word.length === 2 && this.stateCodeToName[word.toUpperCase()]) {
+          return this.stateCodeToName[word.toUpperCase()];
+        }
       }
       
       // Check if this part is already a full state name
       const fullStates = Object.values(this.stateCodeToName);
       if (fullStates.includes(part)) {
         return part;
+      }
+      
+      // Check if any word in this part is a full state name
+      for (const word of words) {
+        if (fullStates.includes(word)) {
+          return word;
+        }
       }
     }
     
