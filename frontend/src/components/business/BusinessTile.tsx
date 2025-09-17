@@ -1,5 +1,6 @@
 // React import not needed for functional components
 import { Business, BUSINESS_TYPE_LABELS } from '../../lib/business-api';
+import { BusinessActions } from './BusinessActions';
 
 interface BusinessTileProps {
   business: Business;
@@ -107,73 +108,13 @@ export function BusinessTile({ business, onEdit, onDelete, onAddEmployee, onView
             </a>
           </div>
 
-          {/* Employee Count */}
-          <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-            <div className="flex items-center space-x-2">
-              <span className="text-gray-400 text-sm">👥</span>
-              {onViewEmployees ? (
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onViewEmployees(business);
-                  }}
-                  className="text-xs sm:text-sm font-medium text-blue-600 hover:text-blue-700 underline"
-                >
-                  {business.total_employees} Employee{business.total_employees !== 1 ? 's' : ''}
-                </button>
-              ) : (
-                <span className="text-xs sm:text-sm font-medium text-gray-700">
-                  {business.total_employees} Employee{business.total_employees !== 1 ? 's' : ''}
-                </span>
-              )}
-            </div>
-            
-            {/* Action Buttons - Mobile Optimized */}
-            <div className="flex flex-wrap gap-2">
-              {onAddEmployee && (
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onAddEmployee(business);
-                  }}
-                  className="text-xs font-medium text-blue-600 hover:text-blue-700 active:text-blue-800 min-h-[32px] px-2 py-1 rounded hover:bg-blue-50 touch-manipulation flex items-center space-x-1"
-                  aria-label={`Add employee to ${business.name}`}
-                >
-                  <span>➕</span>
-                  <span>Add Employee</span>
-                </button>
-              )}
-              {onPaymentsReports && (
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onPaymentsReports(business);
-                  }}
-                  className="text-xs font-medium text-green-600 hover:text-green-700 active:text-green-800 min-h-[32px] px-2 py-1 rounded hover:bg-green-50 touch-manipulation flex items-center space-x-1"
-                  aria-label={`Payments and reports for ${business.name}`}
-                >
-                  <span>💰</span>
-                  <span>Payments</span>
-                </button>
-              )}
-              {onDelete && (
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onDelete(business);
-                  }}
-                  className="text-xs font-medium text-red-600 hover:text-red-700 active:text-red-800 min-h-[32px] px-2 py-1 rounded hover:bg-red-50 touch-manipulation"
-                  aria-label={`Delete ${business.name}`}
-                >
-                  Delete
-                </button>
-              )}
-            </div>
-          </div>
+          {/* Professional Action Buttons */}
+          <BusinessActions
+            business={business}
+            onAddEmployee={onAddEmployee}
+            onViewEmployees={onViewEmployees}
+            onPaymentsReports={onPaymentsReports}
+          />
         </div>
       </div>
 

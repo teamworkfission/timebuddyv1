@@ -3,7 +3,7 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { GooglePlacesAutocomplete } from '../ui/GooglePlacesAutocomplete';
 import { StateDropdown, getStateCodeFromName } from '../ui/StateDropdown';
-import { createBusiness, updateBusiness, BUSINESS_TYPES, BUSINESS_TYPE_LABELS, CreateBusinessData, Business } from '../../lib/business-api';
+import { createBusiness, updateBusiness, deleteBusiness, BUSINESS_TYPES, BUSINESS_TYPE_LABELS, CreateBusinessData, Business } from '../../lib/business-api';
 
 interface BusinessFormProps {
   onSuccess: () => void;
@@ -30,6 +30,9 @@ export function BusinessForm({ onSuccess, onCancel, initialData, mode = 'create'
   const [error, setError] = useState<string | null>(null);
   const [showManualFields, setShowManualFields] = useState(false);
   const [manualFieldsMode, setManualFieldsMode] = useState<'lookup' | 'manual' | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteStep, setDeleteStep] = useState<1 | 2>(1);
+  const [deleting, setDeleting] = useState(false);
 
   // Initialize form data when editing
   useEffect(() => {
@@ -137,6 +140,39 @@ export function BusinessForm({ onSuccess, onCancel, initialData, mode = 'create'
       setError(err instanceof Error ? err.message : `Failed to ${mode} business`);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteClick = () => {
+    setShowDeleteConfirm(true);
+    setDeleteStep(1);
+    setError(null);
+  };
+
+  const handleDeleteConfirmClose = () => {
+    setShowDeleteConfirm(false);
+    setDeleteStep(1);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (deleteStep === 1) {
+      setDeleteStep(2);
+      return;
+    }
+
+    if (!initialData) return;
+
+    try {
+      setDeleting(true);
+      await deleteBusiness(initialData.business_id);
+      // Redirect to business list after successful deletion
+      onSuccess();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete business');
+      setShowDeleteConfirm(false);
+      setDeleteStep(1);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -344,6 +380,38 @@ export function BusinessForm({ onSuccess, onCancel, initialData, mode = 'create'
         )}
 
 
+        {/* Delete Section - Only show for existing businesses */}
+        {mode === 'edit' && initialData && (
+          <div className="pt-6 border-t border-gray-200">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0">
+                  <span className="text-red-600 text-xl">⚠️</span>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-sm font-medium text-red-800 mb-1">Danger Zone</h3>
+                  <p className="text-sm text-red-700 mb-3">
+                    Deleting this business will permanently remove all associated data including employees, schedules, payments, and hiring records. This action cannot be undone.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleDeleteClick}
+                    disabled={loading || deleting}
+                    className="border-red-300 text-red-700 hover:bg-red-100 hover:border-red-400 text-sm px-3 py-2"
+                    size="sm"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <span>🗑️</span>
+                      <span>Delete Business</span>
+                    </div>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Form Actions - Mobile Optimized */}
         <div className="flex flex-col sm:flex-row gap-3 sm:justify-end pt-4 sm:pt-6 border-t border-gray-200">
           {onCancel && (
@@ -351,7 +419,7 @@ export function BusinessForm({ onSuccess, onCancel, initialData, mode = 'create'
               type="button"
               variant="outline"
               onClick={onCancel}
-              disabled={loading}
+              disabled={loading || deleting}
               className="w-full sm:w-auto order-2 sm:order-1"
               size="md"
             >
@@ -361,7 +429,7 @@ export function BusinessForm({ onSuccess, onCancel, initialData, mode = 'create'
           <Button
             type="submit"
             loading={loading}
-            disabled={loading}
+            disabled={loading || deleting}
             className="w-full sm:w-auto order-1 sm:order-2"
             size="md"
           >
@@ -372,6 +440,120 @@ export function BusinessForm({ onSuccess, onCancel, initialData, mode = 'create'
           </Button>
         </div>
       </form>
+
+      {/* Delete Confirmation Modal - Double Confirmation */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+            <div className="p-6">
+              {/* Step 1: Initial Warning */}
+              {deleteStep === 1 && (
+                <>
+                  <div className="flex items-center space-x-3 mb-4">
+                    <div className="flex-shrink-0">
+                      <span className="text-3xl">⚠️</span>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-red-800">Delete Business?</h3>
+                      <p className="text-sm text-red-600">This action will delete "{formData.name}"</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                    <h4 className="font-medium text-red-800 mb-2">⛔ Data that will be permanently deleted:</h4>
+                    <ul className="text-sm text-red-700 space-y-1">
+                      <li>• All employee records and associations</li>
+                      <li>• Hiring processes and job applications</li>
+                      <li>• Work schedules and shift assignments</li>
+                      <li>• Payment records and payroll history</li>
+                      <li>• Business location and contact information</li>
+                      <li>• All related business documents</li>
+                    </ul>
+                  </div>
+
+                  <p className="text-sm text-gray-600 mb-6">
+                    <strong>⚠️ This action cannot be undone.</strong> Please ensure you have backed up any important data before proceeding.
+                  </p>
+
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleDeleteConfirmClose}
+                      className="w-full sm:w-auto order-2 sm:order-1"
+                      disabled={deleting}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={handleDeleteConfirm}
+                      className="w-full sm:w-auto order-1 sm:order-2 bg-red-600 hover:bg-red-700 text-white"
+                      disabled={deleting}
+                    >
+                      Continue to Final Confirmation
+                    </Button>
+                  </div>
+                </>
+              )}
+
+              {/* Step 2: Final Confirmation */}
+              {deleteStep === 2 && (
+                <>
+                  <div className="flex items-center space-x-3 mb-4">
+                    <div className="flex-shrink-0">
+                      <span className="text-3xl">🚨</span>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-red-800">Final Confirmation</h3>
+                      <p className="text-sm text-red-600">Last chance to cancel</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-red-100 border-2 border-red-300 rounded-lg p-4 mb-6">
+                    <h4 className="font-bold text-red-900 text-center mb-2">
+                      🔥 PERMANENT DELETION WARNING 🔥
+                    </h4>
+                    <p className="text-red-800 text-center font-medium">
+                      You are about to permanently delete <strong>"{formData.name}"</strong> and all associated data.
+                    </p>
+                  </div>
+
+                  <div className="text-center mb-6">
+                    <p className="text-sm text-red-700 font-medium mb-2">
+                      This will immediately and permanently remove:
+                    </p>
+                    <p className="text-xs text-red-600">
+                      Employees • Schedules • Payments • Applications • Documents • Everything
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleDeleteConfirmClose}
+                      className="w-full sm:w-auto order-2 sm:order-1"
+                      disabled={deleting}
+                    >
+                      Cancel (Safe Option)
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={handleDeleteConfirm}
+                      loading={deleting}
+                      className="w-full sm:w-auto order-1 sm:order-2 bg-red-700 hover:bg-red-800 text-white"
+                      disabled={deleting}
+                    >
+                      {deleting ? 'Deleting...' : 'Delete Permanently'}
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

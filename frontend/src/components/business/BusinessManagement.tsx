@@ -5,7 +5,7 @@ import { BusinessTile } from './BusinessTile';
 import { AddEmployeeModal } from './AddEmployeeModal';
 import { EmployeeList } from './EmployeeList';
 import { PaymentsReportsModal } from '../payments/PaymentsReportsModal';
-import { Business, getBusinesses, deleteBusiness } from '../../lib/business-api';
+import { Business, getBusinesses } from '../../lib/business-api';
 import { joinRequestsApi } from '../../lib/join-requests-api';
 
 interface BusinessManagementProps {
@@ -18,7 +18,6 @@ export function BusinessManagement({ onBack }: BusinessManagementProps) {
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editingBusiness, setEditingBusiness] = useState<Business | null>(null);
-  const [deleting, setDeleting] = useState<string | null>(null);
   const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
   const [addingEmployee, setAddingEmployee] = useState(false);
@@ -64,21 +63,6 @@ export function BusinessManagement({ onBack }: BusinessManagementProps) {
     setShowForm(true);
   };
 
-  const handleDeleteBusiness = async (business: Business) => {
-    if (!confirm(`Are you sure you want to delete "${business.name}"? This action cannot be undone.`)) {
-      return;
-    }
-
-    try {
-      setDeleting(business.business_id);
-      await deleteBusiness(business.business_id);
-      await loadBusinesses();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete business');
-    } finally {
-      setDeleting(null);
-    }
-  };
 
   const handleAddEmployee = (business: Business) => {
     setSelectedBusiness(business);
@@ -285,24 +269,14 @@ export function BusinessManagement({ onBack }: BusinessManagementProps) {
             {/* Business Grid - Mobile First Design */}
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
               {businesses.map((business) => (
-                <div key={business.business_id} className="relative">
-                  <BusinessTile 
-                    business={business}
-                    onEdit={handleEditBusiness}
-                    onDelete={deleting === business.business_id ? undefined : handleDeleteBusiness}
-                    onAddEmployee={handleAddEmployee}
-                    onViewEmployees={handleViewEmployees}
-                    onPaymentsReports={handlePaymentsReports}
-                  />
-                  {deleting === business.business_id && (
-                    <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center rounded-xl">
-                      <div className="text-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto mb-2"></div>
-                        <p className="text-sm text-gray-600">Deleting...</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <BusinessTile 
+                  key={business.business_id}
+                  business={business}
+                  onEdit={handleEditBusiness}
+                  onAddEmployee={handleAddEmployee}
+                  onViewEmployees={handleViewEmployees}
+                  onPaymentsReports={handlePaymentsReports}
+                />
               ))}
               
               {/* Add Business Button Card - Mobile Optimized */}
