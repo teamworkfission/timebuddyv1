@@ -246,12 +246,16 @@ export function BusinessForm({ onSuccess, onCancel, initialData, mode = 'create'
 
         {/* Manual Address Entry Button or Fields */}
         {!showManualFields ? (
-          <div className="flex justify-center">
+          <div className="flex flex-col items-center space-y-3">
+            <div className="flex items-center space-x-4">
+              <div className="flex-1 h-px bg-gray-200"></div>
+              <span className="text-sm text-gray-500 font-medium">OR</span>
+              <div className="flex-1 h-px bg-gray-200"></div>
+            </div>
             <Button
               type="button"
-              variant="outline"
+              variant="primary"
               onClick={handleManualAddressClick}
-              className="bg-blue-500 hover:bg-blue-600 text-white border-blue-500 hover:border-blue-600"
               size="md"
             >
               Manually Enter Address
