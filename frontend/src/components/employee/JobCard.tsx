@@ -110,11 +110,20 @@ export function JobCard({ job, isExpanded = false, onToggleExpanded, isAppliedJo
           <p className="text-lg text-gray-700">
             🏢 {job.business_name} <span className="font-bold text-gray-900">({BUSINESS_TYPE_LABELS[job.business_type as keyof typeof BUSINESS_TYPE_LABELS] || job.business_type})</span>
           </p>
-          <p className="text-gray-600">
-            📍 {locationInfo.city}
-            {locationInfo.county && `, ${locationInfo.county}`}
-            , {locationInfo.state}
-          </p>
+          <div className="flex items-center space-x-2">
+            <span>📍</span>
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${locationInfo.city}${locationInfo.county ? `, ${locationInfo.county}` : ''}, ${locationInfo.state}`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:text-blue-800 hover:underline transition-colors cursor-pointer"
+              title="View on Google Maps"
+            >
+              {locationInfo.city}
+              {locationInfo.county && `, ${locationInfo.county}`}
+              , {locationInfo.state}
+            </a>
+          </div>
         </div>
 
         {/* Pay and Type Info */}
@@ -199,14 +208,26 @@ export function JobCard({ job, isExpanded = false, onToggleExpanded, isAppliedJo
         <div className="border-t-2 border-gray-300 pt-4">
           <h4 className="font-semibold text-gray-900 mb-3">Contact Information</h4>
           <div className="space-y-2">
-            <div>
+            <div className="flex items-center space-x-2">
               <span className="font-medium text-gray-800">Phone:</span>
-              <span className="text-gray-700 ml-2">{job.phone}</span>
+              <a
+                href={`tel:${job.phone}`}
+                className="text-blue-600 hover:text-blue-800 hover:underline transition-colors cursor-pointer ml-2"
+                title="Call phone number"
+              >
+                {job.phone}
+              </a>
             </div>
             {job.email && (
-              <div>
+              <div className="flex items-center space-x-2">
                 <span className="font-medium text-gray-800">Email:</span>
-                <span className="text-gray-700 ml-2">{job.email}</span>
+                <a
+                  href={`mailto:${job.email}`}
+                  className="text-blue-600 hover:text-blue-800 hover:underline transition-colors cursor-pointer ml-2"
+                  title="Send email"
+                >
+                  {job.email}
+                </a>
               </div>
             )}
             <div>
