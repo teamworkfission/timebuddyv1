@@ -7,6 +7,7 @@ interface PaymentWarningsProps {
   rate: number;
   hasOverlap?: boolean;
   className?: string;
+  compact?: boolean;
 }
 
 interface Warning {
@@ -24,7 +25,8 @@ export function PaymentWarnings({
   hours, 
   rate, 
   hasOverlap = false,
-  className = ""
+  className = "",
+  compact = false
 }: PaymentWarningsProps) {
   const warnings: Warning[] = [];
 
@@ -118,6 +120,23 @@ export function PaymentWarnings({
         return 'text-gray-500';
     }
   };
+
+  if (compact) {
+    // Compact mode for table - show only icons with tooltips
+    const highestPriorityWarning = warnings.find(w => w.type === 'error') || warnings[0];
+    if (!highestPriorityWarning) return null;
+
+    return (
+      <div className={`flex items-center space-x-1 ${className}`} title={highestPriorityWarning.message}>
+        <div className={`${getIconColor(highestPriorityWarning.type)}`}>
+          {highestPriorityWarning.icon}
+        </div>
+        {warnings.length > 1 && (
+          <span className="text-xs text-gray-500">+{warnings.length - 1}</span>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className={`space-y-2 ${className}`}>

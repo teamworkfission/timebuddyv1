@@ -9,11 +9,11 @@ import {
   createPaymentRecord,
   updatePaymentRecord,
   markPaymentAsPaid,
-  setEmployeeRate,
-  getDefaultDateRange
+  getDefaultDateRange,
+  getBusinessEmployees
 } from '../../lib/payments-api';
 import { DateRangePicker } from './DateRangePicker';
-import { EmployeePaymentCard } from './EmployeePaymentCard';
+import { PaymentTable } from './PaymentTable';
 import { SuccessMessage } from './PaymentWarnings';
 import { Button } from '../ui/Button';
 
@@ -39,8 +39,8 @@ export function PaymentsTab({ business }: PaymentsTabProps) {
         getEmployeeHours(business.business_id, dateRange.start, dateRange.end),
         getCurrentEmployeeRates(business.business_id),
         getPaymentRecords(business.business_id, { start_date: dateRange.start, end_date: dateRange.end }),
-        // Fetch business employees from Supabase directly
-        fetchBusinessEmployees(business.business_id)
+        // Fetch business employees using correct API
+        getBusinessEmployees(business.business_id)
       ]);
 
       // Combine data for UI
@@ -61,19 +61,6 @@ export function PaymentsTab({ business }: PaymentsTabProps) {
     }
   };
 
-  // Fetch business employees from Supabase
-  const fetchBusinessEmployees = async (businessId: string) => {
-    try {
-      // This would typically use the supabase client
-      // For now, we'll return mock data or integrate with your existing employee API
-      const response = await fetch(`/api/businesses/${businessId}/employees`);
-      if (!response.ok) throw new Error('Failed to fetch employees');
-      return await response.json();
-    } catch (err) {
-      console.error('Error fetching business employees:', err);
-      return [];
-    }
-  };
 
   // Combine employee data with hours, rates, and payment records
   const combineEmployeeData = (
@@ -82,18 +69,46 @@ export function PaymentsTab({ business }: PaymentsTabProps) {
     rates: any[],
     paymentRecords: any[]
   ): EmployeeWithHours[] => {
-    return businessEmployees.map(emp => {
-      const hoursWorked = hoursByEmployee[emp.id] || 0;
-      const currentRate = rates.find(rate => rate.employee_id === emp.id);
+    // Get all unique employee IDs from business employees and payment records
+    const employeeMap = new Map();
+    
+    // Add business employees
+    businessEmployees.forEach(employeeAssociation => {
+      const emp = employeeAssociation.employee;
+      employeeMap.set(emp.id, emp);
+    });
+    
+    // Add employees from payment records (in case they have payment records but aren't in business employees)
+    paymentRecords.forEach(record => {
+      if (!employeeMap.has(record.employee_id)) {
+        employeeMap.set(record.employee_id, {
+          id: record.employee_id,
+          full_name: `Employee ${record.employee_id.slice(0, 8)}` // Fallback name
+        });
+      }
+    });
+
+    return Array.from(employeeMap.values()).map(emp => {
+      const employeeId = emp.id;
+      
+      // Get hours from schedule system
+      const scheduledHours = hoursByEmployee[employeeId] || 0;
+      
+      // Get current payment record for this period
       const paymentRecord = paymentRecords.find(record => 
-        record.employee_id === emp.id &&
+        record.employee_id === employeeId &&
         record.period_start === dateRange.start &&
         record.period_end === dateRange.end
       );
+      
+      // Use hours from payment record if available, otherwise use scheduled hours
+      const hoursWorked = paymentRecord?.total_hours || scheduledHours;
+      
+      const currentRate = rates.find(rate => rate.employee_id === employeeId);
 
       // Check for overlapping periods
       const hasOverlap = paymentRecords.some(record => 
-        record.employee_id === emp.id &&
+        record.employee_id === employeeId &&
         record.status === 'paid' &&
         (record.period_start !== dateRange.start || record.period_end !== dateRange.end) &&
         (
@@ -103,7 +118,7 @@ export function PaymentsTab({ business }: PaymentsTabProps) {
       );
 
       return {
-        id: emp.id,
+        id: employeeId,
         full_name: emp.full_name || 'Unknown Employee',
         hoursWorked,
         currentRate: currentRate?.hourly_rate || 0,
@@ -114,7 +129,7 @@ export function PaymentsTab({ business }: PaymentsTabProps) {
         notes: paymentRecord?.notes || '',
         hasOverlap
       };
-    });
+    }).filter(emp => emp.hoursWorked > 0 || emp.paymentRecord); // Show employees with hours or existing payment records
   };
 
   // Handle saving payment record
@@ -176,27 +191,6 @@ export function PaymentsTab({ business }: PaymentsTabProps) {
     }
   };
 
-  // Handle updating employee rate
-  const handleUpdateRate = async (employeeId: string, rate: number) => {
-    try {
-      await setEmployeeRate({
-        business_id: business.business_id,
-        employee_id: employeeId,
-        hourly_rate: rate
-      });
-      
-      setSuccess('Employee rate updated successfully');
-      
-      // Reload data to reflect changes
-      await loadPaymentData();
-      
-      // Clear success message after 3 seconds
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update employee rate';
-      setError(errorMessage);
-    }
-  };
 
   // Load data when component mounts or date range changes
   useEffect(() => {
@@ -310,27 +304,21 @@ export function PaymentsTab({ business }: PaymentsTabProps) {
         )}
       </div>
 
-      {/* Employee Payment Cards */}
+      {/* Employee Payments Table */}
       <div className="space-y-6">
         {employeesWithHours.length > 0 ? (
           <>
             <h3 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
               <Users className="w-5 h-5" />
-              <span>Employees with Hours ({employeesWithHours.length})</span>
+              <span>Employee Payments ({employeesWithHours.length})</span>
             </h3>
             
-            <div className="space-y-4">
-              {employeesWithHours.map(employee => (
-                <EmployeePaymentCard
-                  key={employee.id}
-                  employee={employee}
-                  onSave={handleSavePayment}
-                  onMarkPaid={handleMarkAsPaid}
-                  onUpdateRate={handleUpdateRate}
-                  loading={loading}
-                />
-              ))}
-            </div>
+            <PaymentTable 
+              employees={employeesWithHours}
+              onSave={handleSavePayment}
+              onMarkPaid={handleMarkAsPaid}
+              loading={loading}
+            />
           </>
         ) : !loading && (
           <div className="text-center py-12">

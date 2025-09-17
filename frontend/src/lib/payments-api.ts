@@ -323,6 +323,14 @@ export async function bulkCreatePaymentRecords(
 }
 
 // =====================================================
+// BUSINESS EMPLOYEES API
+// =====================================================
+
+export async function getBusinessEmployees(businessId: string): Promise<any[]> {
+  return apiRequest(`/businesses/${businessId}/employees`);
+}
+
+// =====================================================
 // UTILITY FUNCTIONS
 // =====================================================
 

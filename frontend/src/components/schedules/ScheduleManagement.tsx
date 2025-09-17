@@ -30,6 +30,7 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
   const [shiftTemplates, setShiftTemplates] = useState<ShiftTemplate[]>([]);
   const [weeklySchedule, setWeeklySchedule] = useState<WeeklySchedule | null>(null);
   const [loading, setLoading] = useState(false);
+  const [businessesLoading, setBusinessesLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showTemplateManager, setShowTemplateManager] = useState(false);
   const [hasPostedVersion, setHasPostedVersion] = useState(false);
@@ -70,11 +71,14 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
 
   const loadBusinesses = async () => {
     try {
+      setBusinessesLoading(true);
       const businessData = await BusinessesApi.getBusinesses();
       setBusinesses(businessData);
     } catch (err) {
       setError('Failed to load businesses');
       console.error('Error loading businesses:', err);
+    } finally {
+      setBusinessesLoading(false);
     }
   };
 
@@ -478,7 +482,7 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
             businesses={businesses}
             selectedBusinessId={selectedBusinessId}
             onBusinessChange={handleBusinessChange}
-            loading={loading}
+            loading={businessesLoading}
           />
         </div>
 
