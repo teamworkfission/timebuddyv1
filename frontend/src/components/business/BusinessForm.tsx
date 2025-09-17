@@ -28,6 +28,8 @@ export function BusinessForm({ onSuccess, onCancel, initialData, mode = 'create'
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showManualFields, setShowManualFields] = useState(false);
+  const [manualFieldsMode, setManualFieldsMode] = useState<'lookup' | 'manual' | null>(null);
 
   // Initialize form data when editing
   useEffect(() => {
@@ -44,6 +46,15 @@ export function BusinessForm({ onSuccess, onCancel, initialData, mode = 'create'
         zip_code: initialData.zip_code || '',
         street_address: initialData.street_address || '',
       });
+      
+      // Show manual fields if we have address data to edit
+      const hasAddressData = initialData.state || initialData.city || 
+                           initialData.county || initialData.zip_code || 
+                           initialData.street_address;
+      if (hasAddressData) {
+        setShowManualFields(true);
+        setManualFieldsMode('lookup');
+      }
     }
   }, [mode, initialData]);
 
@@ -92,8 +103,17 @@ export function BusinessForm({ onSuccess, onCancel, initialData, mode = 'create'
     
     setFormData(updatedData);
     
+    // Show manual fields when address is selected from lookup
+    setShowManualFields(true);
+    setManualFieldsMode('lookup');
+    
     // Also update the location string to reflect the new combined address if manual fields are filled
     updateLocationFromComponents(updatedData);
+  };
+
+  const handleManualAddressClick = () => {
+    setShowManualFields(true);
+    setManualFieldsMode('manual');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -224,79 +244,100 @@ export function BusinessForm({ onSuccess, onCancel, initialData, mode = 'create'
           />
         </div>
 
-        {/* Manual Address Fields - Mobile Optimized */}
-        <div className="space-y-4">
-          <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg border border-blue-200">
-            <p className="font-medium text-blue-800 mb-1">Manual Address Entry</p>
-            <p>If the address lookup above doesn't work or find your location, you can manually enter the address components below. The state dropdown is searchable for your convenience.</p>
+        {/* Manual Address Entry Button or Fields */}
+        {!showManualFields ? (
+          <div className="flex justify-center">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleManualAddressClick}
+              className="bg-blue-500 hover:bg-blue-600 text-white border-blue-500 hover:border-blue-600"
+              size="md"
+            >
+              Manually Enter Address
+            </Button>
           </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            <div>
-              <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-2">
-                State *
-              </label>
-              <StateDropdown
-                value={formData.state || ''}
-                onChange={handleStateChange}
-                placeholder="Select state..."
-                className="w-full"
-              />
+        ) : (
+          <div className="space-y-4">
+            <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg border border-blue-200">
+              <p className="font-medium text-blue-800 mb-1">
+                {manualFieldsMode === 'lookup' ? 'Address Details' : 'Manual Address Entry'}
+              </p>
+              <p>
+                {manualFieldsMode === 'lookup' 
+                  ? 'Review and edit the address details below as needed.' 
+                  : 'Enter the address components below. The state dropdown is searchable for your convenience.'
+                }
+              </p>
             </div>
-            <div>
-              <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-2">
-                City/Town
-              </label>
-              <Input
-                id="city"
-                name="city"
-                type="text"
-                value={formData.city || ''}
-                onChange={handleInputChange}
-                placeholder="New York"
-              />
-            </div>
-            <div>
-              <label htmlFor="county" className="block text-sm font-medium text-gray-700 mb-2">
-                County
-              </label>
-              <Input
-                id="county"
-                name="county"
-                type="text"
-                value={formData.county || ''}
-                onChange={handleInputChange}
-                placeholder="Manhattan"
-              />
-            </div>
-            <div>
-              <label htmlFor="zip_code" className="block text-sm font-medium text-gray-700 mb-2">
-                ZIP Code
-              </label>
-              <Input
-                id="zip_code"
-                name="zip_code"
-                type="text"
-                value={formData.zip_code || ''}
-                onChange={handleInputChange}
-                placeholder="10001"
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <label htmlFor="street_address" className="block text-sm font-medium text-gray-700 mb-2">
-                Street Address
-              </label>
-              <Input
-                id="street_address"
-                name="street_address"
-                type="text"
-                value={formData.street_address || ''}
-                onChange={handleInputChange}
-                placeholder="123 Main St"
-              />
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              <div>
+                <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-2">
+                  State *
+                </label>
+                <StateDropdown
+                  value={formData.state || ''}
+                  onChange={handleStateChange}
+                  placeholder="Select state..."
+                  className="w-full"
+                />
+              </div>
+              <div>
+                <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-2">
+                  City/Town
+                </label>
+                <Input
+                  id="city"
+                  name="city"
+                  type="text"
+                  value={formData.city || ''}
+                  onChange={handleInputChange}
+                  placeholder="New York"
+                />
+              </div>
+              <div>
+                <label htmlFor="county" className="block text-sm font-medium text-gray-700 mb-2">
+                  County
+                </label>
+                <Input
+                  id="county"
+                  name="county"
+                  type="text"
+                  value={formData.county || ''}
+                  onChange={handleInputChange}
+                  placeholder="Manhattan"
+                />
+              </div>
+              <div>
+                <label htmlFor="zip_code" className="block text-sm font-medium text-gray-700 mb-2">
+                  ZIP Code
+                </label>
+                <Input
+                  id="zip_code"
+                  name="zip_code"
+                  type="text"
+                  value={formData.zip_code || ''}
+                  onChange={handleInputChange}
+                  placeholder="10001"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label htmlFor="street_address" className="block text-sm font-medium text-gray-700 mb-2">
+                  Street Address
+                </label>
+                <Input
+                  id="street_address"
+                  name="street_address"
+                  type="text"
+                  value={formData.street_address || ''}
+                  onChange={handleInputChange}
+                  placeholder="123 Main St"
+                />
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
 
         {/* Form Actions - Mobile Optimized */}
