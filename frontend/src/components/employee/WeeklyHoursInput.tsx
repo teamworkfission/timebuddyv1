@@ -204,12 +204,7 @@ export function WeeklyHoursInput({ businessId, weekStart, onBack }: WeeklyHoursI
       <div className="text-center p-8">
         <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
         <h3 className="text-lg font-medium text-gray-900 mb-2">Failed to Load</h3>
-        <p className="text-gray-600 mb-4">Unable to load hours data for this week</p>
-        {onBack && (
-          <Button variant="outline" onClick={onBack}>
-            ← Go Back
-          </Button>
-        )}
+        <p className="text-gray-600">Unable to load hours data for this week</p>
       </div>
     );
   }
@@ -373,15 +368,7 @@ export function WeeklyHoursInput({ businessId, weekStart, onBack }: WeeklyHoursI
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              {onBack && (
-                <Button variant="outline" onClick={onBack}>
-                  ← Back
-                </Button>
-              )}
-            </div>
-            
+          <div className="flex justify-end">
             <div className="flex items-center space-x-3">
               {canEdit && (
                 <Button
