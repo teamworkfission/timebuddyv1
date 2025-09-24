@@ -10,7 +10,8 @@ import {
   submitConfirmedHours,
   calculateTotalHours,
   validateHours,
-  formatHours
+  formatHours,
+  formatDayWithDate
 } from '../../lib/confirmed-hours-api';
 import { AlertCircle, Check, Clock, Save, Send } from 'lucide-react';
 
@@ -22,13 +23,13 @@ interface WeeklyHoursInputProps {
 
 // Day configuration matching existing schedule system
 const DAYS = [
-  { key: 'sunday_hours', label: 'Sun', fullLabel: 'Sunday' },
-  { key: 'monday_hours', label: 'Mon', fullLabel: 'Monday' },
-  { key: 'tuesday_hours', label: 'Tue', fullLabel: 'Tuesday' },
-  { key: 'wednesday_hours', label: 'Wed', fullLabel: 'Wednesday' },
-  { key: 'thursday_hours', label: 'Thu', fullLabel: 'Thursday' },
-  { key: 'friday_hours', label: 'Fri', fullLabel: 'Friday' },
-  { key: 'saturday_hours', label: 'Sat', fullLabel: 'Saturday' }
+  { key: 'sunday_hours', label: 'Sun', fullLabel: 'Sunday', dayIndex: 0 },
+  { key: 'monday_hours', label: 'Mon', fullLabel: 'Monday', dayIndex: 1 },
+  { key: 'tuesday_hours', label: 'Tue', fullLabel: 'Tuesday', dayIndex: 2 },
+  { key: 'wednesday_hours', label: 'Wed', fullLabel: 'Wednesday', dayIndex: 3 },
+  { key: 'thursday_hours', label: 'Thu', fullLabel: 'Thursday', dayIndex: 4 },
+  { key: 'friday_hours', label: 'Fri', fullLabel: 'Friday', dayIndex: 5 },
+  { key: 'saturday_hours', label: 'Sat', fullLabel: 'Saturday', dayIndex: 6 }
 ] as const;
 
 type DayKey = typeof DAYS[number]['key'];
@@ -211,18 +212,33 @@ export function WeeklyHoursInput({ businessId, weekStart, onBack }: WeeklyHoursI
 
   return (
     <div className="max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="bg-white rounded-lg shadow mb-6">
+      {/* Success/Error Messages */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center text-red-800">
+            <AlertCircle className="h-5 w-5 mr-2" />
+            {error}
+          </div>
+        </div>
+      )}
+      
+      {success && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center text-green-800">
+            <Check className="h-5 w-5 mr-2" />
+            {success}
+          </div>
+        </div>
+      )}
+
+      {/* Hours Input Form */}
+      <div className="bg-white rounded-lg shadow">
         <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">Weekly Hours Entry</h2>
+              <h3 className="text-lg font-medium text-gray-900">Daily Hours</h3>
               <p className="text-sm text-gray-600 mt-1">
-                {data.business.name} • {new Date(weekStart + 'T00:00:00').toLocaleDateString('en-US', { 
-                  weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' 
-                })} - {new Date(new Date(weekStart + 'T00:00:00').getTime() + 6 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { 
-                  weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' 
-                })}
+                Enter the actual hours you worked each day. Hours are prefilled from your schedule.
               </p>
             </div>
             <div className="flex items-center space-x-4">
@@ -237,43 +253,13 @@ export function WeeklyHoursInput({ businessId, weekStart, onBack }: WeeklyHoursI
           </div>
         </div>
 
-        {/* Success/Error Messages */}
-        {error && (
-          <div className="px-6 py-4 bg-red-50 border-b border-red-200">
-            <div className="flex items-center text-red-800">
-              <AlertCircle className="h-5 w-5 mr-2" />
-              {error}
-            </div>
-          </div>
-        )}
-        
-        {success && (
-          <div className="px-6 py-4 bg-green-50 border-b border-green-200">
-            <div className="flex items-center text-green-800">
-              <Check className="h-5 w-5 mr-2" />
-              {success}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Hours Input Form */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900">Daily Hours</h3>
-          <p className="text-sm text-gray-600 mt-1">
-            Enter the actual hours you worked each day. Hours are prefilled from your schedule.
-          </p>
-        </div>
-
         <div className="p-6">
           {/* Desktop View - Grid Layout */}
           <div className="hidden md:grid md:grid-cols-7 gap-4 mb-6">
             {DAYS.map((day) => (
               <div key={day.key} className="text-center">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {day.label}
-                  <div className="text-xs text-gray-500">{day.fullLabel}</div>
+                  {formatDayWithDate(weekStart, day.dayIndex, day.label)}
                 </label>
                 <input
                   type="number"
@@ -309,7 +295,7 @@ export function WeeklyHoursInput({ businessId, weekStart, onBack }: WeeklyHoursI
             {DAYS.map((day) => (
               <div key={day.key} className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="flex-1">
-                  <div className="font-medium text-gray-900">{day.fullLabel}</div>
+                  <div className="font-medium text-gray-900">{formatDayWithDate(weekStart, day.dayIndex, day.label)}</div>
                   {data.scheduled_hours[day.key] > 0 && (
                     <div className="text-sm text-gray-500">
                       Scheduled: {formatHours(data.scheduled_hours[day.key])}h

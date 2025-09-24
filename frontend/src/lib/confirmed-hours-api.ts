@@ -374,3 +374,19 @@ export function validateHours(hours: number | string): boolean {
 export function formatHours(hours: number): string {
   return hours % 1 === 0 ? hours.toString() : hours.toFixed(2).replace(/\.?0+$/, '');
 }
+
+/**
+ * Format day with date for compact display (e.g., "Sun - Sep 21")
+ */
+export function formatDayWithDate(weekStart: string, dayIndex: number, dayAbbrev: string): string {
+  const date = new Date(weekStart + 'T00:00:00');
+  date.setDate(date.getDate() + dayIndex);
+  
+  const options: Intl.DateTimeFormatOptions = { 
+    month: 'short', 
+    day: 'numeric'
+  };
+  
+  const dateStr = date.toLocaleDateString('en-US', options);
+  return `${dayAbbrev} - ${dateStr}`;
+}
