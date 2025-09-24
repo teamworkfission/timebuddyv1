@@ -152,6 +152,20 @@ export class PaymentsController {
     return this.paymentsService.getEmployeeHours(businessId, startDate, endDate);
   }
 
+  @Get('hours-detailed/:businessId')
+  async getDetailedEmployeeHours(
+    @Param('businessId') businessId: string,
+    @Query('start_date') startDate: string,
+    @Query('end_date') endDate: string,
+    @Request() req
+  ) {
+    if (!startDate || !endDate) {
+      throw new BadRequestException('start_date and end_date are required');
+    }
+
+    return this.paymentsService.getDetailedEmployeeHours(businessId, startDate, endDate);
+  }
+
   @Post('calculate')
   async calculatePayForPeriod(
     @Body() calculateDto: {

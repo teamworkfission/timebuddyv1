@@ -20,6 +20,12 @@ import { CreateShiftDto } from './dto/create-shift.dto';
 import { UpdateShiftDto } from './dto/update-shift.dto';
 import { CreateShiftTemplateDto } from './dto/create-shift-template.dto';
 import { UpdateShiftTemplateDto } from './dto/update-shift-template.dto';
+import { 
+  CreateConfirmedHoursDto, 
+  UpdateConfirmedHoursDto, 
+  SubmitHoursDto, 
+  ApproveHoursDto 
+} from './dto/confirmed-hours.dto';
 
 @Controller('schedules')
 export class SchedulesController {
@@ -180,5 +186,103 @@ export class SchedulesController {
   ) {
     const userId = await this.getUserIdFromRequest(req);
     return this.schedulesService.getEmployeeSchedules(userId, weekStart);
+  }
+
+  // =====================================================
+  // EMPLOYEE CONFIRMED HOURS ENDPOINTS
+  // =====================================================
+
+  /**
+   * Get employee's weekly hours with scheduled hours prefill
+   * Returns both confirmed hours (if exists) and scheduled hours from posted schedules
+   */
+  @Get('employee/hours/:businessId/:weekStart')
+  async getEmployeeWeeklyHours(
+    @Param('businessId') businessId: string,
+    @Param('weekStart') weekStart: string,
+    @Request() req: any,
+  ) {
+    const userId = await this.getUserIdFromRequest(req);
+    return this.schedulesService.getEmployeeWeeklyHours(businessId, weekStart, userId);
+  }
+
+  /**
+   * Create new confirmed hours record for employee
+   */
+  @Post('employee/hours')
+  async createConfirmedHours(
+    @Body() createDto: CreateConfirmedHoursDto,
+    @Request() req: any,
+  ) {
+    const userId = await this.getUserIdFromRequest(req);
+    return this.schedulesService.createConfirmedHours(createDto, userId);
+  }
+
+  /**
+   * Update existing confirmed hours (only draft status)
+   */
+  @Put('employee/hours/:id')
+  async updateConfirmedHours(
+    @Param('id') id: string,
+    @Body() updateDto: UpdateConfirmedHoursDto,
+    @Request() req: any,
+  ) {
+    const userId = await this.getUserIdFromRequest(req);
+    return this.schedulesService.updateConfirmedHours(id, updateDto, userId);
+  }
+
+  /**
+   * Submit confirmed hours for employer approval
+   */
+  @Post('employee/hours/:id/submit')
+  async submitConfirmedHours(
+    @Param('id') id: string,
+    @Body() submitDto: SubmitHoursDto,
+    @Request() req: any,
+  ) {
+    const userId = await this.getUserIdFromRequest(req);
+    return this.schedulesService.submitConfirmedHours(id, submitDto, userId);
+  }
+
+  /**
+   * Get list of employee's confirmed hours records
+   */
+  @Get('employee/hours/list')
+  async getEmployeeConfirmedHoursList(
+    @Query('business_id') businessId: string | undefined,
+    @Request() req: any,
+  ) {
+    const userId = await this.getUserIdFromRequest(req);
+    return this.schedulesService.getEmployeeConfirmedHoursList(userId, businessId);
+  }
+
+  // =====================================================
+  // EMPLOYER CONFIRMED HOURS ENDPOINTS
+  // =====================================================
+
+  /**
+   * Get confirmed hours for employer's business (submitted/approved only)
+   */
+  @Get('employer/hours/:businessId')
+  async getEmployerConfirmedHoursList(
+    @Param('businessId') businessId: string,
+    @Query('status') status: 'submitted' | 'approved' | undefined,
+    @Request() req: any,
+  ) {
+    const userId = await this.getUserIdFromRequest(req);
+    return this.schedulesService.getEmployerConfirmedHoursList(businessId, userId, status);
+  }
+
+  /**
+   * Approve submitted hours (employer only)
+   */
+  @Post('employer/hours/:id/approve')
+  async approveConfirmedHours(
+    @Param('id') id: string,
+    @Body() approveDto: ApproveHoursDto,
+    @Request() req: any,
+  ) {
+    const userId = await this.getUserIdFromRequest(req);
+    return this.schedulesService.approveConfirmedHours(id, approveDto, userId);
   }
 }

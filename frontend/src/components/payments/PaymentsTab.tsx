@@ -4,7 +4,7 @@ import { Business } from '../../lib/business-api';
 import { 
   EmployeeWithHours, 
   getCurrentEmployeeRates,
-  getEmployeeHours,
+  getDetailedEmployeeHours,
   getPaymentRecords,
   createPaymentRecord,
   updatePaymentRecord,
@@ -13,7 +13,7 @@ import {
   getBusinessEmployees
 } from '../../lib/payments-api';
 import { DateRangePicker } from './DateRangePicker';
-import { PaymentTable } from './PaymentTable';
+import { EnhancedPaymentTable } from './EnhancedPaymentTable';
 import { SuccessMessage } from './PaymentWarnings';
 import { Button } from '../ui/Button';
 
@@ -35,8 +35,8 @@ export function PaymentsTab({ business }: PaymentsTabProps) {
       setError(null);
 
       // Fetch all required data in parallel
-      const [employeeHours, currentRates, existingPayments, businessEmployees] = await Promise.all([
-        getEmployeeHours(business.business_id, dateRange.start, dateRange.end),
+      const [detailedHours, currentRates, existingPayments, businessEmployees] = await Promise.all([
+        getDetailedEmployeeHours(business.business_id, dateRange.start, dateRange.end),
         getCurrentEmployeeRates(business.business_id),
         getPaymentRecords(business.business_id, { start_date: dateRange.start, end_date: dateRange.end }),
         // Fetch business employees using correct API
@@ -46,7 +46,7 @@ export function PaymentsTab({ business }: PaymentsTabProps) {
       // Combine data for UI
       const employeesWithData = combineEmployeeData(
         businessEmployees,
-        employeeHours,
+        detailedHours,
         currentRates,
         existingPayments
       );
@@ -65,7 +65,7 @@ export function PaymentsTab({ business }: PaymentsTabProps) {
   // Combine employee data with hours, rates, and payment records
   const combineEmployeeData = (
     businessEmployees: any[],
-    hoursByEmployee: Record<string, number>,
+    detailedHours: Record<string, { confirmed: number | null, calculated: number, source: 'confirmed' | 'calculated' }>,
     rates: any[],
     paymentRecords: any[]
   ): EmployeeWithHours[] => {
@@ -91,8 +91,14 @@ export function PaymentsTab({ business }: PaymentsTabProps) {
     return Array.from(employeeMap.values()).map(emp => {
       const employeeId = emp.id;
       
-      // Get hours from schedule system
-      const scheduledHours = hoursByEmployee[employeeId] || 0;
+      // Get hours breakdown from detailed hours
+      const hoursBreakdown = detailedHours[employeeId];
+      const confirmedHours = hoursBreakdown?.confirmed || null;
+      const calculatedHours = hoursBreakdown?.calculated || 0;
+      const hoursSource = hoursBreakdown?.source || 'calculated';
+      
+      // Use confirmed hours if available, otherwise use calculated hours
+      const finalHours = confirmedHours !== null ? confirmedHours : calculatedHours;
       
       // Get current payment record for this period
       const paymentRecord = paymentRecords.find(record => 
@@ -101,10 +107,14 @@ export function PaymentsTab({ business }: PaymentsTabProps) {
         record.period_end === dateRange.end
       );
       
-      // Use hours from payment record if available, otherwise use scheduled hours
-      const hoursWorked = paymentRecord?.total_hours || scheduledHours;
+      // Use hours from payment record if available, otherwise use hours breakdown
+      const hoursWorked = paymentRecord?.total_hours || finalHours;
       
       const currentRate = rates.find(rate => rate.employee_id === employeeId);
+
+      // Check if there's a discrepancy between confirmed and calculated hours
+      const hasDiscrepancy = confirmedHours !== null && calculatedHours > 0 && 
+                           Math.abs(confirmedHours - calculatedHours) > 0.25; // 15-minute threshold
 
       // Check for overlapping periods
       const hasOverlap = paymentRecords.some(record => 
@@ -127,7 +137,12 @@ export function PaymentsTab({ business }: PaymentsTabProps) {
         bonuses: paymentRecord?.bonuses || 0,
         deductions: paymentRecord?.deductions || 0,
         notes: paymentRecord?.notes || '',
-        hasOverlap
+        hasOverlap,
+        // Confirmed hours support
+        confirmedHours,
+        calculatedHours,
+        hoursSource,
+        hasDiscrepancy
       };
     }).filter(emp => emp.hoursWorked > 0 || emp.paymentRecord); // Show employees with hours or existing payment records
   };
@@ -313,8 +328,10 @@ export function PaymentsTab({ business }: PaymentsTabProps) {
               <span>Employee Payments ({employeesWithHours.length})</span>
             </h3>
             
-            <PaymentTable 
+            <EnhancedPaymentTable 
               employees={employeesWithHours}
+              businessId={business.business_id}
+              dateRange={dateRange}
               onSave={handleSavePayment}
               onMarkPaid={handleMarkAsPaid}
               loading={loading}

@@ -77,6 +77,11 @@ export interface EmployeeWithHours {
   deductions?: number;
   notes?: string;
   hasOverlap?: boolean;
+  // Confirmed hours support
+  confirmedHours?: number | null;
+  calculatedHours?: number;
+  hoursSource?: 'confirmed' | 'calculated';
+  hasDiscrepancy?: boolean;
 }
 
 // =====================================================
@@ -216,6 +221,19 @@ export async function getEmployeeHours(
   });
   
   return apiRequest(`/payments/hours/${businessId}?${params.toString()}`);
+}
+
+export async function getDetailedEmployeeHours(
+  businessId: string,
+  startDate: string,
+  endDate: string
+): Promise<Record<string, { confirmed: number | null, calculated: number, source: 'confirmed' | 'calculated' }>> {
+  const params = new URLSearchParams({
+    start_date: startDate,
+    end_date: endDate,
+  });
+  
+  return apiRequest(`/payments/hours-detailed/${businessId}?${params.toString()}`);
 }
 
 export async function calculatePayForPeriod(data: {

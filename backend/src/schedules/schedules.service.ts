@@ -13,6 +13,14 @@ import {
   minutesToLegacyTime,
   isValidAmPmTime
 } from '../utils/time-parser';
+import { 
+  CreateConfirmedHoursDto, 
+  UpdateConfirmedHoursDto, 
+  ConfirmedHoursResponseDto,
+  WeeklyHoursWithScheduleDto,
+  SubmitHoursDto,
+  ApproveHoursDto
+} from './dto/confirmed-hours.dto';
 
 @Injectable()
 export class SchedulesService {
@@ -738,5 +746,340 @@ export class SchedulesService {
         `Please select a current or future date.`
       );
     }
+  }
+
+  // =====================================================
+  // EMPLOYEE CONFIRMED HOURS METHODS
+  // =====================================================
+
+  async getEmployeeWeeklyHours(
+    businessId: string, 
+    weekStart: string, 
+    userId: string
+  ): Promise<WeeklyHoursWithScheduleDto> {
+    const supabase = this.supabaseService.admin;
+    
+    // Get employee record
+    const { data: employee, error: empError } = await supabase
+      .from('employees')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+      
+    if (empError || !employee) {
+      throw new NotFoundException('Employee profile not found');
+    }
+
+    // Get business details
+    const { data: business, error: bizError } = await supabase
+      .from('businesses')
+      .select('business_id, name')
+      .eq('business_id', businessId)
+      .single();
+      
+    if (bizError || !business) {
+      throw new NotFoundException('Business not found');
+    }
+
+    // Check if employee works for this business
+    const { data: businessEmployee, error: beError } = await supabase
+      .from('business_employees')
+      .select('id')
+      .eq('business_id', businessId)
+      .eq('employee_id', employee.id)
+      .single();
+      
+    if (beError || !businessEmployee) {
+      throw new BadRequestException('Employee is not associated with this business');
+    }
+
+    // Get confirmed hours if they exist
+    const { data: confirmedHours } = await supabase
+      .from('employee_confirmed_hours')
+      .select('*')
+      .eq('employee_id', employee.id)
+      .eq('business_id', businessId)
+      .eq('week_start_date', weekStart)
+      .single();
+
+    // Get scheduled hours using database function
+    const { data: scheduledHoursResult, error: schedError } = await supabase
+      .rpc('get_scheduled_hours_for_week', {
+        p_employee_id: employee.id,
+        p_business_id: businessId,
+        p_week_start: weekStart
+      });
+
+    if (schedError) {
+      throw new BadRequestException(`Failed to get scheduled hours: ${schedError.message}`);
+    }
+
+    const scheduledHours = scheduledHoursResult || {
+      sunday_hours: 0, monday_hours: 0, tuesday_hours: 0, 
+      wednesday_hours: 0, thursday_hours: 0, friday_hours: 0, saturday_hours: 0
+    };
+
+    // Calculate total scheduled hours
+    const totalScheduledHours = Object.values(scheduledHours as Record<string, number>)
+      .reduce((sum, hours) => sum + hours, 0);
+
+    return {
+      confirmed_hours: confirmedHours || undefined,
+      scheduled_hours: {
+        ...scheduledHours,
+        total_hours: totalScheduledHours
+      },
+      business: {
+        business_id: business.business_id,
+        name: business.name
+      }
+    };
+  }
+
+  async createConfirmedHours(
+    dto: CreateConfirmedHoursDto, 
+    userId: string
+  ): Promise<ConfirmedHoursResponseDto> {
+    const supabase = this.supabaseService.admin;
+    
+    // Get employee record
+    const { data: employee, error: empError } = await supabase
+      .from('employees')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+      
+    if (empError || !employee) {
+      throw new NotFoundException('Employee profile not found');
+    }
+
+    // Check business association
+    const { data: businessEmployee, error: beError } = await supabase
+      .from('business_employees')
+      .select('id')
+      .eq('business_id', dto.business_id)
+      .eq('employee_id', employee.id)
+      .single();
+      
+    if (beError || !businessEmployee) {
+      throw new BadRequestException('Employee is not associated with this business');
+    }
+
+    // Create confirmed hours record
+    const { data: confirmedHours, error } = await supabase
+      .from('employee_confirmed_hours')
+      .insert({
+        employee_id: employee.id,
+        business_id: dto.business_id,
+        week_start_date: dto.week_start_date,
+        sunday_hours: dto.sunday_hours || 0,
+        monday_hours: dto.monday_hours || 0,
+        tuesday_hours: dto.tuesday_hours || 0,
+        wednesday_hours: dto.wednesday_hours || 0,
+        thursday_hours: dto.thursday_hours || 0,
+        friday_hours: dto.friday_hours || 0,
+        saturday_hours: dto.saturday_hours || 0,
+        notes: dto.notes
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw new BadRequestException(`Failed to create confirmed hours: ${error.message}`);
+    }
+
+    return confirmedHours;
+  }
+
+  async updateConfirmedHours(
+    id: string, 
+    dto: UpdateConfirmedHoursDto, 
+    userId: string
+  ): Promise<ConfirmedHoursResponseDto> {
+    const supabase = this.supabaseService.admin;
+    
+    // Get employee record
+    const { data: employee, error: empError } = await supabase
+      .from('employees')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+      
+    if (empError || !employee) {
+      throw new NotFoundException('Employee profile not found');
+    }
+
+    // Update only if owned by employee and in draft status
+    const updateData: any = {};
+    if (dto.sunday_hours !== undefined) updateData.sunday_hours = dto.sunday_hours;
+    if (dto.monday_hours !== undefined) updateData.monday_hours = dto.monday_hours;
+    if (dto.tuesday_hours !== undefined) updateData.tuesday_hours = dto.tuesday_hours;
+    if (dto.wednesday_hours !== undefined) updateData.wednesday_hours = dto.wednesday_hours;
+    if (dto.thursday_hours !== undefined) updateData.thursday_hours = dto.thursday_hours;
+    if (dto.friday_hours !== undefined) updateData.friday_hours = dto.friday_hours;
+    if (dto.saturday_hours !== undefined) updateData.saturday_hours = dto.saturday_hours;
+    if (dto.notes !== undefined) updateData.notes = dto.notes;
+
+    const { data: confirmedHours, error } = await supabase
+      .from('employee_confirmed_hours')
+      .update(updateData)
+      .eq('id', id)
+      .eq('employee_id', employee.id)
+      .eq('status', 'draft') // Can only update draft hours
+      .select()
+      .single();
+
+    if (error) {
+      throw new BadRequestException(`Failed to update confirmed hours: ${error.message}`);
+    }
+
+    if (!confirmedHours) {
+      throw new NotFoundException('Confirmed hours record not found or not editable');
+    }
+
+    return confirmedHours;
+  }
+
+  async submitConfirmedHours(
+    id: string, 
+    dto: SubmitHoursDto, 
+    userId: string
+  ): Promise<ConfirmedHoursResponseDto> {
+    const supabase = this.supabaseService.admin;
+    
+    // Get employee record
+    const { data: employee, error: empError } = await supabase
+      .from('employees')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+      
+    if (empError || !employee) {
+      throw new NotFoundException('Employee profile not found');
+    }
+
+    // Submit hours (change status to submitted)
+    const updateData: any = { status: 'submitted' };
+    if (dto.notes) updateData.notes = dto.notes;
+
+    const { data: confirmedHours, error } = await supabase
+      .from('employee_confirmed_hours')
+      .update(updateData)
+      .eq('id', id)
+      .eq('employee_id', employee.id)
+      .eq('status', 'draft')
+      .select()
+      .single();
+
+    if (error) {
+      throw new BadRequestException(`Failed to submit confirmed hours: ${error.message}`);
+    }
+
+    if (!confirmedHours) {
+      throw new NotFoundException('Confirmed hours record not found or already submitted');
+    }
+
+    return confirmedHours;
+  }
+
+  async approveConfirmedHours(
+    id: string, 
+    dto: ApproveHoursDto, 
+    userId: string
+  ): Promise<ConfirmedHoursResponseDto> {
+    const supabase = this.supabaseService.admin;
+    
+    // Update hours (change status to approved) - RLS policy handles employer check
+    const updateData: any = { 
+      status: 'approved',
+      approved_by: userId
+    };
+    if (dto.notes) updateData.notes = dto.notes;
+
+    const { data: confirmedHours, error } = await supabase
+      .from('employee_confirmed_hours')
+      .update(updateData)
+      .eq('id', id)
+      .eq('status', 'submitted')
+      .select()
+      .single();
+
+    if (error) {
+      throw new BadRequestException(`Failed to approve confirmed hours: ${error.message}`);
+    }
+
+    if (!confirmedHours) {
+      throw new NotFoundException('Confirmed hours record not found or not in submitted status');
+    }
+
+    return confirmedHours;
+  }
+
+  async getEmployeeConfirmedHoursList(
+    userId: string,
+    businessId?: string
+  ): Promise<ConfirmedHoursResponseDto[]> {
+    const supabase = this.supabaseService.admin;
+    
+    // Get employee record
+    const { data: employee, error: empError } = await supabase
+      .from('employees')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+      
+    if (empError || !employee) {
+      throw new NotFoundException('Employee profile not found');
+    }
+
+    let query = supabase
+      .from('employee_confirmed_hours')
+      .select('*')
+      .eq('employee_id', employee.id)
+      .order('week_start_date', { ascending: false });
+
+    if (businessId) {
+      query = query.eq('business_id', businessId);
+    }
+
+    const { data: confirmedHoursList, error } = await query;
+
+    if (error) {
+      throw new BadRequestException(`Failed to get confirmed hours list: ${error.message}`);
+    }
+
+    return confirmedHoursList || [];
+  }
+
+  async getEmployerConfirmedHoursList(
+    businessId: string,
+    userId: string,
+    status?: 'submitted' | 'approved'
+  ): Promise<ConfirmedHoursResponseDto[]> {
+    const supabase = this.supabaseService.admin;
+    
+    // Verify business ownership - this will be handled by RLS policy
+    let query = supabase
+      .from('employee_confirmed_hours')
+      .select(`
+        *,
+        employees!inner(full_name, employee_gid)
+      `)
+      .eq('business_id', businessId)
+      .order('week_start_date', { ascending: false });
+
+    if (status) {
+      query = query.eq('status', status);
+    } else {
+      query = query.in('status', ['submitted', 'approved']);
+    }
+
+    const { data: confirmedHoursList, error } = await query;
+
+    if (error) {
+      throw new BadRequestException(`Failed to get confirmed hours for business: ${error.message}`);
+    }
+
+    return confirmedHoursList || [];
   }
 }

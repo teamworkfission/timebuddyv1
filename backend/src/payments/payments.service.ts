@@ -172,19 +172,109 @@ export class PaymentsService {
       
       const hoursByEmployee: Record<string, number> = {};
 
-      // Calculate hours for each schedule
+      // First, get confirmed hours for the period (prioritized)
+      const { data: confirmedHours, error: confirmedError } = await this.supabaseService.admin
+        .from('employee_confirmed_hours')
+        .select('employee_id, total_hours')
+        .eq('business_id', businessId)
+        .gte('week_start_date', startDate)
+        .lte('week_start_date', endDate)
+        .eq('status', 'approved'); // Only use approved confirmed hours
+
+      if (confirmedError) {
+        console.warn('Failed to get confirmed hours, falling back to calculated:', confirmedError.message);
+      }
+
+      // Build set of employees with confirmed hours
+      const employeesWithConfirmedHours = new Set<string>();
+      if (confirmedHours) {
+        confirmedHours.forEach(record => {
+          const employeeId = record.employee_id;
+          employeesWithConfirmedHours.add(employeeId);
+          hoursByEmployee[employeeId] = (hoursByEmployee[employeeId] || 0) + (record.total_hours || 0);
+        });
+      }
+
+      // Calculate scheduled hours for employees without confirmed hours
       for (const schedule of schedules || []) {
         const scheduleHours = await this.schedulesService.calculateEmployeeHours(schedule.id);
         
-        // Accumulate hours by employee
+        // Only use calculated hours if no confirmed hours exist for that employee
         Object.entries(scheduleHours).forEach(([employeeId, hours]) => {
-          hoursByEmployee[employeeId] = (hoursByEmployee[employeeId] || 0) + hours;
+          if (!employeesWithConfirmedHours.has(employeeId)) {
+            hoursByEmployee[employeeId] = (hoursByEmployee[employeeId] || 0) + hours;
+          }
         });
       }
 
       return hoursByEmployee;
     } catch (error) {
       throw new BadRequestException(`Failed to get employee hours: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get detailed hours breakdown showing both confirmed and calculated hours
+   * Used by employer to see discrepancies and make decisions
+   */
+  async getDetailedEmployeeHours(
+    businessId: string, 
+    startDate: string, 
+    endDate: string
+  ): Promise<Record<string, { confirmed: number | null, calculated: number, source: 'confirmed' | 'calculated' }>> {
+    try {
+      const hoursByEmployee: Record<string, { confirmed: number | null, calculated: number, source: 'confirmed' | 'calculated' }> = {};
+
+      // Get confirmed hours
+      const { data: confirmedHours } = await this.supabaseService.admin
+        .from('employee_confirmed_hours')
+        .select('employee_id, total_hours')
+        .eq('business_id', businessId)
+        .gte('week_start_date', startDate)
+        .lte('week_start_date', endDate)
+        .eq('status', 'approved');
+
+      // Get all schedules for calculated hours
+      const { data: schedules } = await this.supabaseService.admin
+        .from('weekly_schedules')
+        .select('id, week_start_date')
+        .eq('business_id', businessId)
+        .gte('week_start_date', startDate)
+        .lte('week_start_date', endDate)
+        .eq('status', 'posted');
+
+      // Calculate scheduled hours for all employees
+      const calculatedHours: Record<string, number> = {};
+      for (const schedule of schedules || []) {
+        const scheduleHours = await this.schedulesService.calculateEmployeeHours(schedule.id);
+        Object.entries(scheduleHours).forEach(([employeeId, hours]) => {
+          calculatedHours[employeeId] = (calculatedHours[employeeId] || 0) + hours;
+        });
+      }
+
+      // Build confirmed hours map
+      const confirmedHoursMap: Record<string, number> = {};
+      confirmedHours?.forEach(record => {
+        confirmedHoursMap[record.employee_id] = (confirmedHoursMap[record.employee_id] || 0) + (record.total_hours || 0);
+      });
+
+      // Combine all employees
+      const allEmployeeIds = new Set([...Object.keys(calculatedHours), ...Object.keys(confirmedHoursMap)]);
+      
+      allEmployeeIds.forEach(employeeId => {
+        const confirmed = confirmedHoursMap[employeeId] || null;
+        const calculated = calculatedHours[employeeId] || 0;
+        
+        hoursByEmployee[employeeId] = {
+          confirmed,
+          calculated,
+          source: confirmed !== null ? 'confirmed' : 'calculated'
+        };
+      });
+
+      return hoursByEmployee;
+    } catch (error) {
+      throw new BadRequestException(`Failed to get detailed employee hours: ${error.message}`);
     }
   }
 
