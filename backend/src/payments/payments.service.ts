@@ -220,6 +220,9 @@ export class PaymentsService {
   /**
    * Get detailed hours breakdown showing both confirmed and calculated hours
    * Used by employer to see discrepancies and make decisions
+   * 
+   * STANDARDIZED: Uses confirmed hours table as primary source for all calculations
+   * to ensure consistency between employee (42.5h) and employer (42.5h) views
    */
   async getDetailedEmployeeHours(
     businessId: string, 
@@ -238,22 +241,43 @@ export class PaymentsService {
         .lte('week_start_date', endDate)
         .eq('status', 'approved');
 
-      // Get all schedules for calculated hours
-      const { data: schedules } = await this.supabaseService.admin
-        .from('weekly_schedules')
-        .select('id, week_start_date')
+      // Get ALL confirmed hours (all statuses) for "calculated" fallback
+      const { data: allConfirmedHours } = await this.supabaseService.admin
+        .from('employee_confirmed_hours')
+        .select('employee_id, total_hours, status')
         .eq('business_id', businessId)
         .gte('week_start_date', startDate)
-        .lte('week_start_date', endDate)
-        .eq('status', 'posted');
+        .lte('week_start_date', endDate);
 
-      // Calculate scheduled hours for all employees
+      // Use confirmed hours as primary calculation source, fall back to scheduled only if none exist
       const calculatedHours: Record<string, number> = {};
-      for (const schedule of schedules || []) {
-        const scheduleHours = await this.schedulesService.calculateEmployeeHours(schedule.id);
-        Object.entries(scheduleHours).forEach(([employeeId, hours]) => {
-          calculatedHours[employeeId] = (calculatedHours[employeeId] || 0) + hours;
-        });
+      const employeesWithConfirmedHours = new Set<string>();
+
+      // First, use confirmed hours (any status) for calculation
+      allConfirmedHours?.forEach(record => {
+        employeesWithConfirmedHours.add(record.employee_id);
+        const hours = Math.round((record.total_hours || 0) * 100) / 100;
+        calculatedHours[record.employee_id] = Math.round(((calculatedHours[record.employee_id] || 0) + hours) * 100) / 100;
+      });
+
+      // Only fall back to scheduled calculation for employees WITHOUT any confirmed hours
+      if (employeesWithConfirmedHours.size === 0 || allConfirmedHours?.length === 0) {
+        const { data: schedules } = await this.supabaseService.admin
+          .from('weekly_schedules')
+          .select('id, week_start_date')
+          .eq('business_id', businessId)
+          .gte('week_start_date', startDate)
+          .lte('week_start_date', endDate)
+          .eq('status', 'posted');
+
+        for (const schedule of schedules || []) {
+          const scheduleHours = await this.schedulesService.calculateEmployeeHours(schedule.id);
+          Object.entries(scheduleHours).forEach(([employeeId, hours]) => {
+            if (!employeesWithConfirmedHours.has(employeeId)) {
+              calculatedHours[employeeId] = (calculatedHours[employeeId] || 0) + hours;
+            }
+          });
+        }
       }
 
       // Build confirmed hours map

@@ -202,10 +202,10 @@ export function DateRangePicker({
         <strong>Selected Period:</strong>{' '}
         {value.start && value.end ? (
           <>
-            {new Date(value.start).toLocaleDateString()} to{' '}
-            {new Date(value.end).toLocaleDateString()}
+            {new Date(value.start + 'T00:00:00').toLocaleDateString()} to{' '}
+            {new Date(value.end + 'T00:00:00').toLocaleDateString()}
             {' '}
-            ({Math.ceil((new Date(value.end).getTime() - new Date(value.start).getTime()) / (1000 * 60 * 60 * 24)) + 1} days)
+            ({Math.ceil((new Date(value.end + 'T00:00:00').getTime() - new Date(value.start + 'T00:00:00').getTime()) / (1000 * 60 * 60 * 24)) + 1} days)
           </>
         ) : (
           'No dates selected'

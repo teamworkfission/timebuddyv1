@@ -12,6 +12,7 @@ import {
   getDefaultDateRange,
   getBusinessEmployees
 } from '../../lib/payments-api';
+import { formatHours } from '../../lib/confirmed-hours-api';
 import { DateRangePicker } from './DateRangePicker';
 import { EnhancedPaymentTable } from './EnhancedPaymentTable';
 import { SuccessMessage } from './PaymentWarnings';

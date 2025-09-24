@@ -50,13 +50,34 @@ export function EnhancedPaymentTable({
   const loadPendingApprovals = async () => {
     try {
       const pending = await getEmployerConfirmedHoursList(businessId, 'submitted');
-      setPendingHours(pending.filter(h => 
-        h.week_start_date >= dateRange.start && h.week_start_date <= dateRange.end
-      ));
+      
+      // Filter by American week pattern (Sunday to Saturday)
+      // Include weeks that fall within the payment period
+      setPendingHours(pending.filter(h => {
+        const weekStartDate = h.week_start_date; // Already in YYYY-MM-DD format
+        return weekStartDate >= dateRange.start && weekStartDate <= dateRange.end;
+      }));
     } catch (error) {
       console.error('Failed to load pending approvals:', error);
     }
   };
+
+  // Aggregate pending hours by employee for the pay period
+  const aggregatedPendingHours = pendingHours.reduce((acc, record) => {
+    const employeeId = record.employee_id;
+    if (!acc[employeeId]) {
+      acc[employeeId] = {
+        employee_id: employeeId,
+        records: [],
+        total_hours: 0
+      };
+    }
+    acc[employeeId].records.push(record);
+    acc[employeeId].total_hours += record.total_hours;
+    return acc;
+  }, {} as Record<string, { employee_id: string; records: ConfirmedHoursRecord[]; total_hours: number }>);
+
+  const pendingApprovalsList = Object.values(aggregatedPendingHours);
 
   // Initialize form data for an employee
   const getEmployeeFormData = (employee: EmployeeWithHours): EmployeeFormData => {
@@ -193,14 +214,19 @@ export function EnhancedPaymentTable({
   return (
     <div className="space-y-6">
       {/* Pending Approvals Section */}
-      {pendingHours.length > 0 && (
+      {pendingApprovalsList.length > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center">
               <AlertTriangle className="h-5 w-5 text-amber-600 mr-2" />
-              <h3 className="text-sm font-medium text-amber-800">
-                Pending Hour Approvals ({pendingHours.length})
-              </h3>
+              <div>
+                <h3 className="text-sm font-medium text-amber-800">
+                  Pending Hour Approvals ({pendingApprovalsList.length} employee{pendingApprovalsList.length !== 1 ? 's' : ''})
+                </h3>
+                <p className="text-xs text-amber-700 mt-1">
+                  Employee-submitted standard hours waiting for approval. Once approved, these will be used for payment calculations.
+                </p>
+              </div>
             </div>
             <Button
               size="sm"
@@ -213,26 +239,45 @@ export function EnhancedPaymentTable({
           
           {showPendingApprovals && (
             <div className="space-y-2">
-              {pendingHours.map((hours) => (
-                <div key={hours.id} className="flex items-center justify-between bg-white p-3 rounded border">
-                  <div>
-                    <div className="font-medium text-sm text-gray-900">
-                      Employee ID: {hours.employee_id.slice(0, 8)}...
+              {pendingApprovalsList.map((employeePending) => (
+                <div key={employeePending.employee_id} className="bg-white p-3 rounded border">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <div className="font-medium text-sm text-gray-900">
+                        Employee ID: {employeePending.employee_id.slice(0, 8)}...
+                      </div>
+                      <div className="text-xs text-gray-600">
+                        <span className="bg-blue-100 px-2 py-1 rounded text-blue-800 font-medium">
+                          Standard Hours: {employeePending.total_hours}h
+                        </span>
+                        {employeePending.records.length > 1 && (
+                          <span className="ml-2">({employeePending.records.length} weeks)</span>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-xs text-gray-600">
-                      Week: {new Date(hours.week_start_date).toLocaleDateString()} • 
-                      Total: {hours.total_hours}h
+                    <div className="flex space-x-2">
+                      {employeePending.records.map((record) => (
+                        <Button
+                          key={record.id}
+                          size="sm"
+                          onClick={() => handleApproveHours(record)}
+                          loading={approvingHours.has(record.id)}
+                          className="bg-green-600 hover:bg-green-700"
+                          title={`Approve week of ${new Date(record.week_start_date + 'T00:00:00').toLocaleDateString()} (${record.total_hours}h)`}
+                        >
+                          <Check className="h-4 w-4 mr-1" />
+                          {employeePending.records.length === 1 ? 'Approve' : `${record.total_hours}h`}
+                        </Button>
+                      ))}
                     </div>
                   </div>
-                  <Button
-                    size="sm"
-                    onClick={() => handleApproveHours(hours)}
-                    loading={approvingHours.has(hours.id)}
-                    className="bg-green-600 hover:bg-green-700"
-                  >
-                    <Check className="h-4 w-4 mr-1" />
-                    Approve
-                  </Button>
+                  {employeePending.records.length > 1 && (
+                    <div className="text-xs text-gray-500 border-t pt-2">
+                      Weekly breakdown: {employeePending.records.map(r => 
+                        `${new Date(r.week_start_date + 'T00:00:00').toLocaleDateString()}: ${r.total_hours}h`
+                      ).join(', ')}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
