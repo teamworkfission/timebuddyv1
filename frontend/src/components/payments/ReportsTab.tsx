@@ -150,7 +150,7 @@ export function ReportsTab({ business }: ReportsTabProps) {
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-purple-600">
-                    {reportData.total_hours.toFixed(1)}
+                    {formatHours(reportData.total_hours)}
                   </div>
                   <div className="text-sm text-purple-700">Total Hours</div>
                 </div>
@@ -197,7 +197,7 @@ export function ReportsTab({ business }: ReportsTabProps) {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {employee.total_hours.toFixed(1)}
+                          {formatHours(employee.total_hours)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           ${employee.gross_pay.toFixed(2)}

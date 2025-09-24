@@ -214,7 +214,7 @@ export function PaymentsTab({ business }: PaymentsTabProps) {
 
   const employeesWithHours = employees.filter(emp => emp.hoursWorked > 0);
   const employeesWithoutHours = employees.filter(emp => emp.hoursWorked === 0);
-  const totalHours = employees.reduce((sum, emp) => sum + emp.hoursWorked, 0);
+  const totalHours = Math.round(employees.reduce((sum, emp) => sum + emp.hoursWorked, 0) * 100) / 100;
   const totalPaid = employees.reduce((sum, emp) => {
     if (emp.paymentRecord && emp.paymentRecord.status === 'paid') {
       return sum + emp.paymentRecord.net_pay;
@@ -278,7 +278,7 @@ export function PaymentsTab({ business }: PaymentsTabProps) {
             <div className="flex items-center space-x-3">
               <Calculator className="w-8 h-8 text-purple-600" />
               <div>
-                <div className="text-2xl font-bold text-purple-600">{totalHours.toFixed(1)}</div>
+                <div className="text-2xl font-bold text-purple-600">{formatHours(totalHours)}</div>
                 <div className="text-sm text-purple-700">Total Hours</div>
               </div>
             </div>

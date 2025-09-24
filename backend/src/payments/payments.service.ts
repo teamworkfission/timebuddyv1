@@ -191,7 +191,9 @@ export class PaymentsService {
         confirmedHours.forEach(record => {
           const employeeId = record.employee_id;
           employeesWithConfirmedHours.add(employeeId);
-          hoursByEmployee[employeeId] = (hoursByEmployee[employeeId] || 0) + (record.total_hours || 0);
+          // Apply consistent hours precision (2 decimal places)
+          const hours = Math.round((record.total_hours || 0) * 100) / 100;
+          hoursByEmployee[employeeId] = Math.round(((hoursByEmployee[employeeId] || 0) + hours) * 100) / 100;
         });
       }
 
@@ -202,7 +204,9 @@ export class PaymentsService {
         // Only use calculated hours if no confirmed hours exist for that employee
         Object.entries(scheduleHours).forEach(([employeeId, hours]) => {
           if (!employeesWithConfirmedHours.has(employeeId)) {
-            hoursByEmployee[employeeId] = (hoursByEmployee[employeeId] || 0) + hours;
+            // Apply consistent hours precision (2 decimal places)
+            const standardizedHours = Math.round(hours * 100) / 100;
+            hoursByEmployee[employeeId] = Math.round(((hoursByEmployee[employeeId] || 0) + standardizedHours) * 100) / 100;
           }
         });
       }
@@ -477,7 +481,8 @@ export class PaymentsService {
       paymentRecords.forEach(record => {
         if (record.status === 'paid') {
           totalPaid += record.net_pay;
-          totalHours += record.total_hours;
+          // Apply consistent hours precision (2 decimal places)
+          totalHours += Math.round(record.total_hours * 100) / 100;
 
           const employeeName = employeeMap.get(record.employee_id) || 'Unknown';
           
@@ -493,7 +498,8 @@ export class PaymentsService {
           }
 
           const stats = employeeStats.get(record.employee_id);
-          stats.total_hours += record.total_hours;
+          // Apply consistent hours precision (2 decimal places)
+          stats.total_hours += Math.round(record.total_hours * 100) / 100;
           stats.gross_pay += record.gross_pay;
           stats.net_pay += record.net_pay;
           stats.payment_count += 1;
@@ -518,10 +524,17 @@ export class PaymentsService {
         business_id: businessId,
         period_start: startDate,
         period_end: endDate,
-        total_paid: totalPaid,
-        total_hours: totalHours,
+        total_paid: Math.round(totalPaid * 100) / 100,
+        // Ensure consistent hours precision for the total
+        total_hours: Math.round(totalHours * 100) / 100,
         employee_count: employeeStats.size,
-        employees: Array.from(employeeStats.values()),
+        // Apply consistent precision to all employee hours
+        employees: Array.from(employeeStats.values()).map(emp => ({
+          ...emp,
+          total_hours: Math.round(emp.total_hours * 100) / 100,
+          gross_pay: Math.round(emp.gross_pay * 100) / 100,
+          net_pay: Math.round(emp.net_pay * 100) / 100
+        })),
         timeline_data: timelineData,
       };
     } catch (error) {

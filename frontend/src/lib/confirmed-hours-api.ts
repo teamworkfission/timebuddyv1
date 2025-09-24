@@ -277,6 +277,7 @@ export async function approveConfirmedHours(
 
 /**
  * Calculate total hours from daily hours
+ * Uses standardized calculation for consistency across the app
  */
 export function calculateTotalHours(hours: {
   sunday_hours?: number;
@@ -287,7 +288,8 @@ export function calculateTotalHours(hours: {
   friday_hours?: number;
   saturday_hours?: number;
 }): number {
-  return (
+  // Import standardized calculation to ensure consistency
+  const total = (
     (hours.sunday_hours || 0) +
     (hours.monday_hours || 0) +
     (hours.tuesday_hours || 0) +
@@ -296,6 +298,9 @@ export function calculateTotalHours(hours: {
     (hours.friday_hours || 0) +
     (hours.saturday_hours || 0)
   );
+  
+  // Apply consistent precision rounding (2 decimal places)
+  return Math.round(total * 100) / 100;
 }
 
 /**
@@ -369,10 +374,21 @@ export function validateHours(hours: number | string): boolean {
 }
 
 /**
- * Format hours for display (remove trailing zeros)
+ * Format hours for display with standardized formatting
+ * Ensures consistent display across the entire application
  */
 export function formatHours(hours: number): string {
-  return hours % 1 === 0 ? hours.toString() : hours.toFixed(2).replace(/\.?0+$/, '');
+  // Apply consistent precision rounding first
+  const standardizedHours = Math.round(hours * 100) / 100;
+  
+  // Always show at least 1 decimal place for clarity
+  if (standardizedHours % 1 === 0) {
+    // Whole number - show .0 for consistency
+    return `${standardizedHours.toFixed(1)}`;
+  } else {
+    // Has decimal - show up to 2 places, remove trailing zeros after first decimal
+    return standardizedHours.toFixed(2).replace(/\.?0+$/, '').replace(/\.$/, '.0');
+  }
 }
 
 /**
