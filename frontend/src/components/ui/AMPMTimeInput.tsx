@@ -83,7 +83,7 @@ export function AMPMTimeInput({
     }
   }, [value]);
 
-  // Convert AM/PM to 24-hour format for backend compatibility
+  // Convert AM/PM to 24-hour format (used for parsing legacy values)
   const convertTo24Hour = useCallback((hour: number, minute: number, period: 'AM' | 'PM'): string => {
     let hour24 = hour;
     
@@ -101,15 +101,8 @@ export function AMPMTimeInput({
     let formattedTime = '';
     
     if (hour !== '') {
-      // Inline conversion to avoid dependency issues
-      let hour24 = hour;
-      if (period === 'AM' && hour === 12) {
-        hour24 = 0;
-      } else if (period === 'PM' && hour !== 12) {
-        hour24 = hour + 12;
-      }
-      
-      formattedTime = `${hour24.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+      // Format time in AM/PM format for backend compatibility
+      formattedTime = `${hour}:${minute.toString().padStart(2, '0')} ${period}`;
     }
 
     // Only call onChange if the value actually changed
