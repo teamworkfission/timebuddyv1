@@ -351,21 +351,41 @@ export function ShiftAssignmentModal({
             <h3 className="text-sm font-medium text-gray-900 mb-3">
               {mode === 'edit' ? 'Edit Shift Time' : 'Set Custom Time'}
             </h3>
-            <div className="grid grid-cols-2 gap-4">
-              <AMPMTimeInput
-                label="Start Time"
-                value={customTime.start}
-                onChange={(value) => handleCustomTimeChange('start', value)}
-                placeholder="Select start time..."
-                error={error && !customTime.start ? 'Start time required' : ''}
-              />
-              <AMPMTimeInput
-                label="End Time"
-                value={customTime.end}
-                onChange={(value) => handleCustomTimeChange('end', value)}
-                placeholder="Select end time..."
-                error={error && !customTime.end ? 'End time required' : ''}
-              />
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+              <h4 className="text-sm font-medium text-blue-900 mb-4 flex items-center">
+                <Clock className="h-4 w-4 mr-2" />
+                Shift Duration
+              </h4>
+              <div className="space-y-4">
+                <div>
+                  <AMPMTimeInput
+                    label="From (Start Time) *"
+                    value={customTime.start}
+                    onChange={(value) => handleCustomTimeChange('start', value)}
+                    placeholder="Select when this shift begins..."
+                    error={error && !customTime.start ? 'Start time required' : ''}
+                  />
+                </div>
+                
+                {/* Visual Connector */}
+                <div className="flex justify-center">
+                  <div className="flex items-center text-gray-400">
+                    <div className="h-0.5 w-8 bg-gray-300"></div>
+                    <span className="mx-2 text-sm font-medium">to</span>
+                    <div className="h-0.5 w-8 bg-gray-300"></div>
+                  </div>
+                </div>
+                
+                <div>
+                  <AMPMTimeInput
+                    label="To (End Time) *"
+                    value={customTime.end}
+                    onChange={(value) => handleCustomTimeChange('end', value)}
+                    placeholder="Select when this shift ends..."
+                    error={error && !customTime.end ? 'End time required' : ''}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         )}
