@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 interface AMPMTimeInputProps {
   value?: string;           // "9:00 AM" or "9 AM" or ""
@@ -40,8 +40,9 @@ export function AMPMTimeInput({
   const [hour, setHour] = useState<number | ''>('');
   const [minute, setMinute] = useState<number>(0);
   const [period, setPeriod] = useState<'AM' | 'PM'>('AM');
+  const previousTimeRef = useRef<string>('');
 
-  // Parse incoming value (e.g., "9:00 AM", "10 PM", "14:30")
+  // Parse incoming value (e.g., "09:00", "14:30", "9:00 AM")
   useEffect(() => {
     if (!value) {
       setHour('');
@@ -50,7 +51,7 @@ export function AMPMTimeInput({
       return;
     }
 
-    // Handle AM/PM format
+    // Handle AM/PM format first
     const ampmMatch = value.match(/^(\d{1,2})(?::(\d{2}))?\s?(AM|PM)$/i);
     if (ampmMatch) {
       setHour(parseInt(ampmMatch[1]));
@@ -59,7 +60,7 @@ export function AMPMTimeInput({
       return;
     }
 
-    // Handle 24-hour format (legacy fallback)
+    // Handle 24-hour format (HH:MM or HH:MM:SS)
     const timeMatch = value.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
     if (timeMatch) {
       const hour24 = parseInt(timeMatch[1]);
@@ -68,9 +69,12 @@ export function AMPMTimeInput({
       if (hour24 === 0) {
         setHour(12);
         setPeriod('AM');
-      } else if (hour24 <= 12) {
+      } else if (hour24 === 12) {
+        setHour(12);
+        setPeriod('PM');
+      } else if (hour24 < 12) {
         setHour(hour24);
-        setPeriod(hour24 === 12 ? 'PM' : 'AM');
+        setPeriod('AM');
       } else {
         setHour(hour24 - 12);
         setPeriod('PM');
@@ -79,28 +83,47 @@ export function AMPMTimeInput({
     }
   }, [value]);
 
+  // Convert AM/PM to 24-hour format for backend compatibility
+  const convertTo24Hour = useCallback((hour: number, minute: number, period: 'AM' | 'PM'): string => {
+    let hour24 = hour;
+    
+    if (period === 'AM' && hour === 12) {
+      hour24 = 0;
+    } else if (period === 'PM' && hour !== 12) {
+      hour24 = hour + 12;
+    }
+    
+    return `${hour24.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+  }, []);
+
   // Update parent when internal state changes
   useEffect(() => {
-    if (hour === '') {
-      onChange('');
-      return;
+    let formattedTime = '';
+    
+    if (hour !== '') {
+      // Inline conversion to avoid dependency issues
+      let hour24 = hour;
+      if (period === 'AM' && hour === 12) {
+        hour24 = 0;
+      } else if (period === 'PM' && hour !== 12) {
+        hour24 = hour + 12;
+      }
+      
+      formattedTime = `${hour24.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
     }
 
-    // Format as "H:MM AM/PM"
-    const formattedTime = `${hour}:${minute.toString().padStart(2, '0')} ${period}`;
-    onChange(formattedTime);
-  }, [hour, minute, period, onChange]);
+    // Only call onChange if the value actually changed
+    if (formattedTime !== previousTimeRef.current) {
+      previousTimeRef.current = formattedTime;
+      onChange(formattedTime);
+    }
+  }, [hour, minute, period, onChange]); // Include onChange but use ref to prevent loops
 
   const baseSelectClass = `
     px-3 py-2 border border-gray-300 rounded-md 
     focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
     disabled:bg-gray-50 disabled:text-gray-500
     ${error ? 'border-red-500 focus:ring-red-500' : ''}
-  `;
-
-  const buttonClass = `
-    px-3 py-2 border border-gray-300 rounded-md text-sm font-medium
-    transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed
   `;
 
   return (
@@ -111,9 +134,10 @@ export function AMPMTimeInput({
         </label>
       )}
       
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-3 gap-3">
         {/* Hour Selection */}
         <div>
+          <label className="block text-xs text-gray-500 mb-1">Hour</label>
           <select
             value={hour}
             onChange={(e) => setHour(e.target.value ? parseInt(e.target.value) : '')}
@@ -131,6 +155,7 @@ export function AMPMTimeInput({
 
         {/* Minute Selection */}
         <div>
+          <label className="block text-xs text-gray-500 mb-1">Min</label>
           <select
             value={minute}
             onChange={(e) => setMinute(parseInt(e.target.value))}
@@ -145,56 +170,45 @@ export function AMPMTimeInput({
           </select>
         </div>
 
-        {/* AM/PM Toggle */}
-        <div className="col-span-2 flex">
-          <button
-            type="button"
-            onClick={() => setPeriod('AM')}
+        {/* AM/PM Selection */}
+        <div>
+          <label className="block text-xs text-gray-500 mb-1">Period</label>
+          <select
+            value={period}
+            onChange={(e) => setPeriod(e.target.value as 'AM' | 'PM')}
             disabled={disabled || hour === ''}
-            className={`
-              ${buttonClass} flex-1 mr-1
-              ${period === 'AM' 
-                ? 'bg-blue-500 text-white border-blue-500' 
-                : 'bg-white text-gray-700 hover:bg-gray-50'
-              }
-            `}
+            className={`w-full ${baseSelectClass}`}
           >
-            AM
-          </button>
-          <button
-            type="button"
-            onClick={() => setPeriod('PM')}
-            disabled={disabled || hour === ''}
-            className={`
-              ${buttonClass} flex-1 ml-1
-              ${period === 'PM' 
-                ? 'bg-blue-500 text-white border-blue-500' 
-                : 'bg-white text-gray-700 hover:bg-gray-50'
-              }
-            `}
-          >
-            PM
-          </button>
+            <option value="AM">AM</option>
+            <option value="PM">PM</option>
+          </select>
         </div>
       </div>
 
-      {/* Display Current Selection */}
+      {/* Selected Time Display - Better Integration */}
       {hour !== '' && (
-        <div className="mt-2 text-sm text-gray-600">
-          Selected: <span className="font-medium text-gray-900">
-            {hour}:{minute.toString().padStart(2, '0')} {period}
-          </span>
+        <div className="mt-2 p-2 bg-blue-50 rounded-md border border-blue-200">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-blue-700">Selected Time:</span>
+            <span className="text-sm font-semibold text-blue-900">
+              {hour}:{minute.toString().padStart(2, '0')} {period}
+            </span>
+          </div>
         </div>
       )}
 
       {/* Error Message */}
       {error && (
-        <p className="mt-2 text-sm text-red-600">{error}</p>
+        <div className="mt-2 p-2 bg-red-50 rounded-md border border-red-200">
+          <p className="text-sm text-red-700">{error}</p>
+        </div>
       )}
 
       {/* Help Text */}
       {!error && placeholder && hour === '' && (
-        <p className="mt-2 text-sm text-gray-500">{placeholder}</p>
+        <div className="mt-2 p-2 bg-gray-50 rounded-md border border-gray-200">
+          <p className="text-sm text-gray-600">{placeholder}</p>
+        </div>
       )}
     </div>
   );

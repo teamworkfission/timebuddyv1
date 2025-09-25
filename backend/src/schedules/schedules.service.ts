@@ -525,7 +525,21 @@ export class SchedulesService {
       throw new Error(`Failed to fetch weekly schedules: ${wsError.message}`);
     }
 
-    // Get shifts for each schedule
+    // Get confirmed hours for all businesses this week (for total hours calculation)
+    const { data: confirmedHoursRecords } = await supabase
+      .from('employee_confirmed_hours')
+      .select('business_id, total_hours')
+      .eq('employee_id', employee.id)
+      .in('business_id', businessIds)
+      .eq('week_start_date', weekStart);
+
+    // Create lookup for confirmed hours by business
+    const confirmedHoursByBusiness = (confirmedHoursRecords || []).reduce((acc, record) => {
+      acc[record.business_id] = record.total_hours;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Get shifts for each schedule and use confirmed hours as source of truth
     const schedulesWithShifts = await Promise.all(
       (weeklySchedules || []).map(async (schedule) => {
         const shifts = await this.getEmployeeScheduleShifts(schedule.id, employee.id);
@@ -535,12 +549,21 @@ export class SchedulesService {
           employee_gid: '' 
         }];
         
+        // PRIORITY: Use confirmed hours if available, otherwise calculate from shifts
+        const confirmedHours = confirmedHoursByBusiness[schedule.business_id];
+        const calculatedHours = this.calculateTotalHours(shifts);
+        const totalHours = confirmedHours !== undefined ? confirmedHours : calculatedHours;
+        
+        if (confirmedHours !== undefined) {
+          console.log(`📊 Using confirmed hours for ${schedule.business_name}: ${confirmedHours}h (calculated: ${calculatedHours}h)`);
+        }
+        
         return {
           ...schedule,
           business_name: schedule.businesses?.name,
           shifts,
           employees,
-          total_hours_by_employee: { [employee.id]: this.calculateTotalHours(shifts) },
+          total_hours_by_employee: { [employee.id]: totalHours },
         };
       })
     );
@@ -795,7 +818,7 @@ export class SchedulesService {
     }
 
     // Get confirmed hours if they exist
-    const { data: confirmedHours } = await supabase
+    let { data: confirmedHours } = await supabase
       .from('employee_confirmed_hours')
       .select('*')
       .eq('employee_id', employee.id)
@@ -823,6 +846,38 @@ export class SchedulesService {
     // Calculate total scheduled hours
     const totalScheduledHours = Object.values(scheduledHours as Record<string, number>)
       .reduce((sum, hours) => sum + hours, 0);
+
+    // AUTO-CREATE CONFIRMED HOURS: If no confirmed hours exist and there are scheduled hours,
+    // automatically create a draft confirmed hours record prefilled with scheduled hours
+    if (!confirmedHours && totalScheduledHours > 0) {
+      console.log(`🔧 Auto-creating confirmed hours for employee ${employee.id}, week ${weekStart}, scheduled hours: ${totalScheduledHours}h`);
+      
+      const { data: newConfirmedHours, error: createError } = await supabase
+        .from('employee_confirmed_hours')
+        .insert({
+          employee_id: employee.id,
+          business_id: businessId,
+          week_start_date: weekStart,
+          sunday_hours: scheduledHours.sunday_hours || 0,
+          monday_hours: scheduledHours.monday_hours || 0,
+          tuesday_hours: scheduledHours.tuesday_hours || 0,
+          wednesday_hours: scheduledHours.wednesday_hours || 0,
+          thursday_hours: scheduledHours.thursday_hours || 0,
+          friday_hours: scheduledHours.friday_hours || 0,
+          saturday_hours: scheduledHours.saturday_hours || 0,
+          status: 'draft',
+          notes: 'Auto-generated from scheduled hours'
+        })
+        .select()
+        .single();
+
+      if (!createError && newConfirmedHours) {
+        confirmedHours = newConfirmedHours;
+        console.log(`✅ Successfully auto-created confirmed hours with ID: ${confirmedHours.id}`);
+      } else {
+        console.warn(`⚠️ Failed to auto-create confirmed hours: ${createError?.message}`);
+      }
+    }
 
     return {
       confirmed_hours: confirmedHours || undefined,

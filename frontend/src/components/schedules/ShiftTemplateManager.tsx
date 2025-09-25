@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { X, Plus, Edit2, Trash2, Clock, Palette } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
@@ -46,6 +46,15 @@ export function ShiftTemplateManager({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Memoized onChange callbacks to prevent infinite re-renders
+  const handleStartTimeChange = useCallback((value: string) => {
+    setFormData(prev => ({ ...prev, start_time: value }));
+  }, []);
+
+  const handleEndTimeChange = useCallback((value: string) => {
+    setFormData(prev => ({ ...prev, end_time: value }));
+  }, []);
+
   const resetForm = () => {
     setFormData({
       name: '',
@@ -66,12 +75,35 @@ export function ShiftTemplateManager({
     setEditingTemplate(template);
     setShowCreateForm(true);
     
-    // Use AM/PM labels if available, fallback to converting legacy time
-    const templateTime = formatTemplateTime(template);
+    // Convert template times to format expected by AMPMTimeInput (24-hour HH:MM)
+    const convertTimeToInput = (timeString: string): string => {
+      // Handle HH:MM:SS format from backend
+      if (timeString.match(/^\d{1,2}:\d{2}:\d{2}$/)) {
+        return timeString.substring(0, 5); // Remove seconds, keep HH:MM
+      }
+      // Handle HH:MM format
+      if (timeString.match(/^\d{1,2}:\d{2}$/)) {
+        return timeString;
+      }
+      // Handle AM/PM format - convert to 24-hour
+      const ampmMatch = timeString.match(/^(\d{1,2})(?::(\d{2}))?\s?(AM|PM)$/i);
+      if (ampmMatch) {
+        let hour = parseInt(ampmMatch[1]);
+        const minute = ampmMatch[2] || '00';
+        const period = ampmMatch[3].toUpperCase();
+        
+        if (period === 'AM' && hour === 12) hour = 0;
+        else if (period === 'PM' && hour !== 12) hour += 12;
+        
+        return `${hour.toString().padStart(2, '0')}:${minute}`;
+      }
+      return timeString;
+    };
+
     setFormData({
       name: template.name,
-      start_time: templateTime.start,
-      end_time: templateTime.end,
+      start_time: convertTimeToInput(template.start_time),
+      end_time: convertTimeToInput(template.end_time),
       color: template.color
     });
     setError(null);
@@ -91,8 +123,8 @@ export function ShiftTemplateManager({
     try {
       const templateData: CreateShiftTemplateDto = {
         name: formData.name.trim(),
-        start_time: `${formData.start_time}:00`,
-        end_time: `${formData.end_time}:00`,
+        start_time: formData.start_time.includes(':') ? `${formData.start_time}:00` : `${formData.start_time}:00:00`,
+        end_time: formData.end_time.includes(':') ? `${formData.end_time}:00` : `${formData.end_time}:00:00`,
         color: formData.color
       };
 
@@ -180,19 +212,42 @@ export function ShiftTemplateManager({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <AMPMTimeInput
-                  label="Start Time *"
-                  value={formData.start_time}
-                  onChange={(value) => setFormData(prev => ({ ...prev, start_time: value }))}
-                  placeholder="Select start time..."
-                />
-                <AMPMTimeInput
-                  label="End Time *"
-                  value={formData.end_time}
-                  onChange={(value) => setFormData(prev => ({ ...prev, end_time: value }))}
-                  placeholder="Select end time..."
-                />
+              {/* Time Selection - Vertical Layout */}
+              <div className="space-y-6">
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <h4 className="text-sm font-medium text-blue-900 mb-4 flex items-center">
+                    <Clock className="h-4 w-4 mr-2" />
+                    Shift Duration
+                  </h4>
+                  <div className="space-y-4">
+                    <div>
+                      <AMPMTimeInput
+                        label="From (Start Time) *"
+                        value={formData.start_time}
+                        onChange={handleStartTimeChange}
+                        placeholder="Select when this shift begins..."
+                      />
+                    </div>
+                    
+                    {/* Visual Connector */}
+                    <div className="flex justify-center">
+                      <div className="flex items-center text-gray-400">
+                        <div className="h-0.5 w-8 bg-gray-300"></div>
+                        <span className="mx-2 text-sm font-medium">to</span>
+                        <div className="h-0.5 w-8 bg-gray-300"></div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <AMPMTimeInput
+                        label="To (End Time) *"
+                        value={formData.end_time}
+                        onChange={handleEndTimeChange}
+                        placeholder="Select when this shift ends..."
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div>
