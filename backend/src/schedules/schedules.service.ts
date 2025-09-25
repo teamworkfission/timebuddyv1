@@ -19,7 +19,8 @@ import {
   ConfirmedHoursResponseDto,
   WeeklyHoursWithScheduleDto,
   SubmitHoursDto,
-  ApproveHoursDto
+  ApproveHoursDto,
+  RejectHoursDto
 } from './dto/confirmed-hours.dto';
 
 @Injectable()
@@ -1006,6 +1007,40 @@ export class SchedulesService {
 
     if (error) {
       throw new BadRequestException(`Failed to approve confirmed hours: ${error.message}`);
+    }
+
+    if (!confirmedHours) {
+      throw new NotFoundException('Confirmed hours record not found or not in submitted status');
+    }
+
+    return confirmedHours;
+  }
+
+  async rejectConfirmedHours(
+    id: string, 
+    dto: RejectHoursDto, 
+    userId: string
+  ): Promise<ConfirmedHoursResponseDto> {
+    const supabase = this.supabaseService.admin;
+    
+    // Update hours (change status to rejected) - RLS policy handles employer check
+    const updateData: any = { 
+      status: 'rejected',
+      rejected_by: userId,
+      rejection_reason: dto.rejection_reason
+    };
+    if (dto.notes) updateData.notes = dto.notes;
+
+    const { data: confirmedHours, error } = await supabase
+      .from('employee_confirmed_hours')
+      .update(updateData)
+      .eq('id', id)
+      .eq('status', 'submitted')
+      .select()
+      .single();
+
+    if (error) {
+      throw new BadRequestException(`Failed to reject confirmed hours: ${error.message}`);
     }
 
     if (!confirmedHours) {

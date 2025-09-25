@@ -24,7 +24,8 @@ import {
   CreateConfirmedHoursDto, 
   UpdateConfirmedHoursDto, 
   SubmitHoursDto, 
-  ApproveHoursDto 
+  ApproveHoursDto,
+  RejectHoursDto
 } from './dto/confirmed-hours.dto';
 
 @Controller('schedules')
@@ -284,5 +285,18 @@ export class SchedulesController {
   ) {
     const userId = await this.getUserIdFromRequest(req);
     return this.schedulesService.approveConfirmedHours(id, approveDto, userId);
+  }
+
+  /**
+   * Reject submitted hours with reason (employer only)
+   */
+  @Post('employer/hours/:id/reject')
+  async rejectConfirmedHours(
+    @Param('id') id: string,
+    @Body() rejectDto: RejectHoursDto,
+    @Request() req: any,
+  ) {
+    const userId = await this.getUserIdFromRequest(req);
+    return this.schedulesService.rejectConfirmedHours(id, rejectDto, userId);
   }
 }

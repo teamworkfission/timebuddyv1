@@ -25,10 +25,13 @@ export interface ConfirmedHoursRecord {
   friday_hours: number;
   saturday_hours: number;
   total_hours: number;
-  status: 'draft' | 'submitted' | 'approved';
+  status: 'draft' | 'submitted' | 'approved' | 'rejected';
   submitted_at?: string;
   approved_at?: string;
   approved_by?: string;
+  rejected_at?: string;
+  rejected_by?: string;
+  rejection_reason?: string;
   notes?: string;
   created_at: string;
   updated_at: string;
@@ -79,6 +82,11 @@ export interface UpdateHoursRequest {
 }
 
 export interface SubmitHoursRequest {
+  notes?: string;
+}
+
+export interface RejectHoursRequest {
+  rejection_reason: string;
   notes?: string;
 }
 
@@ -266,6 +274,25 @@ export async function approveConfirmedHours(
     method: 'POST',
     headers,
     body: JSON.stringify({ notes }),
+  });
+
+  return handleResponse<ConfirmedHoursRecord>(response);
+}
+
+/**
+ * Reject submitted hours with reason (employer only)
+ */
+export async function rejectConfirmedHours(
+  id: string,
+  rejection_reason: string,
+  notes?: string
+): Promise<ConfirmedHoursRecord> {
+  const headers = await getAuthHeaders();
+  
+  const response = await fetch(`${API_BASE_URL}/schedules/employer/hours/${id}/reject`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ rejection_reason, notes }),
   });
 
   return handleResponse<ConfirmedHoursRecord>(response);

@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { Check, AlertTriangle, Clock, CheckCircle, Users } from 'lucide-react';
+import { Check, AlertTriangle, Clock, CheckCircle, Users, X } from 'lucide-react';
 import { EmployeeWithHours, formatCurrency } from '../../lib/payments-api';
 import { 
   getEmployerConfirmedHoursList, 
   approveConfirmedHours, 
-  ConfirmedHoursRecord 
+  rejectConfirmedHours,
+  ConfirmedHoursRecord,
+  formatWeekRange
 } from '../../lib/confirmed-hours-api';
 import { Button } from '../ui/Button';
+import { RejectionModal } from './RejectionModal';
 
 interface EnhancedPaymentTableProps {
   employees: EmployeeWithHours[];
@@ -44,7 +47,17 @@ export function EnhancedPaymentTable({
   const [savingEmployees, setSavingEmployees] = useState<Set<string>>(new Set());
   const [pendingHours, setPendingHours] = useState<ConfirmedHoursRecord[]>([]);
   const [approvingHours, setApprovingHours] = useState<Set<string>>(new Set());
+  const [rejectingHours, setRejectingHours] = useState<Set<string>>(new Set());
   const [showPendingApprovals, setShowPendingApprovals] = useState(false);
+  const [rejectionModal, setRejectionModal] = useState<{
+    isOpen: boolean;
+    record: ConfirmedHoursRecord | null;
+    employeeName: string;
+  }>({
+    isOpen: false,
+    record: null,
+    employeeName: ''
+  });
 
   // Load pending hour approvals
   const loadPendingApprovals = async () => {
@@ -146,6 +159,49 @@ export function EnhancedPaymentTable({
         return newSet;
       });
     }
+  };
+
+  // Open rejection modal
+  const handleOpenRejectModal = (hoursRecord: ConfirmedHoursRecord) => {
+    // Get employee name from the aggregated data
+    const employeeName = `Employee ${hoursRecord.employee_id.slice(0, 8)}...`;
+    
+    setRejectionModal({
+      isOpen: true,
+      record: hoursRecord,
+      employeeName
+    });
+  };
+
+  // Handle rejection
+  const handleRejectHours = async (reason: string, notes?: string) => {
+    if (!rejectionModal.record) return;
+
+    const recordId = rejectionModal.record.id;
+    setRejectingHours(prev => new Set(prev).add(recordId));
+    
+    try {
+      await rejectConfirmedHours(recordId, reason, notes);
+      // Reload pending approvals
+      await loadPendingApprovals();
+      // Close modal
+      setRejectionModal({ isOpen: false, record: null, employeeName: '' });
+      // TODO: Refresh parent component data
+    } catch (error) {
+      console.error('Failed to reject hours:', error);
+      throw error; // Re-throw to let modal handle the error display
+    } finally {
+      setRejectingHours(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(recordId);
+        return newSet;
+      });
+    }
+  };
+
+  // Close rejection modal
+  const handleCloseRejectModal = () => {
+    setRejectionModal({ isOpen: false, record: null, employeeName: '' });
   };
 
   // Calculate payment amounts
@@ -255,19 +311,33 @@ export function EnhancedPaymentTable({
                         )}
                       </div>
                     </div>
-                    <div className="flex space-x-2">
+                    <div className="flex flex-wrap gap-2">
                       {employeePending.records.map((record) => (
-                        <Button
-                          key={record.id}
-                          size="sm"
-                          onClick={() => handleApproveHours(record)}
-                          loading={approvingHours.has(record.id)}
-                          className="bg-green-600 hover:bg-green-700"
-                          title={`Approve week of ${new Date(record.week_start_date + 'T00:00:00').toLocaleDateString()} (${record.total_hours}h)`}
-                        >
-                          <Check className="h-4 w-4 mr-1" />
-                          {employeePending.records.length === 1 ? 'Approve' : `${record.total_hours}h`}
-                        </Button>
+                        <div key={record.id} className="flex space-x-1">
+                          <Button
+                            size="sm"
+                            onClick={() => handleApproveHours(record)}
+                            loading={approvingHours.has(record.id)}
+                            disabled={rejectingHours.has(record.id)}
+                            className="bg-green-600 hover:bg-green-700"
+                            title={`Approve week of ${new Date(record.week_start_date + 'T00:00:00').toLocaleDateString()} (${record.total_hours}h)`}
+                          >
+                            <Check className="h-4 w-4 mr-1" />
+                            {employeePending.records.length === 1 ? 'Approve' : `${record.total_hours}h`}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleOpenRejectModal(record)}
+                            loading={rejectingHours.has(record.id)}
+                            disabled={approvingHours.has(record.id)}
+                            className="border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400"
+                            title={`Reject week of ${new Date(record.week_start_date + 'T00:00:00').toLocaleDateString()} (${record.total_hours}h)`}
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Reject
+                          </Button>
+                        </div>
                       ))}
                     </div>
                   </div>
@@ -308,9 +378,6 @@ export function EnhancedPaymentTable({
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Net Pay
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
@@ -396,20 +463,6 @@ export function EnhancedPaymentTable({
                       {formatCurrency(netPay)}
                     </td>
                     
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {employee.paymentRecord?.status === 'paid' ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          <Check className="h-3 w-3 mr-1" />
-                          Paid
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                          <Clock className="h-3 w-3 mr-1" />
-                          Calculated
-                        </span>
-                      )}
-                    </td>
-                    
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                       {employee.paymentRecord?.status !== 'paid' && (
                         <Button
@@ -439,6 +492,17 @@ export function EnhancedPaymentTable({
           </table>
         </div>
       </div>
+
+      {/* Rejection Modal */}
+      <RejectionModal
+        isOpen={rejectionModal.isOpen}
+        onClose={handleCloseRejectModal}
+        onReject={handleRejectHours}
+        employeeName={rejectionModal.employeeName}
+        hoursAmount={rejectionModal.record?.total_hours}
+        weekRange={rejectionModal.record ? formatWeekRange(rejectionModal.record.week_start_date) : undefined}
+        loading={rejectionModal.record ? rejectingHours.has(rejectionModal.record.id) : false}
+      />
     </div>
   );
 }

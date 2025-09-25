@@ -146,7 +146,7 @@ export function WeeklyHoursInput({ businessId, weekStart, onBack }: WeeklyHoursI
       setError(null);
       
       await submitConfirmedHours(data.confirmed_hours.id, { notes });
-      setSuccess('Hours submitted for employer approval');
+      setSuccess(isRejected ? 'Hours resubmitted for employer approval' : 'Hours submitted for employer approval');
       setHasChanges(false);
       // Reload to get updated status
       await loadWeeklyHours();
@@ -173,7 +173,8 @@ export function WeeklyHoursInput({ businessId, weekStart, onBack }: WeeklyHoursI
     const statusConfig = {
       draft: { label: 'Draft', icon: '📝', color: 'text-gray-600 bg-gray-100' },
       submitted: { label: 'Submitted', icon: '⏳', color: 'text-blue-600 bg-blue-100' },
-      approved: { label: 'Approved', icon: '✅', color: 'text-green-600 bg-green-100' }
+      approved: { label: 'Approved', icon: '✅', color: 'text-green-600 bg-green-100' },
+      rejected: { label: 'Rejected', icon: '❌', color: 'text-red-600 bg-red-100' }
     };
     
     const config = statusConfig[status];
@@ -186,8 +187,9 @@ export function WeeklyHoursInput({ businessId, weekStart, onBack }: WeeklyHoursI
     );
   };
 
-  const canEdit = !data?.confirmed_hours || data.confirmed_hours.status === 'draft';
-  const canSubmit = data?.confirmed_hours && data.confirmed_hours.status === 'draft' && !hasChanges;
+  const canEdit = !data?.confirmed_hours || data.confirmed_hours.status === 'draft' || data.confirmed_hours.status === 'rejected';
+  const canSubmit = data?.confirmed_hours && (data.confirmed_hours.status === 'draft' || data.confirmed_hours.status === 'rejected') && !hasChanges;
+  const isRejected = data?.confirmed_hours?.status === 'rejected';
 
   if (loading) {
     return (
@@ -227,6 +229,43 @@ export function WeeklyHoursInput({ businessId, weekStart, onBack }: WeeklyHoursI
           <div className="flex items-center text-green-800">
             <Check className="h-5 w-5 mr-2" />
             {success}
+          </div>
+        </div>
+      )}
+
+      {/* Rejection Notice */}
+      {isRejected && data?.confirmed_hours?.rejection_reason && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
+          <div className="flex items-start space-x-3">
+            <AlertCircle className="h-6 w-6 text-red-500 mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <h4 className="text-red-900 font-semibold mb-2">Hours Rejected by Employer</h4>
+              <div className="bg-white rounded p-3 mb-3">
+                <p className="text-red-800 text-sm font-medium mb-1">Rejection Reason:</p>
+                <p className="text-red-700 text-sm">{data.confirmed_hours.rejection_reason}</p>
+              </div>
+              {data.confirmed_hours.notes && (
+                <div className="bg-white rounded p-3 mb-3">
+                  <p className="text-red-800 text-sm font-medium mb-1">Additional Notes:</p>
+                  <p className="text-red-700 text-sm">{data.confirmed_hours.notes}</p>
+                </div>
+              )}
+              <div className="text-sm text-red-700">
+                <p className="font-medium">You can make changes to your hours and resubmit for approval.</p>
+                <p className="mt-1">
+                  Rejected on: {' '}
+                  {data.confirmed_hours.rejected_at 
+                    ? new Date(data.confirmed_hours.rejected_at).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit'
+                      })
+                    : 'Unknown'}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -375,7 +414,7 @@ export function WeeklyHoursInput({ businessId, weekStart, onBack }: WeeklyHoursI
                   className="bg-green-600 hover:bg-green-700"
                 >
                   <Send className="h-4 w-4 mr-2" />
-                  Submit for Approval
+                  {isRejected ? 'Resubmit for Approval' : 'Submit for Approval'}
                 </Button>
               )}
             </div>

@@ -160,8 +160,8 @@ export class ConfirmedHoursResponseDto {
   @ApiProperty({ description: 'Total hours for the week (calculated)' })
   total_hours: number;
 
-  @ApiProperty({ description: 'Status: draft, submitted, approved' })
-  status: 'draft' | 'submitted' | 'approved';
+  @ApiProperty({ description: 'Status: draft, submitted, approved, rejected' })
+  status: 'draft' | 'submitted' | 'approved' | 'rejected';
 
   @ApiProperty({ description: 'When hours were submitted', required: false })
   submitted_at?: string;
@@ -171,6 +171,15 @@ export class ConfirmedHoursResponseDto {
 
   @ApiProperty({ description: 'Who approved the hours', required: false })
   approved_by?: string;
+
+  @ApiProperty({ description: 'When hours were rejected', required: false })
+  rejected_at?: string;
+
+  @ApiProperty({ description: 'Who rejected the hours', required: false })
+  rejected_by?: string;
+
+  @ApiProperty({ description: 'Reason for rejection', required: false })
+  rejection_reason?: string;
 
   @ApiProperty({ description: 'Optional notes', required: false })
   notes?: string;
@@ -216,5 +225,17 @@ export class ApproveHoursDto {
   @IsString()
   @IsOptional()
   @ApiProperty({ description: 'Optional approval notes', required: false })
+  notes?: string;
+}
+
+export class RejectHoursDto {
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({ description: 'Reason for rejecting the submitted hours' })
+  rejection_reason: string;
+
+  @IsString()
+  @IsOptional()
+  @ApiProperty({ description: 'Optional rejection notes', required: false })
   notes?: string;
 }
