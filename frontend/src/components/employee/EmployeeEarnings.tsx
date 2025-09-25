@@ -27,6 +27,17 @@ export function EmployeeEarnings() {
     loadBusinesses();
   }, [currentWeek]);
 
+  // Helper function to check if a week is in the future
+  const isWeekInFuture = (weekStart: string): boolean => {
+    const currentRealWeek = getCurrentWeekStart();
+    return weekStart > currentRealWeek;
+  };
+
+  // Helper function to determine if next navigation should be disabled
+  const isNextWeekDisabled = (): boolean => {
+    const nextWeek = getNextWeek(currentWeek);
+    return isWeekInFuture(nextWeek);
+  };
 
   const loadBusinesses = async () => {
     try {
@@ -43,6 +54,11 @@ export function EmployeeEarnings() {
   };
 
   const handleWeekNavigation = (direction: 'prev' | 'next') => {
+    if (direction === 'next' && isNextWeekDisabled()) {
+      // Prevent navigation to future weeks
+      return;
+    }
+    
     setCurrentWeek(prev => 
       direction === 'prev' ? getPreviousWeek(prev) : getNextWeek(prev)
     );
@@ -79,7 +95,7 @@ export function EmployeeEarnings() {
             <div className="flex items-center bg-white rounded-lg shadow-sm border">
               <button
                 onClick={() => handleWeekNavigation('prev')}
-                className="p-2 hover:bg-gray-50 rounded-l-lg"
+                className="p-2 hover:bg-gray-50 rounded-l-lg transition-colors duration-200"
               >
                 <ChevronLeft className="h-5 w-5" />
               </button>
@@ -89,9 +105,17 @@ export function EmployeeEarnings() {
               </div>
               <button
                 onClick={() => handleWeekNavigation('next')}
-                className="p-2 hover:bg-gray-50 rounded-r-lg"
+                disabled={isNextWeekDisabled()}
+                className={`p-2 rounded-r-lg transition-colors duration-200 ${
+                  isNextWeekDisabled()
+                    ? 'cursor-not-allowed bg-gray-100 text-gray-400'
+                    : 'hover:bg-gray-50 text-gray-700'
+                }`}
+                title={isNextWeekDisabled() ? 'Cannot navigate to future weeks' : 'Next week'}
               >
-                <ChevronRight className="h-5 w-5" />
+                <ChevronRight className={`h-5 w-5 ${
+                  isNextWeekDisabled() ? 'text-gray-400' : 'text-gray-700'
+                }`} />
               </button>
             </div>
           </div>
