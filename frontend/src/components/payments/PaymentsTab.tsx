@@ -13,6 +13,7 @@ import {
 } from '../../lib/payments-api';
 import { formatHours } from '../../lib/confirmed-hours-api';
 import { PaymentWeekNavigator } from './PaymentWeekNavigator';
+import { PendingHoursApproval } from './PendingHoursApproval';
 import { EnhancedPaymentTable } from './EnhancedPaymentTable';
 import { SuccessMessage } from './PaymentWarnings';
 import { Button } from '../ui/Button';
@@ -273,6 +274,13 @@ export function PaymentsTab({ business }: PaymentsTabProps) {
           <p className="font-medium">{success}</p>
         </SuccessMessage>
       )}
+
+      {/* Pending Hours Approval Section */}
+      <PendingHoursApproval 
+        business={business}
+        currentWeek={currentWeek}
+        onRefresh={loadPaymentData}
+      />
 
       {/* Loading State */}
       {loading && (

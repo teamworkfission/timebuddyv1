@@ -101,7 +101,7 @@ export function PaymentWeekNavigator({ currentWeek, onWeekChange, business }: Pa
             </h2>
             {business && (
               <p className="text-xs text-gray-500 mt-1">
-                {business.business_name} • {business.location.split(',')[1]?.trim()} Time
+                {business.name} • {business.location.split(',')[1]?.trim()} Time
               </p>
             )}
           </div>
