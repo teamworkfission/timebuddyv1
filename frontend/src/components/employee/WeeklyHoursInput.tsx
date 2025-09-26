@@ -244,12 +244,6 @@ export function WeeklyHoursInput({ businessId, weekStart, onBack }: WeeklyHoursI
                 <p className="text-red-800 text-sm font-medium mb-1">Rejection Reason:</p>
                 <p className="text-red-700 text-sm">{data.confirmed_hours.rejection_reason}</p>
               </div>
-              {data.confirmed_hours.notes && (
-                <div className="bg-white rounded p-3 mb-3">
-                  <p className="text-red-800 text-sm font-medium mb-1">Additional Notes:</p>
-                  <p className="text-red-700 text-sm">{data.confirmed_hours.notes}</p>
-                </div>
-              )}
               <div className="text-sm text-red-700">
                 <p className="font-medium">You can make changes to your hours and resubmit for approval.</p>
                 <p className="mt-1">

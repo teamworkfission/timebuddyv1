@@ -41,6 +41,11 @@ export function PendingHoursApproval({ business, currentWeek, onRefresh }: Pendi
   const [rejectingHours, setRejectingHours] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  
+  // Rejection modal state
+  const [showRejectionModal, setShowRejectionModal] = useState(false);
+  const [recordToReject, setRecordToReject] = useState<ConfirmedHoursRecord | null>(null);
+  const [rejectionNotes, setRejectionNotes] = useState('Please review and resubmit your hours');
 
   // Convert week start to date range for filtering
   const getWeekDateRange = (weekStart: string) => {
@@ -106,14 +111,29 @@ export function PendingHoursApproval({ business, currentWeek, onRefresh }: Pendi
     }
   };
 
-  const handleReject = async (record: ConfirmedHoursRecord, reason: string = 'Hours require revision') => {
-    setRejectingHours(prev => new Set(prev).add(record.id));
+  const openRejectionModal = (record: ConfirmedHoursRecord) => {
+    setRecordToReject(record);
+    setRejectionNotes('Please review and resubmit your hours'); // Reset to default
+    setShowRejectionModal(true);
+  };
+
+  const closeRejectionModal = () => {
+    setShowRejectionModal(false);
+    setRecordToReject(null);
+    setRejectionNotes('Please review and resubmit your hours');
+  };
+
+  const handleRejectWithNotes = async () => {
+    if (!recordToReject) return;
+    
+    setRejectingHours(prev => new Set(prev).add(recordToReject.id));
     
     try {
-      await rejectConfirmedHours(record.id, reason, 'Please review and resubmit your hours');
-      setSuccess(`Rejected hours for ${record.employee_id.slice(0, 8)}... - employee can revise and resubmit`);
+      await rejectConfirmedHours(recordToReject.id, rejectionNotes.trim(), undefined);
+      setSuccess(`Rejected hours for ${recordToReject.employee_id.slice(0, 8)}... - employee can revise and resubmit`);
       await loadPendingApprovals();
       onRefresh?.();
+      closeRejectionModal();
       
       // Clear success after 3 seconds
       setTimeout(() => setSuccess(null), 3000);
@@ -122,7 +142,7 @@ export function PendingHoursApproval({ business, currentWeek, onRefresh }: Pendi
     } finally {
       setRejectingHours(prev => {
         const newSet = new Set(prev);
-        newSet.delete(record.id);
+        newSet.delete(recordToReject.id);
         return newSet;
       });
     }
@@ -274,7 +294,7 @@ export function PendingHoursApproval({ business, currentWeek, onRefresh }: Pendi
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleReject(record)}
+                  onClick={() => openRejectionModal(record)}
                   loading={rejectingHours.has(record.id)}
                   className="text-red-600 border-red-300 hover:bg-red-50"
                 >
@@ -295,6 +315,73 @@ export function PendingHoursApproval({ business, currentWeek, onRefresh }: Pendi
           </div>
         ))}
       </div>
+
+      {/* Simple Rejection Modal */}
+      {showRejectionModal && recordToReject && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Reject Hours Submission
+                </h3>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={closeRejectionModal}
+                  className="p-1"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <div className="mb-4">
+                <p className="text-sm text-gray-600 mb-2">
+                  Employee: {recordToReject.employee_id.slice(0, 8)}...
+                </p>
+                <p className="text-sm text-gray-600 mb-4">
+                  Hours: {formatHours(recordToReject.total_hours)}h
+                </p>
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Rejection Reason (will be shown to employee):
+                </label>
+                <textarea
+                  value={rejectionNotes}
+                  onChange={(e) => setRejectionNotes(e.target.value)}
+                  placeholder="Enter reason for rejection..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm resize-none"
+                  rows={4}
+                  maxLength={500}
+                />
+                <div className="text-xs text-gray-500 mt-1">
+                  {rejectionNotes.length}/500 characters
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3">
+                <Button
+                  variant="outline"
+                  onClick={closeRejectionModal}
+                  disabled={rejectingHours.has(recordToReject.id)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleRejectWithNotes}
+                  loading={rejectingHours.has(recordToReject.id)}
+                  className="bg-red-600 hover:bg-red-700"
+                  disabled={!rejectionNotes.trim()}
+                >
+                  Reject Hours
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
