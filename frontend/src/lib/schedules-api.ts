@@ -276,6 +276,21 @@ export class SchedulesApi {
     return response.json();
   }
 
+  static async copyPreviousWeek(businessId: string, weekStart: string): Promise<WeeklySchedule> {
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${API_BASE_URL}/schedules/businesses/${businessId}/weeks/${weekStart}/copy-previous`, {
+      method: 'POST',
+      headers,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || `Failed to copy previous week schedule: ${response.statusText}`);
+    }
+
+    return response.json();
+  }
+
   // Shifts
   static async createShift(scheduleId: string, shift: CreateShiftDto): Promise<Shift> {
     const headers = await getAuthHeaders();

@@ -34,6 +34,7 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
   const [error, setError] = useState<string | null>(null);
   const [showTemplateManager, setShowTemplateManager] = useState(false);
   const [hasPostedVersion, setHasPostedVersion] = useState(false);
+  const [canCopyPreviousWeek, setCanCopyPreviousWeek] = useState(false);
 
   // Helper function to convert BusinessEmployee to ScheduleEmployee format
   const convertToScheduleEmployees = (businessEmployees: BusinessEmployee[]) => {
@@ -226,6 +227,9 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
         }
       }
       
+      // Check if previous week has posted schedule for copy functionality
+      await checkCanCopyPreviousWeek();
+      
       // Clear any previous errors on successful load
       setError(null);
       
@@ -353,6 +357,71 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
     } catch (err) {
       setError('Failed to unpost schedule');
       console.error('Error unposting schedule:', err);
+    }
+  };
+
+  const checkCanCopyPreviousWeek = async () => {
+    if (!selectedBusinessId) {
+      console.log('🚫 Copy Previous Week: No business selected');
+      setCanCopyPreviousWeek(false);
+      return;
+    }
+
+    try {
+      // Calculate previous week
+      const currentDate = new Date(currentWeek + 'T00:00:00');
+      const previousWeekDate = new Date(currentDate);
+      previousWeekDate.setDate(currentDate.getDate() - 7);
+      const previousWeek = previousWeekDate.toISOString().split('T')[0];
+
+      console.log(`🔍 Copy Previous Week: Checking for posted schedule on ${previousWeek} (current: ${currentWeek})`);
+
+      // Check if previous week has posted schedule
+      const previousSchedule = await SchedulesApi.getWeeklyScheduleByStatus(
+        selectedBusinessId, 
+        previousWeek, 
+        'posted'
+      );
+      
+      console.log('📅 Copy Previous Week: Previous schedule:', {
+        exists: !!previousSchedule,
+        shiftCount: previousSchedule?.shifts?.length || 0,
+        status: previousSchedule?.status
+      });
+
+      const canCopy = !!previousSchedule && previousSchedule.shifts?.length > 0;
+      setCanCopyPreviousWeek(canCopy);
+      
+      if (!canCopy) {
+        if (!previousSchedule) {
+          console.log('❌ Copy Previous Week: No posted schedule found for previous week');
+        } else if (!previousSchedule.shifts?.length) {
+          console.log('❌ Copy Previous Week: Previous schedule has no shifts');
+        }
+      } else {
+        console.log('✅ Copy Previous Week: Available to copy!');
+      }
+    } catch (err) {
+      console.error('🚫 Copy Previous Week: Error checking previous week:', err);
+      setCanCopyPreviousWeek(false);
+    }
+  };
+
+  const handleCopyPreviousWeek = async () => {
+    if (!selectedBusinessId) return;
+
+    try {
+      setLoading(true);
+      const copiedSchedule = await SchedulesApi.copyPreviousWeek(selectedBusinessId, currentWeek);
+      setWeeklySchedule(copiedSchedule);
+      setError(null);
+      // Success feedback could be added here
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to copy previous week schedule';
+      setError(errorMessage);
+      console.error('Error copying previous week:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -517,6 +586,8 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
                 loading={loading}
                 shiftCount={weeklySchedule?.shifts?.length || 0}
                 hasPostedVersion={hasPostedVersion}
+                onCopyPreviousWeek={handleCopyPreviousWeek}
+                canCopyPreviousWeek={canCopyPreviousWeek}
               />
             </div>
 

@@ -142,6 +142,16 @@ export class SchedulesController {
     return this.schedulesService.unpostSchedule(scheduleId);
   }
 
+  @Post('businesses/:businessId/weeks/:weekStart/copy-previous')
+  async copyPreviousWeekSchedule(
+    @Param('businessId') businessId: string,
+    @Param('weekStart') weekStart: string,
+    @Request() req: any,
+  ) {
+    const userId = await this.getUserIdFromRequest(req);
+    return this.schedulesService.copyPreviousWeekSchedule(businessId, weekStart, userId);
+  }
+
   // Individual Shifts Endpoints
   @Post('schedules/:scheduleId/shifts')
   async createShift(

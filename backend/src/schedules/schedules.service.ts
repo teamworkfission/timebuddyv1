@@ -1172,4 +1172,84 @@ export class SchedulesService {
 
     return confirmedHoursList || [];
   }
+
+  // =====================================================
+  // COPY PREVIOUS WEEK SCHEDULE
+  // =====================================================
+
+  async copyPreviousWeekSchedule(
+    businessId: string, 
+    targetWeekStart: string, 
+    userId: string
+  ): Promise<WeeklySchedule> {
+    const supabase = this.supabaseService.admin;
+    
+    // Calculate previous week (subtract 7 days)
+    const targetDate = new Date(targetWeekStart + 'T00:00:00');
+    const previousWeekDate = new Date(targetDate);
+    previousWeekDate.setDate(targetDate.getDate() - 7);
+    const previousWeekStart = previousWeekDate.toISOString().split('T')[0];
+    
+    // Find previous week's posted schedule
+    const { data: previousSchedule, error: prevError } = await supabase
+      .from('weekly_schedules')
+      .select('id')
+      .eq('business_id', businessId)
+      .eq('week_start_date', previousWeekStart)
+      .eq('status', 'posted')
+      .single();
+      
+    if (prevError || !previousSchedule) {
+      throw new NotFoundException('No posted schedule found for previous week');
+    }
+    
+    // Get all shifts from previous week
+    const { data: previousShifts, error: shiftsError } = await supabase
+      .from('shifts')
+      .select('employee_id, day_of_week, start_label, end_label, start_min, end_min, shift_template_id, notes')
+      .eq('schedule_id', previousSchedule.id);
+      
+    if (shiftsError) {
+      throw new Error(`Failed to fetch previous week shifts: ${shiftsError.message}`);
+    }
+    
+    if (!previousShifts || previousShifts.length === 0) {
+      throw new BadRequestException('Previous week has no shifts to copy');
+    }
+    
+    // Create or get target schedule
+    let targetSchedule = await this.getWeeklySchedule(businessId, targetWeekStart);
+    if (!targetSchedule) {
+      targetSchedule = await this.createWeeklySchedule(
+        { business_id: businessId, week_start_date: targetWeekStart }, 
+        userId
+      );
+    }
+    
+    // Copy shifts with same day-of-week logic
+    const copyPromises = previousShifts.map(shift => 
+      this.createShift(targetSchedule.id, {
+        employee_id: shift.employee_id,
+        day_of_week: shift.day_of_week,
+        start_label: shift.start_label,
+        end_label: shift.end_label,
+        shift_template_id: shift.shift_template_id,
+        notes: shift.notes
+      }).catch(error => {
+        // Log individual shift copy failures but don't stop the whole process
+        console.warn(`Failed to copy shift for employee ${shift.employee_id}:`, error.message);
+        return null;
+      })
+    );
+    
+    const results = await Promise.all(copyPromises);
+    const successCount = results.filter(r => r !== null).length;
+    
+    if (successCount === 0) {
+      throw new BadRequestException('Failed to copy any shifts from previous week');
+    }
+    
+    // Return updated schedule
+    return this.getWeeklySchedule(businessId, targetWeekStart);
+  }
 }

@@ -1,5 +1,4 @@
-import React from 'react';
-import { Edit3, Eye, Send, RotateCcw } from 'lucide-react';
+import { Edit3, Eye, Send, RotateCcw, Copy } from 'lucide-react';
 import { Button } from '../ui/Button';
 
 interface ScheduleTabsProps {
@@ -11,6 +10,8 @@ interface ScheduleTabsProps {
   loading?: boolean;
   shiftCount?: number;
   hasPostedVersion?: boolean;
+  onCopyPreviousWeek?: () => void;
+  canCopyPreviousWeek?: boolean;
 }
 
 export function ScheduleTabs({
@@ -21,7 +22,9 @@ export function ScheduleTabs({
   onUnpostSchedule,
   loading = false,
   shiftCount = 0,
-  hasPostedVersion = false
+  hasPostedVersion = false,
+  onCopyPreviousWeek,
+  canCopyPreviousWeek = false
 }: ScheduleTabsProps) {
   return (
     <div className="bg-white rounded-lg shadow">
@@ -77,14 +80,37 @@ export function ScheduleTabs({
             )}
           </div>
 
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            {activeTab === 'edit' && scheduleStatus === 'draft' && onCopyPreviousWeek && (
+              <div className="relative group">
+                <Button
+                  variant="outline"
+                  onClick={onCopyPreviousWeek}
+                  disabled={loading || !canCopyPreviousWeek}
+                  className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm"
+                  size="sm"
+                >
+                  <Copy className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">Copy Previous Week</span>
+                  <span className="sm:hidden">Copy</span>
+                </Button>
+                
+                {/* Tooltip when disabled */}
+                {!canCopyPreviousWeek && !loading && (
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                    No posted schedule found for previous week
+                  </div>
+                )}
+              </div>
+            )}
+            
             {activeTab === 'edit' && scheduleStatus === 'draft' && (
               <Button
                 onClick={onPostSchedule}
                 disabled={loading || shiftCount === 0}
-                className="flex items-center space-x-2"
+                className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm"
               >
-                <Send className="h-4 w-4" />
+                <Send className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span>
                   {hasPostedVersion ? 'Send Updated Schedule' : 'Post Schedule'}
                 </span>
