@@ -176,14 +176,6 @@ export function EmployeeEarningsTable({ businessId, weekStart, weekEnd }: Employ
           </div>
         )}
 
-        {/* Payment Method */}
-        {isPaid && paymentRecord.payment_method && (
-          <div className="mt-4 text-center">
-            <div className="text-sm text-gray-600">
-              Paid via: <span className="font-medium capitalize">{paymentRecord.payment_method.replace('_', ' ')}</span>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

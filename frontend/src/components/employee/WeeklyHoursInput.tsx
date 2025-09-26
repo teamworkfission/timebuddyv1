@@ -374,7 +374,7 @@ export function WeeklyHoursInput({ businessId, weekStart, onBack }: WeeklyHoursI
                 clearMessages();
               }}
               disabled={!canEdit}
-              rows={3}
+              rows={1}
               placeholder="Add any notes about your hours this week..."
               className={`
                 w-full px-3 py-2 border rounded-md text-sm
@@ -411,16 +411,6 @@ export function WeeklyHoursInput({ businessId, weekStart, onBack }: WeeklyHoursI
                   {isRejected ? 'Resubmit for Approval' : 'Submit for Approval'}
                 </Button>
               )}
-            </div>
-          </div>
-          
-          {/* Help Text */}
-          <div className="mt-4 text-xs text-gray-500">
-            <div className="flex flex-wrap gap-4">
-              <span>• Hours can be entered in 15-minute increments (0.25)</span>
-              <span>• Maximum 24 hours per day</span>
-              <span>• Save as draft to continue editing later</span>
-              <span>• Submit for employer approval when ready</span>
             </div>
           </div>
         </div>

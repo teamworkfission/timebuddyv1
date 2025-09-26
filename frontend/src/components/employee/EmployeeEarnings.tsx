@@ -162,19 +162,20 @@ export function EmployeeEarnings() {
         </div>
       )}
 
-      {/* Earnings Table - Show when business is selected */}
+      {/* Daily Hours and Earnings - Show when business is selected */}
       {selectedBusinessId && (
         <div className="mt-8 space-y-8">
+          {/* Daily Hours Input - Now at top */}
+          <WeeklyHoursInput
+            businessId={selectedBusinessId}
+            weekStart={currentWeek}
+          />
+          
+          {/* Weekly Earnings Table - Now at bottom */}
           <EmployeeEarningsTable
             businessId={selectedBusinessId}
             weekStart={currentWeek}
             weekEnd={getWeekEndDate(currentWeek)}
-          />
-          
-          {/* Hours Input */}
-          <WeeklyHoursInput
-            businessId={selectedBusinessId}
-            weekStart={currentWeek}
           />
         </div>
       )}
