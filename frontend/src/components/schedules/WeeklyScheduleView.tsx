@@ -7,7 +7,7 @@ import {
   Shift, 
   ShiftTemplate, 
   CreateShiftDto, 
-  UpdateShiftDto 
+  UpdateShiftDto
 } from '../../lib/schedules-api';
 import { Business } from '../../lib/business-api';
 

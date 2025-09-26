@@ -3,7 +3,7 @@ import { Business } from './business-api';
 import { getCurrentWeekStart } from './date-utils';
 
 // Re-export date utilities for components that import from schedules-api
-export { getCurrentWeekStart, getNextWeek, getPreviousWeek, formatWeekRange, isWeekInEditableWindow, isWeekInPast } from './date-utils';
+export { getCurrentWeekStart, getNextWeek, getPreviousWeek, formatWeekRange, isWeekInEditableWindow, isWeekInPast, isDayInPast, getDateForDay, formatDayWithFullDate } from './date-utils';
 
 // Types
 export interface ShiftTemplate {

@@ -144,6 +144,54 @@ export function validateHours(hours: number | string): boolean {
 }
 
 /**
+ * Check if a specific day within a week is in the past
+ * @param weekStart - The week start date (YYYY-MM-DD)
+ * @param dayOfWeek - Day of week (0=Sunday, 1=Monday, etc.)
+ * @returns boolean - true if the day is in the past
+ */
+export function isDayInPast(weekStart: string, dayOfWeek: number): boolean {
+  const weekStartDate = new Date(weekStart + 'T00:00:00');
+  const targetDate = new Date(weekStartDate);
+  targetDate.setDate(weekStartDate.getDate() + dayOfWeek);
+  
+  // Get current date (local time, no timezone complexity)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Reset time to start of day for comparison
+  
+  return targetDate < today;
+}
+
+/**
+ * Get the full date for a specific day within a week
+ * @param weekStart - The week start date (YYYY-MM-DD)  
+ * @param dayOfWeek - Day of week (0=Sunday, 1=Monday, etc.)
+ * @returns Date object for the specific day
+ */
+export function getDateForDay(weekStart: string, dayOfWeek: number): Date {
+  const weekStartDate = new Date(weekStart + 'T00:00:00');
+  const targetDate = new Date(weekStartDate);
+  targetDate.setDate(weekStartDate.getDate() + dayOfWeek);
+  return targetDate;
+}
+
+/**
+ * Format a specific day with full date info for display
+ * @param weekStart - The week start date (YYYY-MM-DD)
+ * @param dayOfWeek - Day of week (0=Sunday, 1=Monday, etc.)
+ * @returns formatted string like "Monday, Sep 25, 2025"
+ */
+export function formatDayWithFullDate(weekStart: string, dayOfWeek: number): string {
+  const date = getDateForDay(weekStart, dayOfWeek);
+  const dateString = date.toLocaleDateString('en-US', { 
+    weekday: 'long', 
+    year: 'numeric', 
+    month: 'short', 
+    day: 'numeric' 
+  });
+  return dateString;
+}
+
+/**
  * Format date for display
  */
 export function formatDate(dateString: string): string {

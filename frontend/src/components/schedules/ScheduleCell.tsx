@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Lock } from 'lucide-react';
 import { ShiftBlock } from './ShiftBlock';
-import { Shift, ShiftTemplate, isWeekInEditableWindow } from '../../lib/schedules-api';
+import { Shift, ShiftTemplate, isWeekInEditableWindow, isDayInPast } from '../../lib/schedules-api';
 import { Business } from '../../lib/business-api';
 
 interface ScheduleCellProps {
@@ -20,7 +20,7 @@ interface ScheduleCellProps {
 export function ScheduleCell({
   employeeId: _employeeId,
   employeeName: _employeeName,
-  dayOfWeek: _dayOfWeek,
+  dayOfWeek,
   dayLabel: _dayLabel,
   shifts,
   shiftTemplates,
@@ -35,23 +35,25 @@ export function ScheduleCell({
   // Calculate total hours for potential future use (currently not displayed)
   // const totalHours = shifts.reduce((sum, shift) => sum + shift.duration_hours, 0);
   
-  // Check if this week is editable (prevent past week editing only)
+  // Check if this specific day is editable (prevent past day editing)
   useEffect(() => {
     setIsLoading(true);
     try {
       if (mode === 'edit' && business) {
-        const editable = isWeekInEditableWindow(weekStartDate);
+        const weekEditable = isWeekInEditableWindow(weekStartDate);
+        const dayNotInPast = !isDayInPast(weekStartDate, dayOfWeek);
+        const editable = weekEditable && dayNotInPast;
         setIsEditable(editable);
       } else {
         setIsEditable(false);
       }
     } catch (error) {
-      console.error('Error checking week editability:', error);
+      console.error('Error checking day editability:', error);
       setIsEditable(false);
     } finally {
       setIsLoading(false);
     }
-  }, [mode, business, weekStartDate]);
+  }, [mode, business, weekStartDate, dayOfWeek]);
 
   const getShiftTemplate = (templateId?: string) => {
     return shiftTemplates.find(t => t.id === templateId);
@@ -67,7 +69,7 @@ export function ScheduleCell({
           : 'cursor-default'
       }`}
       onClick={isEditable && !isLoading ? onCellClick : undefined}
-      title={(!isEditable && mode === 'edit') ? 'Cannot edit past weeks' : 
+      title={(!isEditable && mode === 'edit') ? (isDayInPast(weekStartDate, dayOfWeek) ? 'Cannot assign shifts to past days' : 'Cannot edit past weeks') : 
              (isLoading && mode === 'edit') ? 'Loading...' : undefined}
     >
       {shifts.length === 0 ? (

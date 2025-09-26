@@ -9,7 +9,8 @@ import {
   CreateShiftDto, 
   UpdateShiftDto, 
   formatShiftTime,
-  formatTemplateTime
+  formatTemplateTime,
+  formatDayWithFullDate
 } from '../../lib/schedules-api';
 
 interface ShiftAssignmentModalProps {
@@ -204,24 +205,16 @@ export function ShiftAssignmentModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} maxWidth="md" title="Assign Shift">
+    <Modal isOpen={isOpen} onClose={onClose} maxWidth="md">
       <div className="p-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">
-              Manage Shifts
-            </h2>
-            <p className="text-sm text-gray-600">
-              {employeeName} - {dayName}
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
+        <div className="mb-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-2">
+            Assign Shift
+          </h2>
+          <p className="text-base font-semibold text-gray-700">
+            {employeeName} - {formatDayWithFullDate(weekStartDate, dayOfWeek)}
+          </p>
         </div>
 
         {/* Existing Shifts */}
