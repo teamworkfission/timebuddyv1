@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { WeeklyHoursInput } from './WeeklyHoursInput';
 import { BusinessDropdown } from './BusinessDropdown';
+import { EmployeeEarningsTable } from './EmployeeEarningsTable';
 import { 
   getCurrentWeekStart,
   getNextWeek,
@@ -66,6 +67,14 @@ export function EmployeeEarnings() {
 
   const handleBusinessSelect = (businessId: string | null) => {
     setSelectedBusinessId(businessId);
+  };
+
+  // Helper function to get week end date (6 days after start)
+  const getWeekEndDate = (weekStart: string): string => {
+    const startDate = new Date(weekStart + 'T00:00:00');
+    const endDate = new Date(startDate);
+    endDate.setDate(startDate.getDate() + 6);
+    return endDate.toISOString().split('T')[0];
   };
 
 
@@ -153,9 +162,16 @@ export function EmployeeEarnings() {
         </div>
       )}
 
-      {/* Hours Input - Show when business is selected */}
+      {/* Earnings Table - Show when business is selected */}
       {selectedBusinessId && (
-        <div className="mt-8">
+        <div className="mt-8 space-y-8">
+          <EmployeeEarningsTable
+            businessId={selectedBusinessId}
+            weekStart={currentWeek}
+            weekEnd={getWeekEndDate(currentWeek)}
+          />
+          
+          {/* Hours Input */}
           <WeeklyHoursInput
             businessId={selectedBusinessId}
             weekStart={currentWeek}
