@@ -9,11 +9,10 @@ import {
   createPaymentRecord,
   updatePaymentRecord,
   markPaymentAsPaid,
-  getDefaultDateRange,
   getBusinessEmployees
 } from '../../lib/payments-api';
 import { formatHours } from '../../lib/confirmed-hours-api';
-import { DateRangePicker } from './DateRangePicker';
+import { PaymentWeekNavigator } from './PaymentWeekNavigator';
 import { EnhancedPaymentTable } from './EnhancedPaymentTable';
 import { SuccessMessage } from './PaymentWarnings';
 import { Button } from '../ui/Button';
@@ -23,7 +22,26 @@ interface PaymentsTabProps {
 }
 
 export function PaymentsTab({ business }: PaymentsTabProps) {
-  const [dateRange, setDateRange] = useState(getDefaultDateRange());
+  // Helper function to get current week start (Sunday)
+  const getCurrentWeekStart = (): string => {
+    const today = new Date();
+    const sunday = new Date(today);
+    sunday.setDate(today.getDate() - today.getDay());
+    return sunday.toISOString().split('T')[0];
+  };
+
+  // Helper function to convert week start to date range
+  const weekToDateRange = (weekStart: string) => {
+    const start = new Date(weekStart + 'T00:00:00');
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    return {
+      start: weekStart,
+      end: end.toISOString().split('T')[0]
+    };
+  };
+
+  const [currentWeek, setCurrentWeek] = useState(getCurrentWeekStart());
   const [employees, setEmployees] = useState<EmployeeWithHours[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,6 +52,9 @@ export function PaymentsTab({ business }: PaymentsTabProps) {
     try {
       setLoading(true);
       setError(null);
+
+      // Convert current week to date range for API calls
+      const dateRange = weekToDateRange(currentWeek);
 
       // Fetch all required data in parallel
       const [detailedHours, currentRates, existingPayments, businessEmployees] = await Promise.all([
@@ -102,6 +123,7 @@ export function PaymentsTab({ business }: PaymentsTabProps) {
       const finalHours = confirmedHours !== null ? confirmedHours : calculatedHours;
       
       // Get current payment record for this period
+      const dateRange = weekToDateRange(currentWeek);
       const paymentRecord = paymentRecords.find(record => 
         record.employee_id === employeeId &&
         record.period_start === dateRange.start &&
@@ -162,6 +184,7 @@ export function PaymentsTab({ business }: PaymentsTabProps) {
       const employee = employees.find(emp => emp.id === paymentData.employee_id);
       if (!employee) throw new Error('Employee not found');
 
+      const dateRange = weekToDateRange(currentWeek);
       const recordData = {
         business_id: business.business_id,
         period_start: dateRange.start,
@@ -208,10 +231,10 @@ export function PaymentsTab({ business }: PaymentsTabProps) {
   };
 
 
-  // Load data when component mounts or date range changes
+  // Load data when component mounts or current week changes
   useEffect(() => {
     loadPaymentData();
-  }, [dateRange]);
+  }, [currentWeek]);
 
   const employeesWithHours = employees.filter(emp => emp.hoursWorked > 0);
   const employeesWithoutHours = employees.filter(emp => emp.hoursWorked === 0);
@@ -225,15 +248,12 @@ export function PaymentsTab({ business }: PaymentsTabProps) {
 
   return (
     <div className="space-y-6">
-      {/* Date Range Picker */}
-      <div className="bg-gray-50 p-4 rounded-lg">
-        <DateRangePicker 
-          value={dateRange}
-          onChange={setDateRange}
-          onApply={loadPaymentData}
-          label="Pay Period"
-        />
-      </div>
+      {/* Week Navigator */}
+      <PaymentWeekNavigator 
+        currentWeek={currentWeek}
+        onWeekChange={setCurrentWeek}
+        business={business}
+      />
 
       {/* Status Messages */}
       {error && (
@@ -332,7 +352,7 @@ export function PaymentsTab({ business }: PaymentsTabProps) {
             <EnhancedPaymentTable 
               employees={employeesWithHours}
               businessId={business.business_id}
-              dateRange={dateRange}
+              dateRange={weekToDateRange(currentWeek)}
               onSave={handleSavePayment}
               onMarkPaid={handleMarkAsPaid}
               loading={loading}
