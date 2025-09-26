@@ -193,14 +193,16 @@ export function PaymentTable({
                   {/* Advances */}
                   <td className="px-4 py-4 text-center">
                     <input
-                      type="number"
-                      value={empFormData.advances === 0 ? '' : empFormData.advances}
-                      onChange={(e) => updateEmployeeFormData(employee.id, { 
-                        advances: parseFloat(e.target.value) || 0 
-                      })}
-                      className="w-20 px-2 py-1 text-sm border border-gray-300 rounded text-center"
-                      step="0.01"
-                      min="0"
+                      type="text"
+                      value={empFormData.advances === 0 ? '' : empFormData.advances.toString()}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^0-9.]/g, '');
+                        const numValue = parseFloat(value) || 0;
+                        if (numValue >= 0) {
+                          updateEmployeeFormData(employee.id, { advances: numValue });
+                        }
+                      }}
+                      className="w-20 px-2 py-1 text-sm border border-gray-300 rounded text-center [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       placeholder="0"
                       disabled={isPaid || loading}
                     />
@@ -209,14 +211,16 @@ export function PaymentTable({
                   {/* Bonuses */}
                   <td className="px-4 py-4 text-center">
                     <input
-                      type="number"
-                      value={empFormData.bonuses === 0 ? '' : empFormData.bonuses}
-                      onChange={(e) => updateEmployeeFormData(employee.id, { 
-                        bonuses: parseFloat(e.target.value) || 0 
-                      })}
-                      className="w-20 px-2 py-1 text-sm border border-gray-300 rounded text-center"
-                      step="0.01"
-                      min="0"
+                      type="text"
+                      value={empFormData.bonuses === 0 ? '' : empFormData.bonuses.toString()}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^0-9.]/g, '');
+                        const numValue = parseFloat(value) || 0;
+                        if (numValue >= 0) {
+                          updateEmployeeFormData(employee.id, { bonuses: numValue });
+                        }
+                      }}
+                      className="w-20 px-2 py-1 text-sm border border-gray-300 rounded text-center [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       placeholder="0"
                       disabled={isPaid || loading}
                     />
@@ -225,14 +229,16 @@ export function PaymentTable({
                   {/* Deductions */}
                   <td className="px-4 py-4 text-center">
                     <input
-                      type="number"
-                      value={empFormData.deductions === 0 ? '' : empFormData.deductions}
-                      onChange={(e) => updateEmployeeFormData(employee.id, { 
-                        deductions: parseFloat(e.target.value) || 0 
-                      })}
-                      className="w-20 px-2 py-1 text-sm border border-gray-300 rounded text-center"
-                      step="0.01"
-                      min="0"
+                      type="text"
+                      value={empFormData.deductions === 0 ? '' : empFormData.deductions.toString()}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^0-9.]/g, '');
+                        const numValue = parseFloat(value) || 0;
+                        if (numValue >= 0) {
+                          updateEmployeeFormData(employee.id, { deductions: numValue });
+                        }
+                      }}
+                      className="w-20 px-2 py-1 text-sm border border-gray-300 rounded text-center [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       placeholder="0"
                       disabled={isPaid || loading}
                     />

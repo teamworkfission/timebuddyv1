@@ -227,15 +227,17 @@ export function EmployeePaymentCard({
               <div className="relative">
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
                 <input
-                  type="number"
-                  value={formData.advances}
-                  onChange={(e) => setFormData(prev => ({ 
-                    ...prev, 
-                    advances: parseFloat(e.target.value) || 0 
-                  }))}
-                  step="0.01"
-                  min="0"
-                  className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
+                  type="text"
+                  value={formData.advances === 0 ? '' : formData.advances.toString()}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/[^0-9.]/g, '');
+                    const numValue = parseFloat(value) || 0;
+                    if (numValue >= 0) {
+                      setFormData(prev => ({ ...prev, advances: numValue }));
+                    }
+                  }}
+                  placeholder="0.00"
+                  className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   disabled={isPaid || loading}
                 />
               </div>
@@ -248,15 +250,17 @@ export function EmployeePaymentCard({
               <div className="relative">
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
                 <input
-                  type="number"
-                  value={formData.bonuses}
-                  onChange={(e) => setFormData(prev => ({ 
-                    ...prev, 
-                    bonuses: parseFloat(e.target.value) || 0 
-                  }))}
-                  step="0.01"
-                  min="0"
-                  className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
+                  type="text"
+                  value={formData.bonuses === 0 ? '' : formData.bonuses.toString()}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/[^0-9.]/g, '');
+                    const numValue = parseFloat(value) || 0;
+                    if (numValue >= 0) {
+                      setFormData(prev => ({ ...prev, bonuses: numValue }));
+                    }
+                  }}
+                  placeholder="0.00"
+                  className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   disabled={isPaid || loading}
                 />
               </div>
@@ -269,15 +273,17 @@ export function EmployeePaymentCard({
               <div className="relative">
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
                 <input
-                  type="number"
-                  value={formData.deductions}
-                  onChange={(e) => setFormData(prev => ({ 
-                    ...prev, 
-                    deductions: parseFloat(e.target.value) || 0 
-                  }))}
-                  step="0.01"
-                  min="0"
-                  className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
+                  type="text"
+                  value={formData.deductions === 0 ? '' : formData.deductions.toString()}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/[^0-9.]/g, '');
+                    const numValue = parseFloat(value) || 0;
+                    if (numValue >= 0) {
+                      setFormData(prev => ({ ...prev, deductions: numValue }));
+                    }
+                  }}
+                  placeholder="0.00"
+                  className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   disabled={isPaid || loading}
                 />
               </div>

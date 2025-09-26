@@ -218,37 +218,52 @@ export function EnhancedPaymentTable({
                         <div className="flex justify-between">
                           <span>Advances:</span>
                           <input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={employeeFormData.advances}
-                            onChange={(e) => updateEmployeeFormData(employee.id, 'advances', parseFloat(e.target.value) || 0)}
+                            type="text"
+                            value={employeeFormData.advances === 0 ? '' : employeeFormData.advances.toString()}
+                            onChange={(e) => {
+                              const value = e.target.value.replace(/[^0-9.]/g, '');
+                              const numValue = parseFloat(value) || 0;
+                              if (numValue >= 0) {
+                                updateEmployeeFormData(employee.id, 'advances', numValue);
+                              }
+                            }}
+                            placeholder="0"
                             disabled={employee.paymentRecord?.status === 'paid' || isSaving}
-                            className="w-16 px-1 py-0.5 text-right border rounded text-xs"
+                            className="w-16 px-1 py-0.5 text-right border rounded text-xs [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                           />
                         </div>
                         <div className="flex justify-between">
                           <span>Bonuses:</span>
                           <input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={employeeFormData.bonuses}
-                            onChange={(e) => updateEmployeeFormData(employee.id, 'bonuses', parseFloat(e.target.value) || 0)}
+                            type="text"
+                            value={employeeFormData.bonuses === 0 ? '' : employeeFormData.bonuses.toString()}
+                            onChange={(e) => {
+                              const value = e.target.value.replace(/[^0-9.]/g, '');
+                              const numValue = parseFloat(value) || 0;
+                              if (numValue >= 0) {
+                                updateEmployeeFormData(employee.id, 'bonuses', numValue);
+                              }
+                            }}
+                            placeholder="0"
                             disabled={employee.paymentRecord?.status === 'paid' || isSaving}
-                            className="w-16 px-1 py-0.5 text-right border rounded text-xs"
+                            className="w-16 px-1 py-0.5 text-right border rounded text-xs [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                           />
                         </div>
                         <div className="flex justify-between">
                           <span>Deductions:</span>
                           <input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={employeeFormData.deductions}
-                            onChange={(e) => updateEmployeeFormData(employee.id, 'deductions', parseFloat(e.target.value) || 0)}
+                            type="text"
+                            value={employeeFormData.deductions === 0 ? '' : employeeFormData.deductions.toString()}
+                            onChange={(e) => {
+                              const value = e.target.value.replace(/[^0-9.]/g, '');
+                              const numValue = parseFloat(value) || 0;
+                              if (numValue >= 0) {
+                                updateEmployeeFormData(employee.id, 'deductions', numValue);
+                              }
+                            }}
+                            placeholder="0"
                             disabled={employee.paymentRecord?.status === 'paid' || isSaving}
-                            className="w-16 px-1 py-0.5 text-right border rounded text-xs"
+                            className="w-16 px-1 py-0.5 text-right border rounded text-xs [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                           />
                         </div>
                       </div>
