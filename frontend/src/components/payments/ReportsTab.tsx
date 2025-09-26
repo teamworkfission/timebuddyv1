@@ -1,11 +1,9 @@
 import { useState, useEffect } from 'react';
-import { BarChart3, Download, RefreshCw, DollarSign, Clock, Users } from 'lucide-react';
+import { BarChart3, RefreshCw, DollarSign, Clock, Users } from 'lucide-react';
 import { Business } from '../../lib/business-api';
 import { 
   PayrollReport,
-  getPaymentReports,
-  exportPayrollData,
-  downloadCSV
+  getPaymentReports
 } from '../../lib/payments-api';
 import { DateRangePicker } from './DateRangePicker';
 import { Button } from '../ui/Button';
@@ -23,7 +21,6 @@ export function ReportsTab({ business }: ReportsTabProps) {
   
   const [reportData, setReportData] = useState<PayrollReport | null>(null);
   const [loading, setLoading] = useState(false);
-  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadReportData = async () => {
@@ -41,21 +38,6 @@ export function ReportsTab({ business }: ReportsTabProps) {
     }
   };
 
-  const exportCSV = async () => {
-    try {
-      setExporting(true);
-      const csvData = await exportPayrollData(business.business_id, 'csv', {
-        start_date: dateRange.start,
-        end_date: dateRange.end
-      });
-      downloadCSV(csvData, `payroll-${business.name}-${dateRange.start}-${dateRange.end}.csv`);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to export data';
-      setError(errorMessage);
-    } finally {
-      setExporting(false);
-    }
-  };
 
   useEffect(() => {
     loadReportData();
@@ -83,14 +65,6 @@ export function ReportsTab({ business }: ReportsTabProps) {
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               <span>Refresh</span>
-            </Button>
-            <Button
-              onClick={exportCSV}
-              disabled={exporting || !reportData}
-              className="flex items-center space-x-2"
-            >
-              <Download className="w-4 h-4" />
-              <span>{exporting ? 'Exporting...' : 'Export CSV'}</span>
             </Button>
           </div>
         </div>

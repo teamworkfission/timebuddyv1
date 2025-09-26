@@ -11,7 +11,7 @@ import {
   markPaymentAsPaid,
   getBusinessEmployees
 } from '../../lib/payments-api';
-import { formatHours } from '../../lib/confirmed-hours-api';
+import { formatHours, getEmployerConfirmedHoursList, ConfirmedHoursRecord } from '../../lib/confirmed-hours-api';
 import { PaymentWeekNavigator } from './PaymentWeekNavigator';
 import { PendingHoursApproval } from './PendingHoursApproval';
 import { EnhancedPaymentTable } from './EnhancedPaymentTable';
@@ -44,6 +44,7 @@ export function PaymentsTab({ business }: PaymentsTabProps) {
 
   const [currentWeek, setCurrentWeek] = useState(getCurrentWeekStart());
   const [employees, setEmployees] = useState<EmployeeWithHours[]>([]);
+  const [pendingHours, setPendingHours] = useState<ConfirmedHoursRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -58,13 +59,21 @@ export function PaymentsTab({ business }: PaymentsTabProps) {
       const dateRange = weekToDateRange(currentWeek);
 
       // Fetch all required data in parallel
-      const [detailedHours, currentRates, existingPayments, businessEmployees] = await Promise.all([
+      const [detailedHours, currentRates, existingPayments, businessEmployees, pendingHoursData] = await Promise.all([
         getDetailedEmployeeHours(business.business_id, dateRange.start, dateRange.end),
         getCurrentEmployeeRates(business.business_id),
         getPaymentRecords(business.business_id, { start_date: dateRange.start, end_date: dateRange.end }),
         // Fetch business employees using correct API
-        getBusinessEmployees(business.business_id)
+        getBusinessEmployees(business.business_id),
+        // Fetch pending hours for the current week
+        getEmployerConfirmedHoursList(business.business_id, 'submitted')
       ]);
+
+      // Filter pending hours for the current week
+      const weekPendingHours = pendingHoursData.filter(record => 
+        record.week_start_date >= dateRange.start && 
+        record.week_start_date <= dateRange.end
+      );
 
       // Combine data for UI
       const employeesWithData = combineEmployeeData(
@@ -75,6 +84,7 @@ export function PaymentsTab({ business }: PaymentsTabProps) {
       );
 
       setEmployees(employeesWithData);
+      setPendingHours(weekPendingHours);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load payment data';
       setError(errorMessage);
@@ -232,6 +242,11 @@ export function PaymentsTab({ business }: PaymentsTabProps) {
   };
 
 
+  // Helper function to check if employee has pending hours approval
+  const hasEmployeePendingApproval = (employeeId: string): boolean => {
+    return pendingHours.some(record => record.employee_id === employeeId);
+  };
+
   // Load data when component mounts or current week changes
   useEffect(() => {
     loadPaymentData();
@@ -364,6 +379,7 @@ export function PaymentsTab({ business }: PaymentsTabProps) {
               onSave={handleSavePayment}
               onMarkPaid={handleMarkAsPaid}
               loading={loading}
+              hasEmployeePendingApproval={hasEmployeePendingApproval}
             />
           </>
         ) : !loading && (

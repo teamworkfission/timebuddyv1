@@ -58,32 +58,6 @@ export function DateRangePicker({
     const today = new Date();
     const ranges = [
       {
-        label: 'This Week',
-        getValue: () => {
-          const sunday = new Date(today);
-          sunday.setDate(today.getDate() - today.getDay());
-          const saturday = new Date(sunday);
-          saturday.setDate(sunday.getDate() + 6);
-          return {
-            start: sunday.toISOString().split('T')[0],
-            end: saturday.toISOString().split('T')[0],
-          };
-        }
-      },
-      {
-        label: 'Last Week', 
-        getValue: () => {
-          const lastSunday = new Date(today);
-          lastSunday.setDate(today.getDate() - today.getDay() - 7);
-          const lastSaturday = new Date(lastSunday);
-          lastSaturday.setDate(lastSunday.getDate() + 6);
-          return {
-            start: lastSunday.toISOString().split('T')[0],
-            end: lastSaturday.toISOString().split('T')[0],
-          };
-        }
-      },
-      {
         label: 'This Month',
         getValue: () => {
           const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -99,6 +73,17 @@ export function DateRangePicker({
         getValue: () => {
           const firstDay = new Date(today.getFullYear(), today.getMonth() - 1, 1);
           const lastDay = new Date(today.getFullYear(), today.getMonth(), 0);
+          return {
+            start: firstDay.toISOString().split('T')[0],
+            end: lastDay.toISOString().split('T')[0],
+          };
+        }
+      },
+      {
+        label: 'Next Month',
+        getValue: () => {
+          const firstDay = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+          const lastDay = new Date(today.getFullYear(), today.getMonth() + 2, 0);
           return {
             start: firstDay.toISOString().split('T')[0],
             end: lastDay.toISOString().split('T')[0],

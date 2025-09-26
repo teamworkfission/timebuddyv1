@@ -18,7 +18,7 @@ import { AuthService } from '../auth/auth.service';
 import { SetEmployeeRateDto } from './dto/set-employee-rate.dto';
 import { CreatePaymentRecordDto } from './dto/create-payment-record.dto';
 import { UpdatePaymentRecordDto, MarkAsPaidDto } from './dto/update-payment-record.dto';
-import { PaymentReportDto, ExportPayrollDto } from './dto/payment-report.dto';
+import { PaymentReportDto } from './dto/payment-report.dto';
 
 @Controller('payments')
 export class PaymentsController {
@@ -91,11 +91,39 @@ export class PaymentsController {
   @Get('records/:businessId')
   async getPaymentRecords(
     @Param('businessId') businessId: string,
+    @Request() req,
     @Query('start_date') startDate?: string,
     @Query('end_date') endDate?: string,
     @Query('employee_id') employeeId?: string,
-    @Request() req?,
   ) {
+    // Get authenticated user info
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      throw new UnauthorizedException('Authorization header required');
+    }
+
+    const userInfo = await this.authService.verifyToken(authHeader);
+    if (!userInfo) {
+      throw new UnauthorizedException('Invalid authentication token');
+    }
+
+    // Check if user is an employee - employees can only see their own payment records
+    if (userInfo.role === 'employee') {
+      // Get the employee record for this user
+      const employeeRecord = await this.paymentsService.getEmployeeByUserId(userInfo.userId);
+      if (!employeeRecord) {
+        throw new UnauthorizedException('Employee record not found');
+      }
+
+      // Force employee_id to be the authenticated user's employee ID
+      // Prevent employees from seeing other employees' payment data
+      const enforceEmployeeId = employeeRecord.id;
+      
+      return this.paymentsService.getPaymentRecords(businessId, startDate, endDate, enforceEmployeeId);
+    }
+
+    // Employers can see all payment records for their business
+    // TODO: Add business ownership verification for employers
     return this.paymentsService.getPaymentRecords(businessId, startDate, endDate, employeeId);
   }
 
@@ -222,23 +250,6 @@ export class PaymentsController {
     return this.paymentsService.getPaymentReports(businessId, start, end);
   }
 
-  @Post('export')
-  @Header('Content-Type', 'text/csv')
-  @Header('Content-Disposition', 'attachment; filename="payroll-export.csv"')
-  async exportPayrollData(
-    @Body() exportDto: ExportPayrollDto,
-    @Request() req
-  ) {
-    const { business_id, format, start_date, end_date, employee_id } = exportDto;
-    
-    return this.paymentsService.exportPayrollData(
-      business_id,
-      format,
-      start_date,
-      end_date,
-      employee_id
-    );
-  }
 
   // =====================================================
   // BULK OPERATIONS

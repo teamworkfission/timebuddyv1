@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Check, Clock, CheckCircle, Users } from 'lucide-react';
+import { Check, Clock, CheckCircle, Users, AlertTriangle } from 'lucide-react';
 import { EmployeeWithHours, formatCurrency } from '../../lib/payments-api';
 import { Button } from '../ui/Button';
 
@@ -18,6 +18,7 @@ interface EnhancedPaymentTableProps {
   }) => Promise<void>;
   onMarkPaid: (recordId: string, method: string, notes?: string) => Promise<void>;
   loading?: boolean;
+  hasEmployeePendingApproval: (employeeId: string) => boolean;
 }
 
 interface EmployeeFormData {
@@ -33,7 +34,8 @@ export function EnhancedPaymentTable({
   dateRange,
   onSave,
   onMarkPaid,
-  loading = false
+  loading = false,
+  hasEmployeePendingApproval
 }: EnhancedPaymentTableProps) {
   const [formData, setFormData] = useState<Record<string, EmployeeFormData>>({});
   const [savingEmployees, setSavingEmployees] = useState<Set<string>>(new Set());
@@ -281,6 +283,11 @@ export function EnhancedPaymentTable({
                           </svg>
                           Paid
                         </span>
+                      ) : hasEmployeePendingApproval(employee.id) ? (
+                        <div className="flex items-center justify-end space-x-2">
+                          <Clock className="w-4 h-4 text-amber-500" />
+                          <span className="text-sm text-amber-600 font-medium">Awaiting Approval</span>
+                        </div>
                       ) : (
                         <>
                           {employee.paymentRecord?.status !== 'paid' && (

@@ -464,9 +464,114 @@ export class PaymentsService {
     }
   }
 
+  /**
+   * Get employee record by user ID for authentication/authorization
+   */
+  async getEmployeeByUserId(userId: string): Promise<{ id: string; employee_gid: string } | null> {
+    try {
+      const { data, error } = await this.supabaseService.admin
+        .from('employees')
+        .select('id, employee_gid')
+        .eq('user_id', userId)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // No employee found for this user ID
+          return null;
+        }
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      throw new BadRequestException(`Failed to get employee record: ${error.message}`);
+    }
+  }
+
   // =====================================================
   // REPORTING & ANALYTICS
   // =====================================================
+
+  /**
+   * Calculate monthly hours for employees handling weeks that span multiple months
+   * Only includes hours that fall within the specified month
+   */
+  async getMonthlyEmployeeHours(
+    businessId: string,
+    year: number,
+    month: number // 1-12
+  ): Promise<Record<string, number>> {
+    try {
+      // Get the first and last day of the month
+      const monthStart = new Date(year, month - 1, 1); // month is 0-indexed in Date constructor
+      const monthEnd = new Date(year, month, 0); // 0th day of next month = last day of current month
+      
+      const monthStartStr = monthStart.toISOString().split('T')[0];
+      const monthEndStr = monthEnd.toISOString().split('T')[0];
+
+      // Find all weeks that intersect with this month
+      // A week intersects if it starts before or on month end AND ends after or on month start
+      const { data: confirmedHours, error } = await this.supabaseService.admin
+        .from('employee_confirmed_hours')
+        .select(`
+          employee_id, 
+          week_start_date,
+          sunday_hours,
+          monday_hours, 
+          tuesday_hours,
+          wednesday_hours,
+          thursday_hours,
+          friday_hours,
+          saturday_hours
+        `)
+        .eq('business_id', businessId)
+        .eq('status', 'approved')
+        .lte('week_start_date', monthEndStr) // Week starts before or on month end
+        .gte('week_start_date', new Date(monthStart.getTime() - 6 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]); // Week starts within 6 days before month start (to catch weeks that end in the month)
+
+      if (error) throw error;
+
+      const monthlyHours: Record<string, number> = {};
+
+      if (confirmedHours) {
+        for (const weekRecord of confirmedHours) {
+          const weekStart = new Date(weekRecord.week_start_date + 'T00:00:00');
+          const dailyHours = [
+            weekRecord.sunday_hours || 0,
+            weekRecord.monday_hours || 0,
+            weekRecord.tuesday_hours || 0,
+            weekRecord.wednesday_hours || 0,
+            weekRecord.thursday_hours || 0,
+            weekRecord.friday_hours || 0,
+            weekRecord.saturday_hours || 0
+          ];
+
+          let monthlyHoursForWeek = 0;
+
+          // Check each day of the week to see if it falls within the target month
+          for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+            const currentDay = new Date(weekStart);
+            currentDay.setDate(weekStart.getDate() + dayIndex);
+            
+            // Check if this day is within the target month
+            if (currentDay >= monthStart && currentDay <= monthEnd) {
+              monthlyHoursForWeek += dailyHours[dayIndex];
+            }
+          }
+
+          if (monthlyHoursForWeek > 0) {
+            const employeeId = weekRecord.employee_id;
+            monthlyHours[employeeId] = Math.round(((monthlyHours[employeeId] || 0) + monthlyHoursForWeek) * 100) / 100;
+          }
+        }
+      }
+
+      return monthlyHours;
+    } catch (error) {
+      throw new BadRequestException(`Failed to calculate monthly employee hours: ${error.message}`);
+    }
+  }
 
   async getPaymentReports(
     businessId: string,
@@ -474,9 +579,35 @@ export class PaymentsService {
     endDate: string
   ): Promise<PayrollReport> {
     try {
-      // Get payment records for the period
-      const paymentRecords = await this.getPaymentRecords(businessId, startDate, endDate);
-      
+      // Check if this is a full month request
+      const start = new Date(startDate + 'T00:00:00');
+      const end = new Date(endDate + 'T00:00:00');
+      const isFullMonth = start.getDate() === 1 && end.getMonth() === start.getMonth() && 
+                         end.getDate() === new Date(start.getFullYear(), start.getMonth() + 1, 0).getDate();
+
+      let employeeHoursData: Record<string, number> = {};
+      let totalHours = 0;
+
+      if (isFullMonth) {
+        // Use monthly calculation for full month requests
+        employeeHoursData = await this.getMonthlyEmployeeHours(
+          businessId,
+          start.getFullYear(),
+          start.getMonth() + 1 // Convert to 1-12 range
+        );
+        totalHours = Object.values(employeeHoursData).reduce((sum, hours) => sum + hours, 0);
+      } else {
+        // Fall back to payment records for custom date ranges
+        const paymentRecords = await this.getPaymentRecords(businessId, startDate, endDate);
+        paymentRecords.forEach(record => {
+          if (record.status === 'paid') {
+            const hours = Math.round(record.total_hours * 100) / 100;
+            employeeHoursData[record.employee_id] = (employeeHoursData[record.employee_id] || 0) + hours;
+            totalHours += hours;
+          }
+        });
+      }
+
       // Get employee details
       const { data: employees, error } = await this.supabaseService.admin
         .from('business_employees')
@@ -497,52 +628,52 @@ export class PaymentsService {
         employeeMap.set(emp.employee_id, employeeName);
       });
 
-      // Aggregate data by employee
-      const employeeStats = new Map();
-      let totalPaid = 0;
-      let totalHours = 0;
-
-      paymentRecords.forEach(record => {
-        if (record.status === 'paid') {
-          totalPaid += record.net_pay;
-          // Apply consistent hours precision (2 decimal places)
-          totalHours += Math.round(record.total_hours * 100) / 100;
-
-          const employeeName = employeeMap.get(record.employee_id) || 'Unknown';
-          
-          if (!employeeStats.has(record.employee_id)) {
-            employeeStats.set(record.employee_id, {
-              employee_id: record.employee_id,
-              employee_name: employeeName,
-              total_hours: 0,
-              gross_pay: 0,
-              net_pay: 0,
-              payment_count: 0,
-            });
-          }
-
-          const stats = employeeStats.get(record.employee_id);
-          // Apply consistent hours precision (2 decimal places)
-          stats.total_hours += Math.round(record.total_hours * 100) / 100;
-          stats.gross_pay += record.gross_pay;
-          stats.net_pay += record.net_pay;
-          stats.payment_count += 1;
-        }
+      // Get employee rates for pay calculation
+      const currentRates = await this.getCurrentEmployeeRates(businessId);
+      const rateMap = new Map();
+      currentRates.forEach(rate => {
+        rateMap.set(rate.employee_id, rate.hourly_rate);
       });
 
-      // Create timeline data (grouped by date)
-      const timelineMap = new Map();
-      paymentRecords
-        .filter(record => record.status === 'paid' && record.paid_at)
-        .forEach(record => {
-          const date = record.paid_at!.split('T')[0]; // Extract date part
-          timelineMap.set(date, (timelineMap.get(date) || 0) + record.net_pay);
-        });
+      // Build employee stats from hours data
+      const employeeStats = new Map();
+      let totalPaid = 0;
 
-      const timelineData = Array.from(timelineMap.entries()).map(([date, amount]) => ({
-        date,
-        amount,
-      })).sort((a, b) => a.date.localeCompare(b.date));
+      Object.entries(employeeHoursData).forEach(([employeeId, hours]) => {
+        const employeeName = employeeMap.get(employeeId) || 'Unknown';
+        const hourlyRate = rateMap.get(employeeId) || 0;
+        const grossPay = hours * hourlyRate;
+        const netPay = grossPay; // Simplified for now
+
+        totalPaid += netPay;
+
+        employeeStats.set(employeeId, {
+          employee_id: employeeId,
+          employee_name: employeeName,
+          total_hours: hours,
+          gross_pay: grossPay,
+          net_pay: netPay,
+          payment_count: 1, // Simplified for monthly view
+        });
+      });
+
+      // Create timeline data - only available for payment record based reports
+      let timelineData: { date: string; amount: number }[] = [];
+      if (!isFullMonth) {
+        const paymentRecords = await this.getPaymentRecords(businessId, startDate, endDate);
+        const timelineMap = new Map();
+        paymentRecords
+          .filter(record => record.status === 'paid' && record.paid_at)
+          .forEach(record => {
+            const date = record.paid_at!.split('T')[0]; // Extract date part
+            timelineMap.set(date, (timelineMap.get(date) || 0) + record.net_pay);
+          });
+
+        timelineData = Array.from(timelineMap.entries()).map(([date, amount]) => ({
+          date,
+          amount,
+        })).sort((a, b) => a.date.localeCompare(b.date));
+      }
 
       return {
         business_id: businessId,
@@ -566,76 +697,4 @@ export class PaymentsService {
     }
   }
 
-  async exportPayrollData(
-    businessId: string,
-    format: 'csv',
-    startDate: string,
-    endDate: string,
-    employeeId?: string
-  ): Promise<string> {
-    try {
-      const paymentRecords = await this.getPaymentRecords(businessId, startDate, endDate, employeeId);
-      
-      // Get employee details
-      const { data: employees, error } = await this.supabaseService.admin
-        .from('business_employees')
-        .select(`
-          employee_id,
-          employees (
-            id,
-            full_name
-          )
-        `)
-        .eq('business_id', businessId);
-
-      if (error) throw error;
-
-      const employeeMap = new Map();
-      employees?.forEach((emp: any) => {
-        const employeeName = emp.employees?.full_name || 'Unknown Employee';
-        employeeMap.set(emp.employee_id, employeeName);
-      });
-
-      // Generate CSV
-      const headers = [
-        'Employee Name',
-        'Employee ID', 
-        'Period Start',
-        'Period End',
-        'Total Hours',
-        'Hourly Rate',
-        'Gross Pay',
-        'Bonuses',
-        'Advances',
-        'Deductions',
-        'Net Pay',
-        'Status',
-        'Payment Method',
-        'Paid Date',
-        'Notes'
-      ].join(',');
-
-      const rows = paymentRecords.map(record => [
-        `"${employeeMap.get(record.employee_id) || 'Unknown'}"`,
-        record.employee_id,
-        record.period_start,
-        record.period_end,
-        record.total_hours,
-        record.hourly_rate,
-        record.gross_pay,
-        record.bonuses || 0,
-        record.advances || 0,
-        record.deductions || 0,
-        record.net_pay,
-        record.status,
-        record.payment_method || '',
-        record.paid_at?.split('T')[0] || '',
-        `"${record.notes || ''}"`
-      ].join(','));
-
-      return [headers, ...rows].join('\n');
-    } catch (error) {
-      throw new BadRequestException(`Failed to export payroll data: ${error.message}`);
-    }
-  }
 }

@@ -22,12 +22,15 @@ export function EmployeeEarningsTable({ businessId, weekStart, weekEnd }: Employ
       setLoading(true);
       setError(null);
       
+      // The backend now automatically filters by the authenticated employee
+      // So we only get payment records that belong to the current user
       const records = await getPaymentRecords(businessId, {
         start_date: weekStart,
         end_date: weekEnd
       });
       
-      // Find the current user's payment record for this period
+      // Find the payment record for this specific period
+      // Since records are already filtered by current employee, we just need to match dates
       const userRecord = records.find(record => 
         record.period_start === weekStart && record.period_end === weekEnd
       );
