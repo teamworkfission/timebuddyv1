@@ -374,24 +374,8 @@ export function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
-export function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
-}
+// MOVED TO date-utils.ts - Import from there instead
+export { formatDate } from './date-utils';
 
-export function getDefaultDateRange(): { start: string; end: string } {
-  const today = new Date();
-  const sunday = new Date(today);
-  sunday.setDate(today.getDate() - today.getDay());
-  
-  const saturday = new Date(sunday);
-  saturday.setDate(sunday.getDate() + 6);
-  
-  return {
-    start: sunday.toISOString().split('T')[0],
-    end: saturday.toISOString().split('T')[0],
-  };
-}
+// MOVED TO date-utils.ts - Import from there instead
+export { getDefaultDateRange } from './date-utils';

@@ -306,99 +306,23 @@ export async function rejectConfirmedHours(
  * Calculate total hours from daily hours
  * Uses standardized calculation for consistency across the app
  */
-export function calculateTotalHours(hours: {
-  sunday_hours?: number;
-  monday_hours?: number;
-  tuesday_hours?: number;
-  wednesday_hours?: number;
-  thursday_hours?: number;
-  friday_hours?: number;
-  saturday_hours?: number;
-}): number {
-  // Import standardized calculation to ensure consistency
-  const total = (
-    (hours.sunday_hours || 0) +
-    (hours.monday_hours || 0) +
-    (hours.tuesday_hours || 0) +
-    (hours.wednesday_hours || 0) +
-    (hours.thursday_hours || 0) +
-    (hours.friday_hours || 0) +
-    (hours.saturday_hours || 0)
-  );
-  
-  // Apply consistent precision rounding (2 decimal places)
-  return Math.round(total * 100) / 100;
-}
+// MOVED TO date-utils.ts - Import from there instead
+export { calculateTotalHours } from './date-utils';
 
-/**
- * Get current week start date (Sunday)
- */
-export function getCurrentWeekStart(): string {
-  const today = new Date();
-  const currentDay = today.getDay(); // 0 = Sunday
-  const weekStart = new Date(today);
-  weekStart.setDate(today.getDate() - currentDay);
-  return weekStart.toISOString().split('T')[0];
-}
+// MOVED TO date-utils.ts - Import from there instead  
+export { getCurrentWeekStart } from './date-utils';
 
-/**
- * Get next week start date
- */
-export function getNextWeek(weekStart: string): string {
-  const date = new Date(weekStart + 'T00:00:00');
-  date.setDate(date.getDate() + 7);
-  return date.toISOString().split('T')[0];
-}
+// MOVED TO date-utils.ts - Import from there instead
+export { getNextWeek } from './date-utils';
 
-/**
- * Get previous week start date
- */
-export function getPreviousWeek(weekStart: string): string {
-  const date = new Date(weekStart + 'T00:00:00');
-  date.setDate(date.getDate() - 7);
-  return date.toISOString().split('T')[0];
-}
+// MOVED TO date-utils.ts - Import from there instead
+export { getPreviousWeek } from './date-utils';
 
-/**
- * Format week range display (e.g., "Sep 21 - Sep 27, 2025")
- */
-export function formatWeekRange(weekStart: string): string {
-  const start = new Date(weekStart + 'T00:00:00');
-  const end = new Date(start);
-  end.setDate(start.getDate() + 6);
+// MOVED TO date-utils.ts - Import from there instead
+export { formatWeekRange } from './date-utils';
 
-  const options: Intl.DateTimeFormatOptions = { 
-    month: 'short', 
-    day: 'numeric',
-    year: 'numeric'
-  };
-
-  const startStr = start.toLocaleDateString('en-US', options);
-  const endStr = end.toLocaleDateString('en-US', options);
-  
-  return `${startStr.replace(', ' + start.getFullYear(), '')} - ${endStr}`;
-}
-
-/**
- * Validate hours input (0-24, max 2 decimal places)
- */
-export function validateHours(hours: number | string): boolean {
-  if (typeof hours === 'string') {
-    hours = parseFloat(hours);
-  }
-  
-  if (isNaN(hours) || hours < 0 || hours > 24) {
-    return false;
-  }
-  
-  // Check for max 2 decimal places
-  const decimalParts = hours.toString().split('.');
-  if (decimalParts.length > 1 && decimalParts[1].length > 2) {
-    return false;
-  }
-  
-  return true;
-}
+// MOVED TO date-utils.ts - Import from there instead
+export { validateHours } from './date-utils';
 
 /**
  * Format hours for display with standardized formatting
@@ -418,18 +342,5 @@ export function formatHours(hours: number): string {
   }
 }
 
-/**
- * Format day with date for compact display (e.g., "Sun - Sep 21")
- */
-export function formatDayWithDate(weekStart: string, dayIndex: number, dayAbbrev: string): string {
-  const date = new Date(weekStart + 'T00:00:00');
-  date.setDate(date.getDate() + dayIndex);
-  
-  const options: Intl.DateTimeFormatOptions = { 
-    month: 'short', 
-    day: 'numeric'
-  };
-  
-  const dateStr = date.toLocaleDateString('en-US', options);
-  return `${dayAbbrev} - ${dateStr}`;
-}
+// MOVED TO date-utils.ts - Import from there instead  
+export { formatDayWithDate } from './date-utils';

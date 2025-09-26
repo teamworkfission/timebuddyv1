@@ -9,6 +9,7 @@ import {
 } from '../../lib/payments-api';
 import { DateRangePicker } from './DateRangePicker';
 import { Button } from '../ui/Button';
+import { formatHours } from '../../lib/confirmed-hours-api';
 
 interface ReportsTabProps {
   business: Business;

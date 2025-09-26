@@ -1,5 +1,9 @@
 import { supabase } from './supabase';
 import { Business } from './business-api';
+import { getCurrentWeekStart } from './date-utils';
+
+// Re-export date utilities for components that import from schedules-api
+export { getCurrentWeekStart, getNextWeek, getPreviousWeek, formatWeekRange, isWeekInEditableWindow, isWeekInPast } from './date-utils';
 
 // Types
 export interface ShiftTemplate {
@@ -369,25 +373,14 @@ export class SchedulesApi {
 
 // Utility functions
 
-/**
- * Get current week start (Sunday) - BULLETPROOF VERSION
- * No timezone complexity - simple and reliable
- */
-export function getCurrentWeekStart(): string {
-  const now = new Date();
-  const dayOfWeek = now.getDay(); // 0=Sunday, 1=Monday, etc.
-  const daysToSunday = -dayOfWeek; // Always go back to Sunday
-  const sunday = new Date(now);
-  sunday.setDate(now.getDate() + daysToSunday);
-  sunday.setHours(0, 0, 0, 0);
-  return sunday.toISOString().split('T')[0];
-}
+// SINGLE SOURCE OF TRUTH - Imported from date-utils.ts at top of file
 
 /**
  * Get the start of the scheduling window (current Sunday) - BULLETPROOF VERSION
  * No timezone complexity - always returns current Sunday
  */
 export function getScheduleWindowStart(): string {
+  // Import from date-utils.ts for consistency
   return getCurrentWeekStart();
 }
 
@@ -402,23 +395,7 @@ export function getScheduleWindowEnd(): string {
   return farFuture.toISOString().split('T')[0];
 }
 
-/**
- * Check if a week is within the editable window - BULLETPROOF VERSION
- * UPDATED: Removed 4-week limit, now only prevents past week editing
- */
-export function isWeekInEditableWindow(weekStart: string): boolean {
-  const windowStart = getScheduleWindowStart();
-  // Only prevent scheduling for past weeks, allow unlimited future scheduling
-  return weekStart >= windowStart;
-}
-
-/**
- * Check if a week is in the past - BULLETPROOF VERSION
- */
-export function isWeekInPast(weekStart: string): boolean {
-  const windowStart = getScheduleWindowStart();
-  return weekStart < windowStart;
-}
+// These are re-exported at top of file
 
 /**
  * Check if it's safe to navigate to next week - BULLETPROOF VERSION
@@ -429,28 +406,7 @@ export function canNavigateToNextWeek(_currentWeek: string): boolean {
   return true;
 }
 
-/**
- * Format week range for display (Sunday to Saturday) - BULLETPROOF VERSION
- * No timezone complexity - what you see is what you get
- * Fixed: Properly handles date parsing to avoid timezone offset issues
- */
-export function formatWeekRange(weekStart: string): string {
-  // Fix timezone parsing issue: ensure date is interpreted in local time
-  const start = new Date(weekStart + 'T00:00:00');
-  const end = new Date(start);
-  end.setDate(start.getDate() + 6); // Sunday + 6 = Saturday
-  
-  const options: Intl.DateTimeFormatOptions = { 
-    month: 'short', 
-    day: 'numeric' 
-  };
-  
-  const startStr = start.toLocaleDateString('en-US', options);
-  const endStr = end.toLocaleDateString('en-US', options);
-  const year = start.getFullYear();
-  
-  return `${startStr} - ${endStr}, ${year}`;
-}
+// Re-exported at top of file
 
 /**
  * Format time for display - BULLETPROOF VERSION
@@ -491,17 +447,7 @@ export function formatTemplateTime(template: ShiftTemplate): { start: string; en
   };
 }
 
-export function getNextWeek(weekStart: string): string {
-  const date = new Date(weekStart + 'T00:00:00');
-  date.setDate(date.getDate() + 7);
-  return date.toISOString().split('T')[0];
-}
-
-export function getPreviousWeek(weekStart: string): string {
-  const date = new Date(weekStart + 'T00:00:00');
-  date.setDate(date.getDate() - 7);
-  return date.toISOString().split('T')[0];
-}
+// Re-exported at top of file
 
 // Employee Schedule API Functions
 
