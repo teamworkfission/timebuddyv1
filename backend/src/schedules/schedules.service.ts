@@ -965,7 +965,7 @@ export class SchedulesService {
       throw new NotFoundException('Employee profile not found');
     }
 
-    // Update only if owned by employee and in draft status
+    // Update only if owned by employee and in draft OR rejected status
     const updateData: any = {};
     if (dto.sunday_hours !== undefined) updateData.sunday_hours = dto.sunday_hours;
     if (dto.monday_hours !== undefined) updateData.monday_hours = dto.monday_hours;
@@ -976,12 +976,32 @@ export class SchedulesService {
     if (dto.saturday_hours !== undefined) updateData.saturday_hours = dto.saturday_hours;
     if (dto.notes !== undefined) updateData.notes = dto.notes;
 
+    // Clear rejection fields when updating rejected hours
+    const { data: currentRecord, error: fetchError } = await supabase
+      .from('employee_confirmed_hours')
+      .select('status')
+      .eq('id', id)
+      .eq('employee_id', employee.id)
+      .single();
+
+    if (fetchError || !currentRecord) {
+      throw new NotFoundException('Confirmed hours record not found');
+    }
+
+    // If updating rejected hours, clear rejection fields and set status to draft
+    if (currentRecord.status === 'rejected') {
+      updateData.status = 'draft';
+      updateData.rejection_reason = null;
+      updateData.rejected_at = null;
+      updateData.rejected_by = null;
+    }
+
     const { data: confirmedHours, error } = await supabase
       .from('employee_confirmed_hours')
       .update(updateData)
       .eq('id', id)
       .eq('employee_id', employee.id)
-      .eq('status', 'draft') // Can only update draft hours
+      .in('status', ['draft', 'rejected']) // Can update draft or rejected hours
       .select()
       .single();
 
@@ -1014,16 +1034,35 @@ export class SchedulesService {
       throw new NotFoundException('Employee profile not found');
     }
 
+    // Get current record to check if it's rejected
+    const { data: currentRecord, error: fetchError } = await supabase
+      .from('employee_confirmed_hours')
+      .select('status')
+      .eq('id', id)
+      .eq('employee_id', employee.id)
+      .single();
+
+    if (fetchError || !currentRecord) {
+      throw new NotFoundException('Confirmed hours record not found');
+    }
+
     // Submit hours (change status to submitted)
     const updateData: any = { status: 'submitted' };
     if (dto.notes) updateData.notes = dto.notes;
+
+    // If resubmitting rejected hours, clear rejection fields
+    if (currentRecord.status === 'rejected') {
+      updateData.rejection_reason = null;
+      updateData.rejected_at = null;
+      updateData.rejected_by = null;
+    }
 
     const { data: confirmedHours, error } = await supabase
       .from('employee_confirmed_hours')
       .update(updateData)
       .eq('id', id)
       .eq('employee_id', employee.id)
-      .eq('status', 'draft')
+      .in('status', ['draft', 'rejected']) // Can submit draft or rejected hours
       .select()
       .single();
 
