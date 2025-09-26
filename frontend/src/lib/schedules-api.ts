@@ -349,8 +349,8 @@ export class SchedulesApi {
   }
 }
 
-// Schedule window configuration
-export const SCHEDULE_WINDOW_WEEKS = 4;
+// Schedule window configuration - REMOVED 4-week limit
+// export const SCHEDULE_WINDOW_WEEKS = 4; // REMOVED - No longer limiting scheduling window
 
 // Utility functions
 
@@ -377,22 +377,24 @@ export function getScheduleWindowStart(): string {
 }
 
 /**
- * Get the end of the scheduling window (4 weeks from current Sunday) - BULLETPROOF VERSION
+ * Get the end of the scheduling window (unlimited) - BULLETPROOF VERSION
+ * UPDATED: Removed 4-week limit, now allows unlimited future scheduling
  */
 export function getScheduleWindowEnd(): string {
-  const startDate = getScheduleWindowStart();
-  const start = new Date(startDate + 'T00:00:00');
-  start.setDate(start.getDate() + (SCHEDULE_WINDOW_WEEKS * 7));
-  return start.toISOString().split('T')[0];
+  // Return a far future date to allow unlimited scheduling
+  const farFuture = new Date();
+  farFuture.setFullYear(farFuture.getFullYear() + 10); // 10 years in the future
+  return farFuture.toISOString().split('T')[0];
 }
 
 /**
- * Check if a week is within the editable 4-week window - BULLETPROOF VERSION
+ * Check if a week is within the editable window - BULLETPROOF VERSION
+ * UPDATED: Removed 4-week limit, now only prevents past week editing
  */
 export function isWeekInEditableWindow(weekStart: string): boolean {
   const windowStart = getScheduleWindowStart();
-  const windowEnd = getScheduleWindowEnd();
-  return weekStart >= windowStart && weekStart < windowEnd;
+  // Only prevent scheduling for past weeks, allow unlimited future scheduling
+  return weekStart >= windowStart;
 }
 
 /**
@@ -404,12 +406,12 @@ export function isWeekInPast(weekStart: string): boolean {
 }
 
 /**
- * Check if it's safe to navigate to next week (within window) - BULLETPROOF VERSION
+ * Check if it's safe to navigate to next week - BULLETPROOF VERSION
+ * UPDATED: Removed 4-week limit, now allows unlimited future navigation
  */
-export function canNavigateToNextWeek(currentWeek: string): boolean {
-  const nextWeek = getNextWeek(currentWeek);
-  const windowEnd = getScheduleWindowEnd();
-  return nextWeek < windowEnd;
+export function canNavigateToNextWeek(_currentWeek: string): boolean {
+  // Allow unlimited future navigation
+  return true;
 }
 
 /**

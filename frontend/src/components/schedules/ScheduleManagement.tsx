@@ -245,7 +245,7 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
   };
 
   const handleShiftCreate = async (shift: CreateShiftDto) => {
-    let targetSchedule = weeklySchedule;
+    let targetSchedule: WeeklySchedule;
 
     // If no schedule exists or if it's an empty schedule placeholder, create a new one
     if (!weeklySchedule || !weeklySchedule.id) {
@@ -265,6 +265,9 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
       const draftSchedule = await handleCreateDraftFromPosted();
       if (!draftSchedule) return; // Failed to convert to draft
       targetSchedule = draftSchedule;
+    }
+    else {
+      targetSchedule = weeklySchedule;
     }
 
     try {
@@ -382,10 +385,10 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
     console.log(`🗓️ Week change requested: ${currentWeek} → ${weekStart}`);
     const selectedBusiness = businesses.find(b => b.business_id === selectedBusinessId);
     
-    // Only allow navigation within the 4-week window
+    // Only prevent navigation to past weeks
     try {
       if (selectedBusiness && !isWeekInEditableWindow(weekStart)) {
-        console.warn('Cannot navigate to week outside the 4-week scheduling window');
+        console.warn('Cannot navigate to past weeks');
         return;
       }
     } catch (error) {
@@ -575,7 +578,7 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
                   </div>
                   <h3 className="text-lg font-medium text-gray-900 mb-2">Week Not Editable</h3>
                   <p className="text-gray-600">
-                    This week is outside the current 4-week scheduling window and cannot be edited.
+                    This week is in the past and cannot be edited. Please select the current week or a future week.
                   </p>
                 </div>
               </div>

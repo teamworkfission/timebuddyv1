@@ -210,17 +210,12 @@ export class TimezoneService {
 
   /**
    * Check if a week is within the scheduling window for a business
+   * UPDATED: Removed 4-week limit, now only prevents past week scheduling
    */
-  isWeekInSchedulingWindow(weekStart: string, timezone: string, windowWeeks: number = 4): boolean {
+  isWeekInSchedulingWindow(weekStart: string, timezone: string, windowWeeks?: number): boolean {
     const windowStart = this.getCurrentWeekStart(timezone);
-    const windowStartDate = new Date(windowStart);
-    const windowEndDate = new Date(windowStartDate);
-    windowEndDate.setDate(windowEndDate.getDate() + (windowWeeks * 7));
-    
-    const weekStartDate = new Date(weekStart);
-    const windowEnd = windowEndDate.toISOString().split('T')[0];
-    
-    return weekStart >= windowStart && weekStart < windowEnd;
+    // Only prevent scheduling for past weeks, allow unlimited future scheduling
+    return weekStart >= windowStart;
   }
 
   /**

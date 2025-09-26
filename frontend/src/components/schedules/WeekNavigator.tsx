@@ -90,7 +90,7 @@ export function WeekNavigator({ currentWeek, onWeekChange, business }: WeekNavig
             onClick={handlePreviousWeek}
             disabled={!canGoPrevious || loading}
             className="flex items-center space-x-2"
-            title={!canGoPrevious ? "Cannot go beyond current 4-week scheduling window" : "Previous Week"}
+            title={!canGoPrevious ? "Cannot schedule in past weeks" : "Previous Week"}
           >
             <ChevronLeft className="h-4 w-4" />
             <span className="hidden sm:inline">Previous Week</span>
@@ -129,16 +129,16 @@ export function WeekNavigator({ currentWeek, onWeekChange, business }: WeekNavig
             onClick={handleNextWeek}
             disabled={!canGoNext || loading}
             className="flex items-center space-x-2"
-            title={!canGoNext ? "Cannot schedule beyond 4-week window" : "Next Week"}
+            title="Next Week"
           >
             <span className="hidden sm:inline">Next Week</span>
             <ChevronRight className="h-4 w-4" />
           </Button>
           
-          {business && (!canGoNext || !canGoPrevious) && !loading && (
-            <div className="flex items-center text-amber-600 text-sm" title="4-week scheduling window">
+          {business && !canGoPrevious && !loading && (
+            <div className="flex items-center text-amber-600 text-sm" title="Cannot schedule in past weeks">
               <AlertCircle className="h-4 w-4 mr-1" />
-              <span className="hidden md:inline">4-week limit</span>
+              <span className="hidden md:inline">Past week</span>
             </div>
           )}
         </div>

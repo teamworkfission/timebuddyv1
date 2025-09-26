@@ -35,7 +35,7 @@ export function ScheduleCell({
   // Calculate total hours for potential future use (currently not displayed)
   // const totalHours = shifts.reduce((sum, shift) => sum + shift.duration_hours, 0);
   
-  // Check if this week is editable (within 4-week window)
+  // Check if this week is editable (prevent past week editing only)
   useEffect(() => {
     setIsLoading(true);
     try {
@@ -67,7 +67,7 @@ export function ScheduleCell({
           : 'cursor-default'
       }`}
       onClick={isEditable && !isLoading ? onCellClick : undefined}
-      title={(!isEditable && mode === 'edit') ? 'Week is outside the 4-week scheduling window' : 
+      title={(!isEditable && mode === 'edit') ? 'Cannot edit past weeks' : 
              (isLoading && mode === 'edit') ? 'Loading...' : undefined}
     >
       {shifts.length === 0 ? (

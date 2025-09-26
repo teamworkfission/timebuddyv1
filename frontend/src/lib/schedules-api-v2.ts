@@ -286,12 +286,11 @@ export class SchedulesApi {
   }
 }
 
-// Schedule window configuration
-export const SCHEDULE_WINDOW_WEEKS = 4;
+// Schedule window configuration - REMOVED 4-week limit
+// export const SCHEDULE_WINDOW_WEEKS = 4; // REMOVED - No longer limiting scheduling window
 
 // Export bulletproof functions
 export {
-  getCurrentWeekStart,
   getScheduleWindowEnd,
   isWeekInEditableWindow,
   isWeekInPast,
@@ -299,11 +298,5 @@ export {
   formatWeekRange,
   formatTime,
   getNextWeek,
-  getPreviousWeek,
-  getCurrentWeekStartInTimezone
+  getPreviousWeek
 };
-
-// Fallback for non-business contexts
-export function getCurrentWeekStart(): string {
-  return getCurrentWeekStartInTimezone('UTC');
-}
