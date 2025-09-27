@@ -536,15 +536,13 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
             </div>
             
             {selectedBusinessId && (
-              <Button
-                variant="outline"
-                size="sm"
+              <button
                 onClick={() => setShowTemplateManager(true)}
-                className="bg-blue-600 hover:bg-blue-700 border-blue-600 text-white hover:text-white font-medium shadow-lg px-3 py-2 sm:px-4 transition-all duration-200 hover:shadow-xl"
+                className="font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed bg-blue-600 hover:bg-blue-700 border border-blue-600 hover:border-blue-700 text-white hover:text-white font-semibold shadow-md hover:shadow-lg px-3 py-2 sm:px-4 text-sm min-h-[36px] transform hover:scale-105"
               >
                 <span className="hidden sm:inline">Manage Shift Templates</span>
                 <span className="sm:hidden">Templates</span>
-              </Button>
+              </button>
             )}
           </div>
         </div>
