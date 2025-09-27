@@ -31,6 +31,7 @@ export function ApplicationsList({ jobPostId, jobTitle, statusFilter, showAction
       setLoading(true);
       setError(null);
       const data = await getApplicationsByJobPost(jobPostId);
+      
       // Filter applications based on statusFilter prop
       const filteredData = statusFilter 
         ? data.filter(app => statusFilter.includes(app.status))
@@ -184,9 +185,12 @@ export function ApplicationsList({ jobPostId, jobTitle, statusFilter, showAction
           {error && (
             <div className="p-4 bg-red-50 border-l-4 border-red-400">
               <p className="text-sm text-red-800">{error}</p>
-              <p className="text-xs text-red-600 mt-1">
-                Check if employee_job_application table exists in your database.
-              </p>
+              <button 
+                onClick={loadApplications}
+                className="mt-2 text-xs text-blue-600 hover:text-blue-800 underline"
+              >
+                Retry Loading Applications
+              </button>
             </div>
           )}
 

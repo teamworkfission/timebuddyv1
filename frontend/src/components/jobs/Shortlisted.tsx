@@ -9,6 +9,7 @@ import {
   JOB_STATUS_LABELS,
   JOB_TYPE_LABELS
 } from '../../lib/jobs-api';
+import { getApplicationsByJobPost } from '../../lib/job-applications-api';
 import { ApplicationsList } from './ApplicationsList';
 
 export function Shortlisted() {
@@ -396,7 +397,8 @@ function ShortlistedBusinessTileView({ onBusinessSelect }: { onBusinessSelect: (
       // Group by business and create stats
       const businessStatsMap = new Map();
       
-      jobsWithShortlisted.forEach(job => {
+      // For each job with shortlisted/interviewed applications, count the actual applications
+      for (const job of jobsWithShortlisted) {
         const businessId = job.business_id;
         if (!businessStatsMap.has(businessId)) {
           businessStatsMap.set(businessId, {
@@ -420,7 +422,20 @@ function ShortlistedBusinessTileView({ onBusinessSelect }: { onBusinessSelect: (
         if (job.status === 'published') stats.published_jobs += 1;
         else if (job.status === 'draft') stats.draft_jobs += 1;
         else if (job.status === 'closed') stats.closed_jobs += 1;
-      });
+        
+        // Count actual shortlisted and interviewed applications for this job
+        try {
+          const applications = await getApplicationsByJobPost(job.id);
+          const shortlistedCount = applications.filter(app => app.status === 'shortlisted').length;
+          const interviewedCount = applications.filter(app => app.status === 'interviewed').length;
+          
+          stats.shortlisted_applications += shortlistedCount;
+          stats.interviewed_applications += interviewedCount;
+          stats.total_applications += (shortlistedCount + interviewedCount);
+        } catch (appError) {
+          console.warn(`Failed to load applications for job ${job.id}:`, appError);
+        }
+      }
       
       setBusinessStats(Array.from(businessStatsMap.values()));
     } catch (err) {

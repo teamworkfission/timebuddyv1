@@ -9,6 +9,7 @@ import {
   JOB_STATUS_LABELS,
   JOB_TYPE_LABELS
 } from '../../lib/jobs-api';
+import { getApplicationsByJobPost } from '../../lib/job-applications-api';
 import { ApplicationsList } from './ApplicationsList';
 
 export function Hired() {
@@ -396,7 +397,8 @@ function HiredBusinessTileView({ onBusinessSelect }: { onBusinessSelect: (busine
       // Group by business and create stats
       const businessStatsMap = new Map();
       
-      jobsWithHired.forEach(job => {
+      // For each job with hired applications, we need to count the actual hired applications
+      for (const job of jobsWithHired) {
         const businessId = job.business_id;
         if (!businessStatsMap.has(businessId)) {
           businessStatsMap.set(businessId, {
@@ -419,7 +421,17 @@ function HiredBusinessTileView({ onBusinessSelect }: { onBusinessSelect: (busine
         if (job.status === 'published') stats.published_jobs += 1;
         else if (job.status === 'draft') stats.draft_jobs += 1;
         else if (job.status === 'closed') stats.closed_jobs += 1;
-      });
+        
+        // Count actual hired applications for this job
+        try {
+          const applications = await getApplicationsByJobPost(job.id);
+          const hiredCount = applications.filter(app => app.status === 'hired').length;
+          stats.hired_applications += hiredCount;
+          stats.total_applications += hiredCount;
+        } catch (appError) {
+          console.warn(`Failed to load applications for job ${job.id}:`, appError);
+        }
+      }
       
       setBusinessStats(Array.from(businessStatsMap.values()));
     } catch (err) {

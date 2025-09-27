@@ -342,7 +342,7 @@ export function PostTracking() {
                   )}
                 </div>
 
-                {/* Job Applications - Only show applied and reviewed, with action buttons */}
+                {/* Job Applications - Only show applied/reviewed applications for single-source segregation */}
                 <ApplicationsList 
                   jobPostId={job.id} 
                   jobTitle={job.job_title}
