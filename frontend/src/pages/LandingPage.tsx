@@ -7,7 +7,7 @@ import { useAuth } from '../contexts/AuthProvider';
 
 export function LandingPage() {
   const navigate = useNavigate();
-  const { user, profile, loading, processingAuth, logout } = useAuth();
+  const { user, profile, loading, processingAuth, authError, retryAuth, logout } = useAuth();
   const [authModal, setAuthModal] = useState<{
     isOpen: boolean;
     role: 'employee' | 'employer';
@@ -34,6 +34,69 @@ export function LandingPage() {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading...</p>
         </div>
+      </div>
+    );
+  }
+
+  // If logged in but auth completion failed, show retry option
+  if (user && !profile && authError) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <header className="bg-white border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16">
+              <h1 className="text-2xl font-bold text-blue-600">PtimeBuddy</h1>
+              <div className="flex items-center">
+                <Button variant="outline" onClick={logout}>
+                  Sign Out
+                </Button>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center max-w-md">
+            <div className="mb-6">
+              <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                Connection Issue
+              </h2>
+              <p className="text-gray-600 mb-6">
+                {authError}
+              </p>
+            </div>
+            <div className="space-y-3">
+              <Button 
+                size="lg" 
+                onClick={retryAuth}
+                disabled={processingAuth}
+                className="w-full"
+              >
+                {processingAuth ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Retrying...
+                  </>
+                ) : (
+                  'Try Again'
+                )}
+              </Button>
+              <Button 
+                variant="outline" 
+                size="lg" 
+                onClick={logout}
+                className="w-full"
+              >
+                Sign Out & Start Over
+              </Button>
+            </div>
+          </div>
+        </main>
       </div>
     );
   }

@@ -17,6 +17,8 @@ interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   processingAuth: boolean;
+  authError: string | null;
+  retryAuth: () => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -39,6 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     actual: string;
   } | null>(null);
   const [processingAuth, setProcessingAuth] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -47,8 +50,64 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await supabase.auth.signOut();
     setUser(null);
     setProfile(null);
+    setAuthError(null);
     clearAuthStorage();
     navigate('/');
+  };
+
+  const retryAuth = async () => {
+    if (!user) return;
+    
+    setAuthError(null);
+    setProcessingAuth(true);
+    
+    try {
+      const session = await supabase.auth.getSession();
+      if (!session.data.session) {
+        setAuthError('Session expired. Please sign in again.');
+        setProcessingAuth(false);
+        return;
+      }
+
+      const intendedRole = sessionStorage.getItem('intendedRole') as 'employee' | 'employer' | null;
+      console.log('🔄 Retrying auth completion:', {
+        userId: session.data.session.user.id,
+        intendedRole
+      });
+      
+      const profileData = await completeAuth(session.data.session.access_token, intendedRole || undefined);
+      console.log('✅ Retry successful:', profileData);
+      
+      setProfile(profileData);
+      setAuthError(null);
+      
+      // Clear auth storage
+      clearAuthStorage();
+      
+      // Update last chosen role for UX
+      localStorage.setItem('lastChosenRole', profileData.role);
+      
+      // Navigate to appropriate dashboard
+      const dashboardPath = profileData.role === 'employer' ? '/app/employer' : '/app/employee';
+      navigate(dashboardPath, { replace: true });
+      
+    } catch (error: unknown) {
+      console.error('❌ Retry failed:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      
+      if (errorMessage.includes('Invalid or expired token') || errorMessage.includes('Unauthorized')) {
+        await supabase.auth.signOut();
+        setUser(null);
+        setProfile(null);
+        setAuthError(null);
+        clearAuthStorage();
+        navigate('/', { replace: true });
+      } else {
+        setAuthError('Failed to complete authentication. Please check your connection and try again.');
+      }
+    } finally {
+      setProcessingAuth(false);
+    }
   };
 
   // Auth guard: redirect authenticated users away from auth pages
@@ -139,11 +198,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await supabase.auth.signOut();
           setUser(null);
           setProfile(null);
+          setAuthError(null);
           clearAuthStorage();
           navigate('/', { replace: true });
         } else {
-          // For other errors (network, etc), just show error but don't sign out
+          // For network/timeout errors, set error state but keep session
           console.warn('Non-auth error during completion, retaining session:', errorMessage);
+          let userFriendlyError = 'Failed to complete authentication. Please try again.';
+          
+          if (errorMessage.includes('timeout')) {
+            userFriendlyError = 'Connection timeout. Please check your network and try again.';
+          } else if (errorMessage.includes('Failed to fetch') || errorMessage.includes('network')) {
+            userFriendlyError = 'Network error. Please check your connection and try again.';
+          }
+          
+          setAuthError(userFriendlyError);
         }
       }
       
@@ -211,11 +280,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await supabase.auth.signOut();
         setUser(null);
         setProfile(null);
+        setAuthError(null);
         clearAuthStorage();
         navigate('/', { replace: true });
       } else {
-        // For other errors (network, etc), just show error but retain session
+        // For network/timeout errors, set error state but keep session
         console.warn('Non-auth error during completion, retaining session:', errorMessage);
+        let userFriendlyError = 'Failed to complete authentication. Please try again.';
+        
+        if (errorMessage.includes('timeout')) {
+          userFriendlyError = 'Connection timeout. Please check your network and try again.';
+        } else if (errorMessage.includes('Failed to fetch') || errorMessage.includes('network')) {
+          userFriendlyError = 'Network error. Please check your connection and try again.';
+        }
+        
+        setAuthError(userFriendlyError);
       }
     } finally {
       setProcessingAuth(false);
@@ -228,7 +307,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, processingAuth, logout }}>
+    <AuthContext.Provider value={{ user, profile, loading, processingAuth, authError, retryAuth, logout }}>
       {children}
       
       <AccountMismatchModal
