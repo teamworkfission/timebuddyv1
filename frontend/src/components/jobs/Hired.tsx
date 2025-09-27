@@ -160,25 +160,6 @@ export function Hired() {
           </div>
         </div>
         
-        {selectedBusinessId && (
-          <div className="flex items-center space-x-4">
-            <div className="flex space-x-2">
-              {(['all', 'draft', 'published'] as const).map((status) => (
-                <button
-                  key={status}
-                  onClick={() => setFilter(status)}
-                  className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                    filter === status
-                      ? 'bg-green-600 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  {status === 'all' ? 'All' : JOB_STATUS_LABELS[status]}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Error Message */}
