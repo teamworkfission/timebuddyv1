@@ -9,8 +9,8 @@ import {
   JOB_STATUS_LABELS,
   JOB_TYPE_LABELS
 } from '../../lib/jobs-api';
+import { getApplicationsByJobPost } from '../../lib/job-applications-api';
 import { ApplicationsList } from './ApplicationsList';
-import { BusinessTileView } from './BusinessTileView';
 
 export function PostTracking() {
   const [jobs, setJobs] = useState<JobPost[]>([]);
@@ -198,7 +198,7 @@ export function PostTracking() {
 
       {/* Business Tile View or Job Posts List */}
       {!selectedBusinessId ? (
-        <BusinessTileView onBusinessSelect={handleBusinessSelect} />
+        <PostTrackingBusinessTileView onBusinessSelect={handleBusinessSelect} />
       ) : jobs.length === 0 ? (
         <div className="text-center py-12">
           <div className="text-gray-400 mb-4">
@@ -369,6 +369,228 @@ export function PostTracking() {
         confirmText={confirmationModal.type === 'close' ? 'Close' : 'Delete'}
         type="danger"
       />
+    </div>
+  );
+}
+
+// Custom Business Tile View for Post Tracking - only shows businesses with applied/reviewed applications from non-closed jobs
+function PostTrackingBusinessTileView({ onBusinessSelect }: { onBusinessSelect: (businessId: string, businessName: string) => void }) {
+  const [businessStats, setBusinessStats] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadPostTrackingBusinessStats();
+  }, []);
+
+  const loadPostTrackingBusinessStats = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Get all non-closed jobs
+      const allJobs = await getJobPosts(undefined);
+      const nonClosedJobs = allJobs.filter(job => job.status !== 'closed');
+      
+      // Group by business and create stats
+      const businessStatsMap = new Map();
+      
+      // For each non-closed job, count only applied/reviewed applications
+      for (const job of nonClosedJobs) {
+        const businessId = job.business_id;
+        if (!businessStatsMap.has(businessId)) {
+          businessStatsMap.set(businessId, {
+            business_id: businessId,
+            business_name: job.business_name,
+            business_type: job.business_type,
+            location: job.location,
+            total_jobs: 0,
+            published_jobs: 0,
+            draft_jobs: 0,
+            closed_jobs: 0,
+            applied_applications: 0,
+            reviewed_applications: 0,
+            total_applications: 0
+          });
+        }
+        
+        const stats = businessStatsMap.get(businessId);
+        stats.total_jobs += 1;
+        
+        if (job.status === 'published') stats.published_jobs += 1;
+        else if (job.status === 'draft') stats.draft_jobs += 1;
+        
+        // Count only applied and reviewed applications for this job
+        try {
+          const applications = await getApplicationsByJobPost(job.id);
+          const appliedCount = applications.filter(app => app.status === 'applied').length;
+          const reviewedCount = applications.filter(app => app.status === 'reviewed').length;
+          
+          stats.applied_applications += appliedCount;
+          stats.reviewed_applications += reviewedCount;
+          stats.total_applications += (appliedCount + reviewedCount);
+        } catch (appError) {
+          console.warn(`Failed to load applications for job ${job.id}:`, appError);
+        }
+      }
+      
+      // Only include businesses that have applied/reviewed applications or at least one job
+      const businessesWithRelevantData = Array.from(businessStatsMap.values()).filter(
+        business => business.total_jobs > 0
+      );
+      
+      setBusinessStats(businessesWithRelevantData);
+    } catch (err) {
+      console.error('Failed to load post tracking business stats:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load business statistics');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getBusinessTypeIcon = (type: string) => {
+    const icons: Record<string, string> = {
+      restaurant: '🍽️',
+      gas_station: '⛽',
+      retail_store: '🏪',
+      grocery_store: '🛒',
+      convenience_store: '🏪',
+      pharmacy: '💊',
+      coffee_shop: '☕',
+      fast_food: '🍔',
+      delivery_service: '🚚',
+      warehouse: '🏭',
+      office: '🏢',
+      other: '🏬',
+    };
+    return icons[type] || '🏬';
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading post tracking statistics...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
+        <div className="flex">
+          <div className="flex-shrink-0">
+            <span className="text-red-400">⚠️</span>
+          </div>
+          <div className="ml-3">
+            <p className="text-sm text-red-800">{error}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (businessStats.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-gray-400 mb-4">
+          <span className="text-6xl">🏢</span>
+        </div>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">No businesses found</h3>
+        <p className="text-gray-500 mb-6">
+          Create your first job post to start tracking applications.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Summary Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
+          <div className="text-2xl font-bold text-blue-600 mb-1">{businessStats.length}</div>
+          <div className="text-sm text-gray-600 font-medium">
+            Business{businessStats.length !== 1 ? 'es' : ''}
+          </div>
+        </div>
+        <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
+          <div className="text-2xl font-bold text-green-600 mb-1">
+            {businessStats.reduce((sum, b) => sum + (b.applied_applications || 0), 0)}
+          </div>
+          <div className="text-sm text-gray-600 font-medium">Applied</div>
+        </div>
+        <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
+          <div className="text-2xl font-bold text-orange-600 mb-1">
+            {businessStats.reduce((sum, b) => sum + (b.reviewed_applications || 0), 0)}
+          </div>
+          <div className="text-sm text-gray-600 font-medium">Reviewed</div>
+        </div>
+        <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
+          <div className="text-2xl font-bold text-purple-600 mb-1">
+            {businessStats.reduce((sum, b) => sum + b.published_jobs, 0)}
+          </div>
+          <div className="text-sm text-gray-600 font-medium">Active Jobs</div>
+        </div>
+      </div>
+
+      {/* Business Tiles */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+        {businessStats.map((business) => (
+          <div
+            key={business.business_id}
+            onClick={() => onBusinessSelect(business.business_id, business.business_name)}
+            className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg hover:border-blue-300 transition-all duration-200 cursor-pointer overflow-hidden"
+          >
+            {/* Header */}
+            <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center text-white text-lg">
+                  {getBusinessTypeIcon(business.business_type)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-white text-sm sm:text-base truncate">
+                    {business.business_name}
+                  </h3>
+                  <p className="text-blue-100 text-xs capitalize">
+                    {business.business_type.replace('_', ' ')}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Business Details */}
+            <div className="p-4">
+              <div className="space-y-3">
+                {/* Location */}
+                <div className="flex items-center text-sm text-gray-600">
+                  <span className="mr-2">📍</span>
+                  <span className="truncate">{business.location}</span>
+                </div>
+
+                {/* Job Statistics */}
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <div className="text-center">
+                    <div className="text-xl font-bold text-blue-600">{business.total_jobs}</div>
+                    <div className="text-xs text-gray-600">Job Posts</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-xl font-bold text-green-600">{business.total_applications}</div>
+                    <div className="text-xs text-gray-600">New Applications</div>
+                  </div>
+                </div>
+
+                {/* Click Indicator */}
+                <div className="pt-2 text-center">
+                  <span className="text-xs text-blue-600 font-medium">Click to view jobs →</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
