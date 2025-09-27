@@ -149,43 +149,6 @@ export function AppliedJobs() {
                 </span>
               </div>
               
-              {/* Show additional application details when expanded */}
-              {expandedJobId === application.job_post_id && (
-                <div className="mt-3 p-4 bg-gray-50 rounded-lg border">
-                  <h4 className="text-sm font-semibold text-gray-900 mb-2">Application Details</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    {/* Only show status update info if status has changed from applied */}
-                    {application.status !== 'applied' && (
-                      <>
-                        <div>
-                          <span className="font-medium text-gray-700">Current Status:</span>
-                          <span className={`ml-2 px-2 py-1 text-xs rounded-full font-medium ${getStatusColorClass(application.status)}`}>
-                            {APPLICATION_STATUS_LABELS[application.status]}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="font-medium text-gray-700">Status Updated:</span>
-                          <span className="ml-2 text-gray-600">{formatApplicationDate(application.status_updated_at)}</span>
-                        </div>
-                      </>
-                    )}
-                    
-                    {/* Always show when originally applied */}
-                    <div>
-                      <span className="font-medium text-gray-700">Originally Applied:</span>
-                      <span className="ml-2 text-gray-600">{formatApplicationDate(application.applied_at)}</span>
-                    </div>
-                    
-                    {/* Show cover message if available */}
-                    {application.cover_message && (
-                      <div className="md:col-span-2">
-                        <span className="font-medium text-gray-700">Cover Message:</span>
-                        <p className="mt-1 text-gray-600 text-sm">{application.cover_message}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
           );
         })}

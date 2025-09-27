@@ -104,10 +104,18 @@ export function JobCard({ job, isExpanded = false, onToggleExpanded, isAppliedJo
       <div className="p-6 space-y-4">
         {/* Main Job Info */}
         <div className="space-y-2">
-          <h3 className="text-xl font-bold text-gray-900">
+          <h3 
+            className="text-xl font-bold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
+            onClick={onToggleExpanded}
+            title="Click to collapse job details"
+          >
             {job.job_title}
           </h3>
-          <p className="text-lg text-gray-700">
+          <p 
+            className="text-lg text-gray-700 cursor-pointer hover:text-blue-600 transition-colors"
+            onClick={onToggleExpanded}
+            title="Click to collapse job details"
+          >
             🏢 {job.business_name} <span className="font-bold text-gray-900">({BUSINESS_TYPE_LABELS[job.business_type as keyof typeof BUSINESS_TYPE_LABELS] || job.business_type})</span>
           </p>
           <div className="flex items-center space-x-2">
