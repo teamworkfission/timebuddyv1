@@ -203,23 +203,25 @@ export function ApplicationsList({ jobPostId, jobTitle, statusFilter, showAction
           )}
 
           {!loading && !error && applications.length > 0 && (
-            <div className="space-y-4 p-4">
+            <div className="space-y-3 sm:space-y-4 p-3 sm:p-4">
               {applications.filter(app => !hiddenApplications.has(app.id)).map((application) => (
                 <div key={application.id} className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200">
-                  {/* Application Header Card */}
-                  <div className="p-6 border-b border-gray-100">
+                  {/* Application Header Card - Mobile Optimized */}
+                  <div className="p-4 sm:p-6 border-b border-gray-100">
                     <div className="flex items-start justify-between">
-                      <div className="flex items-start space-x-4">
+                      <div className="flex items-start space-x-3 flex-1 min-w-0">
                         {/* Avatar/Initial */}
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-lg">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm sm:text-lg flex-shrink-0">
                           {application.full_name.charAt(0).toUpperCase()}
                         </div>
                         
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-1 truncate">
                             {application.full_name}
                           </h3>
-                          <div className="flex items-center space-x-3 text-sm text-gray-600">
+                          
+                          {/* Mobile: Stack info vertically, Desktop: Horizontal */}
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 space-y-1 sm:space-y-0 text-xs sm:text-sm text-gray-600">
                             <span className="flex items-center space-x-1">
                               <span>📅</span>
                               <span>Applied {formatApplicationDate(application.applied_at)}</span>
@@ -227,14 +229,22 @@ export function ApplicationsList({ jobPostId, jobTitle, statusFilter, showAction
                             {application.city && application.state && (
                               <span className="flex items-center space-x-1">
                                 <span>📍</span>
-                                <span>{application.city}, {application.state}</span>
+                                <span className="truncate">{application.city}, {application.state}</span>
                               </span>
                             )}
+                          </div>
+                          
+                          {/* Status Badge - Mobile: Below info, Desktop: Top right */}
+                          <div className="mt-2 sm:hidden">
+                            <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getStatusColorClass(application.status)}`}>
+                              {APPLICATION_STATUS_LABELS[application.status]}
+                            </span>
                           </div>
                         </div>
                       </div>
                       
-                      <div className="flex items-center space-x-2">
+                      {/* Desktop: Status and Hide button */}
+                      <div className="hidden sm:flex items-center space-x-2 flex-shrink-0">
                         <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColorClass(application.status)}`}>
                           {APPLICATION_STATUS_LABELS[application.status]}
                         </span>
@@ -248,33 +258,46 @@ export function ApplicationsList({ jobPostId, jobTitle, statusFilter, showAction
                           </svg>
                         </button>
                       </div>
+                      
+                      {/* Mobile: Only hide button */}
+                      <div className="sm:hidden flex-shrink-0">
+                        <button
+                          onClick={() => handleHideApplication(application.id)}
+                          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                          title="Hide this application"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Application Details */}
-                  <div className="p-6 space-y-6">
+                  {/* Application Details - Mobile Optimized */}
+                  <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
                     
-                    {/* Contact Information */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Contact Information - Mobile First */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                       {application.show_email ? (
                         <a 
                           href={`mailto:${application.email}`}
-                          className="flex items-center space-x-3 p-3 bg-gray-50 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                          className="flex items-center space-x-2 sm:space-x-3 p-2 sm:p-3 bg-gray-50 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
                         >
-                          <span className="text-blue-500">✉️</span>
-                          <div>
+                          <span className="text-blue-500 text-sm sm:text-base">✉️</span>
+                          <div className="min-w-0 flex-1">
                             <p className="text-xs text-gray-500 uppercase tracking-wide">Email</p>
-                            <p className="text-sm font-medium text-blue-600 hover:text-blue-800">
+                            <p className="text-xs sm:text-sm font-medium text-blue-600 hover:text-blue-800 truncate">
                               {application.email}
                             </p>
                           </div>
                         </a>
                       ) : (
-                        <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                          <span className="text-blue-500">✉️</span>
-                          <div>
+                        <div className="flex items-center space-x-2 sm:space-x-3 p-2 sm:p-3 bg-gray-50 rounded-lg">
+                          <span className="text-blue-500 text-sm sm:text-base">✉️</span>
+                          <div className="min-w-0 flex-1">
                             <p className="text-xs text-gray-500 uppercase tracking-wide">Email</p>
-                            <p className="text-sm font-medium text-gray-900">
+                            <p className="text-xs sm:text-sm font-medium text-gray-900">
                               🔒 Hidden by user
                             </p>
                           </div>
@@ -285,22 +308,22 @@ export function ApplicationsList({ jobPostId, jobTitle, statusFilter, showAction
                         application.show_phone ? (
                           <a 
                             href={`tel:${application.phone}`}
-                            className="flex items-center space-x-3 p-3 bg-gray-50 hover:bg-green-50 rounded-lg transition-colors cursor-pointer"
+                            className="flex items-center space-x-2 sm:space-x-3 p-2 sm:p-3 bg-gray-50 hover:bg-green-50 rounded-lg transition-colors cursor-pointer"
                           >
-                            <span className="text-green-500">📞</span>
-                            <div>
+                            <span className="text-green-500 text-sm sm:text-base">📞</span>
+                            <div className="min-w-0 flex-1">
                               <p className="text-xs text-gray-500 uppercase tracking-wide">Phone</p>
-                              <p className="text-sm font-medium text-green-600 hover:text-green-800">
+                              <p className="text-xs sm:text-sm font-medium text-green-600 hover:text-green-800 truncate">
                                 {application.phone}
                               </p>
                             </div>
                           </a>
                         ) : (
-                          <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                            <span className="text-green-500">📞</span>
-                            <div>
+                          <div className="flex items-center space-x-2 sm:space-x-3 p-2 sm:p-3 bg-gray-50 rounded-lg">
+                            <span className="text-green-500 text-sm sm:text-base">📞</span>
+                            <div className="min-w-0 flex-1">
                               <p className="text-xs text-gray-500 uppercase tracking-wide">Phone</p>
-                              <p className="text-sm font-medium text-gray-900">
+                              <p className="text-xs sm:text-sm font-medium text-gray-900">
                                 🔒 Hidden by user
                               </p>
                             </div>
@@ -309,22 +332,24 @@ export function ApplicationsList({ jobPostId, jobTitle, statusFilter, showAction
                       )}
                     </div>
 
-                    {/* Work Details */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Work Details - Mobile Optimized */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                       {application.availability && (
-                        <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
-                          <div>
+                        <div className="flex items-center space-x-2 p-2 sm:p-3 bg-blue-50 rounded-lg">
+                          <span className="text-blue-600 text-sm">⏰</span>
+                          <div className="min-w-0 flex-1">
                             <p className="text-xs text-blue-700 uppercase tracking-wide font-medium">Availability</p>
-                            <p className="text-sm text-gray-900">{application.availability}</p>
+                            <p className="text-xs sm:text-sm text-gray-900 truncate">{application.availability}</p>
                           </div>
                         </div>
                       )}
                       
                       {application.transportation && (
-                        <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
-                          <div>
+                        <div className="flex items-center space-x-2 p-2 sm:p-3 bg-green-50 rounded-lg">
+                          <span className="text-green-600 text-sm">🚗</span>
+                          <div className="min-w-0 flex-1">
                             <p className="text-xs text-green-700 uppercase tracking-wide font-medium">Transportation</p>
-                            <p className="text-sm text-gray-900">
+                            <p className="text-xs sm:text-sm text-gray-900 truncate">
                               {TRANSPORTATION_LABELS[application.transportation]}
                             </p>
                           </div>
@@ -416,9 +441,9 @@ export function ApplicationsList({ jobPostId, jobTitle, statusFilter, showAction
                           </div>
                         </div>
 
-                        {/* Action Buttons - Show below resume if enabled */}
+                        {/* Action Buttons - Mobile Optimized */}
                         {showActionButtons && (
-                          <div className="mt-4 flex items-center space-x-3">
+                          <div className="mt-4 flex flex-col sm:flex-row gap-2 sm:gap-3">
                             {/* Shortlist Button - Only show if not already shortlisted/interviewed/hired */}
                             {!['shortlisted', 'interviewed', 'hired'].includes(application.status) && (
                               <button
@@ -427,7 +452,7 @@ export function ApplicationsList({ jobPostId, jobTitle, statusFilter, showAction
                                   handleStatusUpdate(application.id, 'shortlisted');
                                 }}
                                 disabled={updatingStatus.has(application.id)}
-                                className="flex items-center space-x-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                className="flex items-center justify-center space-x-2 px-3 sm:px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
                               >
                                 {updatingStatus.has(application.id) ? (
                                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -446,7 +471,7 @@ export function ApplicationsList({ jobPostId, jobTitle, statusFilter, showAction
                                   handleStatusUpdate(application.id, 'hired');
                                 }}
                                 disabled={updatingStatus.has(application.id)}
-                                className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                className="flex items-center justify-center space-x-2 px-3 sm:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
                               >
                                 {updatingStatus.has(application.id) ? (
                                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
