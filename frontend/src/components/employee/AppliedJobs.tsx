@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { JobCard } from './JobCard';
 import { Button } from '../ui/Button';
-import { getJobApplications, JobApplicationWithJobDetails, APPLICATION_STATUS_LABELS, getStatusColorClass, formatApplicationDate } from '../../lib/job-applications-api';
+import { getJobApplications, JobApplicationWithJobDetails, APPLICATION_STATUS_LABELS, getStatusColorClass } from '../../lib/job-applications-api';
 
 export function AppliedJobs() {
   const [appliedJobs, setAppliedJobs] = useState<JobApplicationWithJobDetails[]>([]);

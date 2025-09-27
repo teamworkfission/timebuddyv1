@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { PublicJobPost, JobSearchParams, searchPublicJobs, JobSearchResponse } from '../../lib/public-job-api';
+import { getAppliedJobStatuses } from '../../lib/job-applications-api';
 import { JobCard } from './JobCard';
 import { LocationFilter } from './LocationFilter';
 import { Button } from '../ui/Button';
@@ -43,6 +44,7 @@ export function JobBrowse({ initialSearchParams, autoLoad = false }: JobBrowsePr
 
   const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
   const [showLocationFilter, setShowLocationFilter] = useState(false);
+  const [appliedStatuses, setAppliedStatuses] = useState<Record<string, boolean>>({});
 
   // Load jobs when search params change
   useEffect(() => {
@@ -66,13 +68,25 @@ export function JobBrowse({ initialSearchParams, autoLoad = false }: JobBrowsePr
         page: currentPage
       });
 
+      const allJobs = loadMore ? [...jobState.jobs, ...response.jobs] : response.jobs;
+      
       setJobState(prev => ({
         ...prev,
-        jobs: loadMore ? [...prev.jobs, ...response.jobs] : response.jobs,
+        jobs: allJobs,
         pagination: response.pagination,
         hasNextPage: response.pagination.page < response.pagination.totalPages,
         loading: false
       }));
+
+      // Fetch applied statuses for all jobs
+      try {
+        const jobIds = allJobs.map(job => job.id);
+        const statuses = await getAppliedJobStatuses(jobIds);
+        setAppliedStatuses(statuses);
+      } catch (statusError) {
+        console.warn('Failed to load applied statuses:', statusError);
+        // Don't fail the whole operation if status check fails
+      }
 
     } catch (error) {
       setJobState(prev => ({
@@ -235,6 +249,7 @@ export function JobBrowse({ initialSearchParams, autoLoad = false }: JobBrowsePr
               job={job}
               isExpanded={expandedJobId === job.id}
               onToggleExpanded={() => handleCardToggle(job.id)}
+              hasApplied={appliedStatuses[job.id] || false}
             />
           ))}
         </div>

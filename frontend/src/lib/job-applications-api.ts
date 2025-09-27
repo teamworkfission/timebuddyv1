@@ -212,6 +212,25 @@ export async function hasAppliedToJob(jobPostId: string): Promise<boolean> {
 }
 
 /**
+ * Get applied job statuses for multiple job IDs efficiently
+ */
+export async function getAppliedJobStatuses(jobIds: string[]): Promise<Record<string, boolean>> {
+  try {
+    const applications = await getJobApplications();
+    const statusMap: Record<string, boolean> = {};
+    
+    jobIds.forEach(jobId => {
+      statusMap[jobId] = applications.some(app => app.job_post_id === jobId);
+    });
+    
+    return statusMap;
+  } catch (error) {
+    console.error('Error checking applied statuses:', error);
+    return {};
+  }
+}
+
+/**
  * Helper function to format application date
  */
 export function formatApplicationDate(dateString: string): string {

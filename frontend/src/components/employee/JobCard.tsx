@@ -10,13 +10,25 @@ interface JobCardProps {
   onToggleExpanded?: () => void;
   isAppliedJobsContext?: boolean;
   isSavedJobsContext?: boolean;
+  hasApplied?: boolean;
 }
 
-export function JobCard({ job, isExpanded = false, onToggleExpanded, isAppliedJobsContext = false, isSavedJobsContext = false }: JobCardProps) {
+export function JobCard({ job, isExpanded = false, onToggleExpanded, isAppliedJobsContext = false, isSavedJobsContext = false, hasApplied = false }: JobCardProps) {
   const [showApplicationModal, setShowApplicationModal] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const locationInfo = formatLocation(job.location);
+
+  // Simple status badge component
+  const StatusBadge = ({ type }: { type: 'applied' | 'saved' }) => (
+    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+      type === 'applied' 
+        ? 'bg-blue-100 text-blue-800' 
+        : 'bg-gray-100 text-gray-700'
+    }`}>
+      {type === 'applied' ? 'Applied' : 'Saved'}
+    </span>
+  );
 
   // Check if job is saved on component mount
   useEffect(() => {
@@ -60,10 +72,21 @@ export function JobCard({ job, isExpanded = false, onToggleExpanded, isAppliedJo
     // COMPACT VIEW - Only 3 elements
     return (
       <div 
-        className="bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow duration-200"
+        className="bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow duration-200 relative"
         onClick={onToggleExpanded}
       >
-        <div className="space-y-2">
+        {/* Status Badge - Top Right (only show when not in applied jobs context) */}
+        {!isAppliedJobsContext && (
+          <div className="absolute top-3 right-3 z-10">
+            {hasApplied ? (
+              <StatusBadge type="applied" />
+            ) : isSaved ? (
+              <StatusBadge type="saved" />
+            ) : null}
+          </div>
+        )}
+
+        <div className={`space-y-2 ${!isAppliedJobsContext && (hasApplied || isSaved) ? 'pr-16' : ''}`}>
           {/* Job Title */}
           <h3 className="text-lg font-semibold text-gray-900 truncate">
             {job.job_title}
@@ -93,7 +116,19 @@ export function JobCard({ job, isExpanded = false, onToggleExpanded, isAppliedJo
     <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-lg">
       {/* Header with close button */}
       <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center">
-        <span className="text-sm text-gray-600">Job Details</span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-gray-600">Job Details</span>
+          {/* Status Badge in header (only show when not in applied jobs context) */}
+          {!isAppliedJobsContext && (
+            <>
+              {hasApplied ? (
+                <StatusBadge type="applied" />
+              ) : isSaved ? (
+                <StatusBadge type="saved" />
+              ) : null}
+            </>
+          )}
+        </div>
         <button 
           onClick={onToggleExpanded}
           className="text-gray-400 hover:text-gray-600 text-xl"
