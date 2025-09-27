@@ -139,8 +139,24 @@ export function LocationFilter({ currentLocation, onLocationChange, onClose }: L
   );
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end sm:items-center justify-center">
-      <div className="bg-white w-full max-w-md mx-4 rounded-t-lg sm:rounded-lg max-h-[90vh] flex flex-col">
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center"
+      onClick={(e) => {
+        // Close modal when clicking on overlay
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+      onTouchMove={(e) => {
+        // Prevent background scrolling when touching the overlay
+        e.preventDefault();
+      }}
+    >
+      <div 
+        className="bg-white w-full max-w-md mx-4 rounded-lg max-h-[90vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+        onTouchMove={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex justify-between items-center p-4 border-b border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900">📍 Location Filter</h3>
