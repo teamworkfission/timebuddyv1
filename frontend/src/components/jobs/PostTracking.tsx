@@ -20,6 +20,9 @@ export function PostTracking() {
   const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
   const [selectedBusinessName, setSelectedBusinessName] = useState<string>('');
   
+  // Expanded jobs state for mobile collapsible cards
+  const [expandedJobs, setExpandedJobs] = useState<Set<string>>(new Set());
+  
   // Confirmation modal state
   const [confirmationModal, setConfirmationModal] = useState<{
     isOpen: boolean;
@@ -96,6 +99,18 @@ export function PostTracking() {
   const handleBackToBusinesses = () => {
     setSelectedBusinessId(null);
     setSelectedBusinessName('');
+  };
+
+  const toggleJobExpansion = (jobId: string) => {
+    setExpandedJobs(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(jobId)) {
+        newSet.delete(jobId);
+      } else {
+        newSet.add(jobId);
+      }
+      return newSet;
+    });
   };
 
   const formatPay = (job: JobPost) => {
@@ -211,141 +226,191 @@ export function PostTracking() {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6">
-          {jobs.map((job) => (
-            <div
-              key={job.id}
-              className="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200"
-            >
-              <div className="p-6">
-                {/* Job Header */}
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <h3 className="text-xl font-semibold text-gray-900">
-                        {job.job_title}
-                      </h3>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(job.status)}`}>
-                        {JOB_STATUS_LABELS[job.status as keyof typeof JOB_STATUS_LABELS]}
-                      </span>
+          {jobs.map((job) => {
+            const isExpanded = expandedJobs.has(job.id);
+            
+            return (
+              <div
+                key={job.id}
+                className="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200"
+              >
+                <div className="p-6">
+                  {/* Job Header - Always Visible */}
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4">
+                    <div className="flex-1">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 mb-2">
+                        <div className="flex items-center space-x-3 mb-1 sm:mb-0">
+                          <h3 className="text-xl font-semibold text-gray-900">
+                            {job.job_title}
+                          </h3>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(job.status)}`}>
+                            {JOB_STATUS_LABELS[job.status as keyof typeof JOB_STATUS_LABELS]}
+                          </span>
+                        </div>
+                        <span className="flex items-center space-x-1 text-sm text-gray-600">
+                          <span>💼</span>
+                          <span>{JOB_TYPE_LABELS[job.job_type as keyof typeof JOB_TYPE_LABELS]}</span>
+                        </span>
+                      </div>
+                      {/* Only show business info when not in specific business context */}
+                      {!selectedBusinessId && (
+                        <div className="flex items-center text-sm text-gray-600 space-x-4">
+                          <span className="flex items-center space-x-1">
+                            <span>🏢</span>
+                            <span>{job.business_name}</span>
+                          </span>
+                          <span className="flex items-center space-x-1">
+                            <span>📍</span>
+                            <span>{job.location}</span>
+                          </span>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-center text-sm text-gray-600 space-x-4">
-                      <span className="flex items-center space-x-1">
-                        <span>🏢</span>
-                        <span>{job.business_name}</span>
-                      </span>
-                      <span className="flex items-center space-x-1">
-                        <span>📍</span>
-                        <span>{job.location}</span>
-                      </span>
-                      <span className="flex items-center space-x-1">
-                        <span>💼</span>
-                        <span>{JOB_TYPE_LABELS[job.job_type as keyof typeof JOB_TYPE_LABELS]}</span>
-                      </span>
-                    </div>
-                  </div>
-                  
-                  {/* Action Buttons */}
-                  <div className="flex items-center space-x-2 mt-4 sm:mt-0">
-                    {job.status === 'draft' && (
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={() => updateJobPost(job.id, { status: 'published' }).then(() => loadJobs())}
-                      >
-                        Publish
-                      </Button>
-                    )}
-                    {job.status === 'published' && (
+                    
+                    {/* Action Buttons */}
+                    <div className="flex items-center space-x-2 mt-4 sm:mt-0">
+                      {job.status === 'draft' && (
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => updateJobPost(job.id, { status: 'published' }).then(() => loadJobs())}
+                        >
+                          Publish
+                        </Button>
+                      )}
+                      {job.status === 'published' && (
+                        <button
+                          onClick={() => handleClose(job.id, job.job_title)}
+                          className="px-3 py-1.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 border border-red-600 rounded-lg transition-colors"
+                        >
+                          Close
+                        </button>
+                      )}
                       <button
-                        onClick={() => handleClose(job.id, job.job_title)}
+                        onClick={() => handleDelete(job.id, job.job_title)}
                         className="px-3 py-1.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 border border-red-600 rounded-lg transition-colors"
                       >
-                        Close
+                        Delete
                       </button>
-                    )}
+                    </div>
+                  </div>
+
+                  {/* Essential Info - Always Visible on Mobile */}
+                  <div className="sm:hidden">
+                    <div className="flex items-center justify-between text-sm mb-3">
+                      <span className="flex items-center space-x-1 text-green-600 font-medium">
+                        <span>💰</span>
+                        <span>{formatPay(job)}</span>
+                      </span>
+                      <div className="flex items-center space-x-3">
+                        {job.expected_hours_per_week && (
+                          <span className="flex items-center space-x-1 text-blue-600">
+                            <span>⏰</span>
+                            <span>{job.expected_hours_per_week}h/week</span>
+                          </span>
+                        )}
+                        {job.schedule && (
+                          <span className="flex items-center space-x-1 text-purple-600 text-xs">
+                            <span>📅</span>
+                            <span>{job.schedule}</span>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Toggle Button for Mobile */}
                     <button
-                      onClick={() => handleDelete(job.id, job.job_title)}
-                      className="px-3 py-1.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 border border-red-600 rounded-lg transition-colors"
+                      onClick={() => toggleJobExpansion(job.id)}
+                      className="w-full flex items-center justify-center space-x-2 py-2 text-sm text-blue-600 hover:text-blue-700 border-t border-b border-gray-200 transition-colors"
                     >
-                      Delete
+                      <span>{isExpanded ? 'Show Less' : 'Show Details'}</span>
+                      <span className={`transform transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
+                        ↓
+                      </span>
                     </button>
                   </div>
-                </div>
 
-                {/* Job Details */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-gray-500">💰</span>
-                    <span className="text-sm">
-                      <span className="font-medium">{formatPay(job)}</span>
-                    </span>
-                  </div>
-                  {job.expected_hours_per_week && (
-                    <div className="flex items-center space-x-2">
-                      <span className="text-gray-500">⏰</span>
-                      <span className="text-sm">
-                        <span className="font-medium">{job.expected_hours_per_week}h/week</span>
-                      </span>
+                  {/* Collapsible Content */}
+                  <div className={`${isExpanded || 'sm:block'} ${!isExpanded && 'hidden'} sm:block`}>
+                    {/* Job Details - Desktop Only or Mobile Expanded */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4 sm:mt-0 mt-4">
+                      {/* Show pay/hours on desktop or when there's no mobile summary */}
+                      <div className="hidden sm:flex items-center space-x-2">
+                        <span className="text-gray-500">💰</span>
+                        <span className="text-sm">
+                          <span className="font-medium">{formatPay(job)}</span>
+                        </span>
+                      </div>
+                      {job.expected_hours_per_week && (
+                        <div className="hidden sm:flex items-center space-x-2">
+                          <span className="text-gray-500">⏰</span>
+                          <span className="text-sm">
+                            <span className="font-medium">{job.expected_hours_per_week}h/week</span>
+                          </span>
+                        </div>
+                      )}
+                      {job.schedule && (
+                        <div className="hidden sm:flex items-center space-x-2">
+                          <span className="text-gray-500">📅</span>
+                          <span className="text-sm font-medium">{job.schedule}</span>
+                        </div>
+                      )}
                     </div>
-                  )}
-                  {job.schedule && (
-                    <div className="flex items-center space-x-2">
-                      <span className="text-gray-500">📅</span>
-                      <span className="text-sm font-medium">{job.schedule}</span>
+
+                    {/* Benefits & Supplemental Pay */}
+                    {(job.benefits.length > 0 || job.supplemental_pay.length > 0) && (
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {job.benefits.map((benefit) => (
+                          <span
+                            key={benefit}
+                            className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
+                          >
+                            {benefit.replace('_', ' ')}
+                          </span>
+                        ))}
+                        {job.supplemental_pay.map((pay) => (
+                          <span
+                            key={pay}
+                            className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full"
+                          >
+                            {pay}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Job Description Preview */}
+                    <div className="border-t border-gray-200 pt-4">
+                      <p className="text-sm text-gray-600 line-clamp-3">
+                        {job.job_description}
+                      </p>
                     </div>
-                  )}
-                </div>
 
-                {/* Benefits & Supplemental Pay */}
-                {(job.benefits.length > 0 || job.supplemental_pay.length > 0) && (
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {job.benefits.map((benefit) => (
-                      <span
-                        key={benefit}
-                        className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
-                      >
-                        {benefit.replace('_', ' ')}
-                      </span>
-                    ))}
-                    {job.supplemental_pay.map((pay) => (
-                      <span
-                        key={pay}
-                        className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full"
-                      >
-                        {pay}
-                      </span>
-                    ))}
+                    {/* Timestamps */}
+                    <div className="flex items-center justify-between text-xs text-gray-500 mt-4 pt-4 border-t border-gray-200">
+                      <span>Created: {new Date(job.created_at).toLocaleDateString()}</span>
+                      {job.published_at && (
+                        <span>Published: {new Date(job.published_at).toLocaleDateString()}</span>
+                      )}
+                      {job.closed_at && (
+                        <span>Closed: {new Date(job.closed_at).toLocaleDateString()}</span>
+                      )}
+                    </div>
                   </div>
-                )}
 
-                {/* Job Description Preview */}
-                <div className="border-t border-gray-200 pt-4">
-                  <p className="text-sm text-gray-600 line-clamp-3">
-                    {job.job_description}
-                  </p>
+                  {/* Job Applications - Always Visible */}
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <ApplicationsList 
+                      jobPostId={job.id} 
+                      jobTitle={job.job_title}
+                      statusFilter={['applied', 'reviewed']}
+                      showActionButtons={true}
+                    />
+                  </div>
                 </div>
-
-                {/* Timestamps */}
-                <div className="flex items-center justify-between text-xs text-gray-500 mt-4 pt-4 border-t border-gray-200">
-                  <span>Created: {new Date(job.created_at).toLocaleDateString()}</span>
-                  {job.published_at && (
-                    <span>Published: {new Date(job.published_at).toLocaleDateString()}</span>
-                  )}
-                  {job.closed_at && (
-                    <span>Closed: {new Date(job.closed_at).toLocaleDateString()}</span>
-                  )}
-                </div>
-
-                {/* Job Applications - Only show applied/reviewed applications for single-source segregation */}
-                <ApplicationsList 
-                  jobPostId={job.id} 
-                  jobTitle={job.job_title}
-                  statusFilter={['applied', 'reviewed']}
-                  showActionButtons={true}
-                />
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
