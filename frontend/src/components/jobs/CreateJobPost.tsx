@@ -84,6 +84,7 @@ export function CreateJobPost({ editingJob, onSuccess }: CreateJobPostProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [redirecting, setRedirecting] = useState(false);
 
   // Load businesses on component mount
   useEffect(() => {
@@ -229,10 +230,17 @@ export function CreateJobPost({ editingJob, onSuccess }: CreateJobPostProps) {
           supplemental_pay: [],
           benefits: [],
         }));
-      }
 
-      if (onSuccess) {
-        onSuccess();
+        // Navigate to Post Tracking after successfully publishing a new job
+        if (status === 'published' && onSuccess) {
+          setTimeout(() => {
+            setRedirecting(true);
+            setSuccess('Redirecting to Post Tracking...');
+            setTimeout(() => {
+              onSuccess();
+            }, 800); // Additional delay to show redirect message
+          }, 1200); // Show success message first
+        }
       }
     } catch (error) {
       setError(error instanceof Error ? error.message : 'An error occurred');
@@ -640,7 +648,11 @@ export function CreateJobPost({ editingJob, onSuccess }: CreateJobPostProps) {
           <div className="bg-green-50 border border-green-200 rounded-md p-4">
             <div className="flex">
               <div className="flex-shrink-0">
-                <span className="text-green-400">✅</span>
+                {redirecting ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
+                ) : (
+                  <span className="text-green-400">✅</span>
+                )}
               </div>
               <div className="ml-3">
                 <p className="text-sm text-green-800">{success}</p>
@@ -656,7 +668,7 @@ export function CreateJobPost({ editingJob, onSuccess }: CreateJobPostProps) {
               type="button"
               variant="outline"
               onClick={(e) => handleSubmit(e, 'draft')}
-              disabled={loading}
+              disabled={loading || redirecting}
               loading={loading}
               className="flex-1 sm:flex-none"
             >
@@ -666,11 +678,11 @@ export function CreateJobPost({ editingJob, onSuccess }: CreateJobPostProps) {
               type="button"
               variant="primary"
               onClick={(e) => handleSubmit(e, 'published')}
-              disabled={loading}
-              loading={loading}
+              disabled={loading || redirecting}
+              loading={loading || redirecting}
               className="flex-1 sm:flex-none"
             >
-              Publish Job Post
+              {redirecting ? 'Publishing & Redirecting...' : 'Publish Job Post'}
             </Button>
           </div>
           <p className="text-xs text-gray-500 mt-2">

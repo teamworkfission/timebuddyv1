@@ -498,9 +498,8 @@ function PostTrackingBusinessTileView({ onBusinessSelect }: { onBusinessSelect: 
         <div className="text-gray-400 mb-4">
           <span className="text-6xl">🏢</span>
         </div>
-        <h3 className="text-lg font-medium text-gray-900 mb-2">No businesses found</h3>
         <p className="text-gray-500 mb-6">
-          Create your first job post to start tracking applications.
+          Create your  job post to start tracking applications.
         </p>
       </div>
     );

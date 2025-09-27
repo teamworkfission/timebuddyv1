@@ -23,10 +23,15 @@ export function JobManagement({ onBack }: JobManagementProps) {
     { id: 'closed' as TabType, label: 'Closed', icon: '📁' },
   ];
 
+  const handleJobCreated = () => {
+    // Switch to Post Tracking tab after successful job creation
+    setActiveTab('tracking');
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case 'create':
-        return <CreateJobPost />;
+        return <CreateJobPost onSuccess={handleJobCreated} />;
       case 'tracking':
         return <PostTracking />;
       case 'shortlisted':
@@ -36,7 +41,7 @@ export function JobManagement({ onBack }: JobManagementProps) {
       case 'closed':
         return <ClosedJobs />;
       default:
-        return <CreateJobPost />;
+        return <CreateJobPost onSuccess={handleJobCreated} />;
     }
   };
 
