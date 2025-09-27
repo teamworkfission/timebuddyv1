@@ -57,7 +57,7 @@ export function formatWeekRange(weekStart: string): string {
   const endStr = end.toLocaleDateString('en-US', options);
   const year = start.getFullYear();
   
-  return `${startStr} - ${endStr}, ${year}`;
+  return `${startStr} - ${endStr}`;
 }
 
 /**

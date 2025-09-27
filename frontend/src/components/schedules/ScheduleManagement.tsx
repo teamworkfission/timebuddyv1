@@ -518,18 +518,19 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
+          <div className="flex items-center justify-between py-3 min-h-[64px]">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={onBack}
-                className="flex items-center space-x-2"
+                className="flex items-center space-x-1 sm:space-x-2 text-gray-600 hover:text-gray-900"
               >
                 <ArrowLeft className="h-4 w-4" />
-                <span>Back to Dashboard</span>
+                <span className="hidden sm:inline">Back to Dashboard</span>
+                <span className="sm:hidden">Back</span>
               </Button>
-              <h1 className="text-xl font-semibold text-gray-900">
+              <h1 className="text-lg sm:text-xl font-semibold text-gray-900">
                 Schedule Management
               </h1>
             </div>
@@ -539,8 +540,10 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
                 variant="outline"
                 size="sm"
                 onClick={() => setShowTemplateManager(true)}
+                className="bg-blue-600 hover:bg-blue-700 border-blue-600 text-white hover:text-white font-medium shadow-lg px-3 py-2 sm:px-4 transition-all duration-200 hover:shadow-xl"
               >
-                Manage Shift Templates
+                <span className="hidden sm:inline">Manage Shift Templates</span>
+                <span className="sm:hidden">Templates</span>
               </Button>
             )}
           </div>
