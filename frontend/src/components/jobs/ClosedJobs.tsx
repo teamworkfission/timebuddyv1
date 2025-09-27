@@ -189,20 +189,22 @@ export function ClosedJobs() {
                         {JOB_STATUS_LABELS[job.status as keyof typeof JOB_STATUS_LABELS]}
                       </span>
                     </div>
-                    <div className="flex items-center text-sm text-gray-600 space-x-4">
-                      <span className="flex items-center space-x-1">
-                        <span>🏢</span>
-                        <span>{job.business_name}</span>
-                      </span>
-                      <span className="flex items-center space-x-1">
-                        <span>📍</span>
-                        <span>{job.location}</span>
-                      </span>
-                      <span className="flex items-center space-x-1">
-                        <span>💼</span>
-                        <span>{JOB_TYPE_LABELS[job.job_type as keyof typeof JOB_TYPE_LABELS]}</span>
-                      </span>
-                    </div>
+                    {!selectedBusinessId && (
+                      <div className="flex items-center text-sm text-gray-600 space-x-4">
+                        <span className="flex items-center space-x-1">
+                          <span>🏢</span>
+                          <span>{job.business_name}</span>
+                        </span>
+                        <span className="flex items-center space-x-1">
+                          <span>📍</span>
+                          <span>{job.location}</span>
+                        </span>
+                        <span className="flex items-center space-x-1">
+                          <span>💼</span>
+                          <span>{JOB_TYPE_LABELS[job.job_type as keyof typeof JOB_TYPE_LABELS]}</span>
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Action Buttons */}
@@ -290,6 +292,7 @@ export function ClosedJobs() {
 
                 {/* Applications List - Show all applications for closed jobs */}
                 <ApplicationsList 
+                  key={`closed-applications-${job.id}`}
                   jobPostId={job.id} 
                   jobTitle={job.job_title}
                   statusFilter={['applied', 'reviewed', 'shortlisted', 'interviewed', 'hired', 'rejected']}

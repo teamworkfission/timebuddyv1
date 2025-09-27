@@ -401,6 +401,7 @@ export function PostTracking() {
                   {/* Job Applications - Always Visible */}
                   <div className="mt-4 pt-4 border-t border-gray-200">
                     <ApplicationsList 
+                      key={`applications-${job.id}`}
                       jobPostId={job.id} 
                       jobTitle={job.job_title}
                       statusFilter={['applied', 'reviewed']}

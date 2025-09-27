@@ -217,20 +217,22 @@ export function Shortlisted() {
                         Shortlisted
                       </span>
                     </div>
-                    <div className="flex items-center text-sm text-gray-600 space-x-4">
-                      <span className="flex items-center space-x-1">
-                        <span>🏢</span>
-                        <span>{job.business_name}</span>
-                      </span>
-                      <span className="flex items-center space-x-1">
-                        <span>📍</span>
-                        <span>{job.location}</span>
-                      </span>
-                      <span className="flex items-center space-x-1">
-                        <span>💼</span>
-                        <span>{JOB_TYPE_LABELS[job.job_type as keyof typeof JOB_TYPE_LABELS]}</span>
-                      </span>
-                    </div>
+                    {!selectedBusinessId && (
+                      <div className="flex items-center text-sm text-gray-600 space-x-4">
+                        <span className="flex items-center space-x-1">
+                          <span>🏢</span>
+                          <span>{job.business_name}</span>
+                        </span>
+                        <span className="flex items-center space-x-1">
+                          <span>📍</span>
+                          <span>{job.location}</span>
+                        </span>
+                        <span className="flex items-center space-x-1">
+                          <span>💼</span>
+                          <span>{JOB_TYPE_LABELS[job.job_type as keyof typeof JOB_TYPE_LABELS]}</span>
+                        </span>
+                      </div>
+                    )}
                   </div>
                   
                   {/* Action Buttons */}
@@ -326,7 +328,7 @@ export function Shortlisted() {
                 </div>
 
                 {/* Shortlisted Applications - Only show shortlisted and interviewed */}
-                <ShortlistedApplicationsList jobPostId={job.id} jobTitle={job.job_title} />
+                <ShortlistedApplicationsList key={`shortlisted-applications-${job.id}`} jobPostId={job.id} jobTitle={job.job_title} />
               </div>
             </div>
           ))}
@@ -551,6 +553,7 @@ function ShortlistedBusinessTileView({ onBusinessSelect }: { onBusinessSelect: (
 function ShortlistedApplicationsList({ jobPostId, jobTitle }: { jobPostId: string; jobTitle: string }) {
   return (
     <ApplicationsList 
+      key={`applications-list-${jobPostId}`}
       jobPostId={jobPostId} 
       jobTitle={jobTitle}
       statusFilter={['shortlisted', 'interviewed']}

@@ -217,20 +217,22 @@ export function Hired() {
                         Hired
                       </span>
                     </div>
-                    <div className="flex items-center text-sm text-gray-600 space-x-4">
-                      <span className="flex items-center space-x-1">
-                        <span>🏢</span>
-                        <span>{job.business_name}</span>
-                      </span>
-                      <span className="flex items-center space-x-1">
-                        <span>📍</span>
-                        <span>{job.location}</span>
-                      </span>
-                      <span className="flex items-center space-x-1">
-                        <span>💼</span>
-                        <span>{JOB_TYPE_LABELS[job.job_type as keyof typeof JOB_TYPE_LABELS]}</span>
-                      </span>
-            </div>
+                    {!selectedBusinessId && (
+                      <div className="flex items-center text-sm text-gray-600 space-x-4">
+                        <span className="flex items-center space-x-1">
+                          <span>🏢</span>
+                          <span>{job.business_name}</span>
+                        </span>
+                        <span className="flex items-center space-x-1">
+                          <span>📍</span>
+                          <span>{job.location}</span>
+                        </span>
+                        <span className="flex items-center space-x-1">
+                          <span>💼</span>
+                          <span>{JOB_TYPE_LABELS[job.job_type as keyof typeof JOB_TYPE_LABELS]}</span>
+                        </span>
+                      </div>
+                    )}
           </div>
 
                   {/* Action Buttons */}
@@ -326,7 +328,7 @@ export function Hired() {
                 </div>
 
                 {/* Hired Applications - Only show hired applications */}
-                <HiredApplicationsList jobPostId={job.id} jobTitle={job.job_title} />
+                <HiredApplicationsList key={`hired-applications-${job.id}`} jobPostId={job.id} jobTitle={job.job_title} />
               </div>
             </div>
           ))}
@@ -538,6 +540,7 @@ function HiredBusinessTileView({ onBusinessSelect }: { onBusinessSelect: (busine
 function HiredApplicationsList({ jobPostId, jobTitle }: { jobPostId: string; jobTitle: string }) {
   return (
     <ApplicationsList 
+      key={`applications-list-${jobPostId}`}
       jobPostId={jobPostId} 
       jobTitle={jobTitle}
       statusFilter={['hired']}
