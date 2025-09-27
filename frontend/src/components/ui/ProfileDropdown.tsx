@@ -21,6 +21,7 @@ export function ProfileDropdown({
   className = '' 
 }: ProfileDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [copiedGid, setCopiedGid] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
@@ -36,6 +37,39 @@ export function ProfileDropdown({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  // Copy GID function with fallback and feedback
+  const copyGidToClipboard = async () => {
+    if (!employeeGid) return;
+    
+    try {
+      // Modern clipboard API
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(employeeGid);
+      } else {
+        // Fallback for older browsers or non-secure contexts
+        const textArea = document.createElement('textarea');
+        textArea.value = employeeGid;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand('copy');
+        textArea.remove();
+      }
+      
+      // Show success feedback
+      setCopiedGid(true);
+      setTimeout(() => setCopiedGid(false), 2000); // Reset after 2 seconds
+      
+    } catch (err) {
+      console.error('Failed to copy GID:', err);
+      // Fallback alert for extreme cases
+      alert('Unable to copy GID. Please copy manually: ' + employeeGid);
+    }
+  };
 
   return (
     <div className={`relative ${className}`} ref={dropdownRef}>
@@ -85,26 +119,30 @@ export function ProfileDropdown({
                       <span className="text-xs font-bold text-blue-700">ID</span>
                     </div>
                     <div>
-                      <p className="text-xs text-blue-600 font-medium">Employee GID</p>
+                      <p className="text-xs text-blue-600 font-medium">
+                        Employee GID {copiedGid && <span className="text-green-600">• Copied!</span>}
+                      </p>
                       <p className="text-sm font-mono font-bold text-blue-800">{employeeGid}</p>
                     </div>
                   </div>
                   <button
-                    onClick={async () => {
-                      try {
-                        await navigator.clipboard.writeText(employeeGid);
-                        // You could add a toast notification here
-                        alert('GID copied to clipboard!');
-                      } catch (err) {
-                        console.error('Failed to copy GID:', err);
-                      }
-                    }}
-                    className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded transition-colors"
-                    title="Copy GID to clipboard"
+                    onClick={copyGidToClipboard}
+                    className={`p-1.5 rounded transition-all duration-200 ${
+                      copiedGid 
+                        ? 'text-green-600 bg-green-100' 
+                        : 'text-blue-600 hover:text-blue-800 hover:bg-blue-100'
+                    }`}
+                    title={copiedGid ? 'Copied!' : 'Copy GID to clipboard'}
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                    </svg>
+                    {copiedGid ? (
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    ) : (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                    )}
                   </button>
                 </div>
                 
