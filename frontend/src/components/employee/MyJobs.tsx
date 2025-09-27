@@ -125,17 +125,18 @@ export function MyJobs() {
               job={job}
               isExpanded={expandedJobId === job.id}
               onToggleExpanded={() => handleCardToggle(job.id)}
+              isSavedJobsContext={true}
             />
-            {/* Show when job was saved with unsave option */}
-            <div className="absolute top-2 right-12 flex items-center gap-2">
+            {/* Show when job was saved with unsave option - Optimized for mobile */}
+            <div className="absolute top-2 right-2 flex flex-col sm:flex-row items-end sm:items-center gap-1 sm:gap-2">
               <button
                 onClick={() => handleUnsaveJob(job.id)}
-                className="px-3 py-1.5 text-xs font-medium rounded-md bg-red-500 text-white hover:bg-red-600 active:bg-red-700 shadow-sm border border-red-500 transition-all duration-200 hover:shadow-md"
+                className="px-2 sm:px-3 py-1 sm:py-1.5 text-xs font-medium rounded-md bg-red-500 text-white hover:bg-red-600 active:bg-red-700 shadow-sm border border-red-500 transition-all duration-200 hover:shadow-md"
                 title="Remove from saved jobs"
               >
-                ✕ Unsave
+                ✕ <span className="hidden sm:inline">Unsave</span>
               </button>
-              <span className="px-2 py-1 text-xs rounded-full font-medium bg-green-100 text-green-800">
+              <span className="px-2 py-1 text-xs rounded-full font-medium bg-green-100 text-green-800 hidden sm:inline">
                 Saved {new Date(job.saved_at).toLocaleDateString()}
               </span>
             </div>

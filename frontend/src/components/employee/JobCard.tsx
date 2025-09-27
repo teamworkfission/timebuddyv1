@@ -9,9 +9,10 @@ interface JobCardProps {
   isExpanded?: boolean;
   onToggleExpanded?: () => void;
   isAppliedJobsContext?: boolean;
+  isSavedJobsContext?: boolean;
 }
 
-export function JobCard({ job, isExpanded = false, onToggleExpanded, isAppliedJobsContext = false }: JobCardProps) {
+export function JobCard({ job, isExpanded = false, onToggleExpanded, isAppliedJobsContext = false, isSavedJobsContext = false }: JobCardProps) {
   const [showApplicationModal, setShowApplicationModal] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -248,31 +249,34 @@ export function JobCard({ job, isExpanded = false, onToggleExpanded, isAppliedJo
         {/* Action Buttons - Hidden in applied jobs context */}
         {!isAppliedJobsContext && (
           <div className="border-t-2 border-gray-300 pt-4 flex gap-3">
+            {/* Save Button - Hidden in saved jobs context since it's redundant */}
+            {!isSavedJobsContext && (
+              <Button
+                variant="outline"
+                className={`flex-1 flex items-center justify-center gap-2 ${
+                  isSaved ? 'bg-green-50 border-green-200 text-green-700' : ''
+                }`}
+                onClick={handleSaveJob}
+                disabled={isSaving}
+              >
+                {isSaving ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                    Saving...
+                  </>
+                ) : isSaved ? (
+                  <>
+                    ✅ Saved
+                  </>
+                ) : (
+                  <>
+                    💾 Save Job
+                  </>
+                )}
+              </Button>
+            )}
             <Button
-              variant="outline"
-              className={`flex-1 flex items-center justify-center gap-2 ${
-                isSaved ? 'bg-green-50 border-green-200 text-green-700' : ''
-              }`}
-              onClick={handleSaveJob}
-              disabled={isSaving}
-            >
-              {isSaving ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-                  Saving...
-                </>
-              ) : isSaved ? (
-                <>
-                  ✅ Saved
-                </>
-              ) : (
-                <>
-                  💾 Save Job
-                </>
-              )}
-            </Button>
-            <Button
-              className="flex-1 flex items-center justify-center gap-2"
+              className={`${isSavedJobsContext ? 'w-full' : 'flex-1'} flex items-center justify-center gap-2`}
               onClick={() => setShowApplicationModal(true)}
             >
               📝 Apply Now
