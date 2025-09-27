@@ -59,26 +59,26 @@ export function PaymentsReportsModal({ business, onClose }: PaymentsReportsModal
   );
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-1 sm:p-4 z-50">
+      <div className="bg-white rounded-lg sm:rounded-xl shadow-2xl w-full max-w-6xl h-full sm:h-auto sm:max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="bg-gradient-to-r from-green-500 to-blue-600 p-4 sm:p-6 text-white flex-shrink-0">
+        <div className="bg-gradient-to-r from-green-500 to-blue-600 p-3 sm:p-6 text-white flex-shrink-0">
           <div className="flex justify-between items-start">
             <div className="min-w-0 flex-1">
-              <h2 className="text-xl sm:text-2xl font-bold truncate">Payments & Reports</h2>
-              <p className="text-green-100 text-sm sm:text-base truncate mt-1">{business.name}</p>
+              <h2 className="text-lg sm:text-2xl font-bold truncate">Payments & Reports</h2>
+              <p className="text-green-100 text-xs sm:text-base truncate mt-0.5 sm:mt-1">{business.name}</p>
             </div>
             <button 
               onClick={onClose} 
-              className="ml-4 text-white hover:text-gray-200 p-1 rounded-lg hover:bg-white hover:bg-opacity-10 transition-colors flex-shrink-0"
+              className="ml-2 sm:ml-4 text-white hover:text-gray-200 p-1 rounded-lg hover:bg-white hover:bg-opacity-10 transition-colors flex-shrink-0"
               aria-label="Close modal"
             >
-              <X size={24} />
+              <X size={20} className="sm:w-6 sm:h-6" />
             </button>
           </div>
           
           {/* Tab Navigation - Mobile Responsive */}
-          <div className="flex space-x-1 mt-4 overflow-x-auto">
+          <div className="flex space-x-1 mt-3 sm:mt-4 overflow-x-auto pb-1 sm:pb-0">
             <TabButton tab="payments" icon="💰">
               Payments
             </TabButton>
@@ -90,7 +90,7 @@ export function PaymentsReportsModal({ business, onClose }: PaymentsReportsModal
         
         {/* Tab Content - Scrollable */}
         <div className="flex-1 overflow-y-auto">
-          <div className="p-4 sm:p-6">
+          <div className="p-3 sm:p-6">
             {activeTab === 'payments' ? (
               <PaymentsTab business={business} />
             ) : (

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Business } from '../../lib/business-api';
 
@@ -68,14 +68,14 @@ export function PaymentWeekNavigator({ currentWeek, onWeekChange, business }: Pa
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
+    <div className="bg-white rounded-lg shadow p-3 sm:p-4">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center space-x-1 sm:space-x-2">
           <Button
             variant="outline"
             size="sm"
             onClick={handlePreviousWeek}
-            className="flex items-center space-x-2"
+            className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3"
           >
             <ChevronLeft className="h-4 w-4" />
             <span className="hidden sm:inline">Previous Week</span>
@@ -86,33 +86,26 @@ export function PaymentWeekNavigator({ currentWeek, onWeekChange, business }: Pa
               variant="ghost"
               size="sm"
               onClick={handleThisWeek}
-              className="text-blue-600 hover:text-blue-700"
+              className="text-blue-600 hover:text-blue-700 px-2 sm:px-3 text-xs sm:text-sm"
             >
-              This Week
+              <span className="hidden xs:inline">This Week</span>
+              <span className="xs:hidden">Now</span>
             </Button>
           )}
         </div>
 
-        <div className="flex items-center space-x-2">
-          <Calendar className="h-5 w-5 text-gray-500" />
-          <div className="text-center">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Week of {formatWeekRange(currentWeek)}
-            </h2>
-            {business && (
-              <p className="text-xs text-gray-500 mt-1">
-                {business.name} • {business.location.split(',')[1]?.trim()} Time
-              </p>
-            )}
-          </div>
+        <div className="flex-1 text-center px-2">
+          <h2 className="text-sm sm:text-lg font-semibold text-gray-900 leading-tight">
+            Week of {formatWeekRange(currentWeek)}
+          </h2>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1 sm:space-x-2">
           <Button
             variant="outline"
             size="sm"
             onClick={handleNextWeek}
-            className="flex items-center space-x-2"
+            className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3"
           >
             <span className="hidden sm:inline">Next Week</span>
             <ChevronRight className="h-4 w-4" />
