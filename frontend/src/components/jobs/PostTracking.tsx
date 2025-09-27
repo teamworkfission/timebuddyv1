@@ -149,14 +149,8 @@ export function PostTracking() {
             )}
             <div>
               <h2 className="text-2xl font-bold text-gray-900">
-                {selectedBusinessId ? `${selectedBusinessName} - Post Tracking` : 'Post Tracking'}
+                {selectedBusinessId ? selectedBusinessName : 'Post Tracking'}
               </h2>
-              <p className="text-gray-600">
-                {selectedBusinessId 
-                  ? `Monitor job posts and applicants for ${selectedBusinessName}`
-                  : 'Monitor your job posts and applicants'
-                }
-              </p>
             </div>
           </div>
         </div>

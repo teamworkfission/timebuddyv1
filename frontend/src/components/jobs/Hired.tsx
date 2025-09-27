@@ -154,14 +154,8 @@ export function Hired() {
             )}
             <div>
               <h2 className="text-2xl font-bold text-gray-900">
-                {selectedBusinessId ? `${selectedBusinessName} - Hired Employees` : 'Hired Employees'}
+                {selectedBusinessId ? selectedBusinessName : 'Hired Employees'}
               </h2>
-              <p className="text-gray-600">
-                {selectedBusinessId 
-                  ? `Manage hired employees and closed positions for ${selectedBusinessName}`
-                  : 'Manage your hired employees and closed job positions'
-                }
-              </p>
             </div>
           </div>
         </div>

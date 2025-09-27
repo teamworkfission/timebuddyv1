@@ -154,14 +154,8 @@ export function Shortlisted() {
             )}
             <div>
               <h2 className="text-2xl font-bold text-gray-900">
-                {selectedBusinessId ? `${selectedBusinessName} - Shortlisted` : 'Shortlisted Applications'}
+                {selectedBusinessId ? selectedBusinessName : 'Shortlisted Applications'}
               </h2>
-              <p className="text-gray-600">
-                {selectedBusinessId 
-                  ? `View shortlisted and interviewed candidates for ${selectedBusinessName}`
-                  : 'Manage your shortlisted and interviewed candidates'
-                }
-              </p>
             </div>
           </div>
         </div>
@@ -506,33 +500,6 @@ function ShortlistedBusinessTileView({ onBusinessSelect }: { onBusinessSelect: (
 
   return (
     <div className="space-y-6">
-      {/* Summary Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
-          <div className="text-2xl font-bold text-orange-600 mb-1">{businessStats.length}</div>
-          <div className="text-sm text-gray-600 font-medium">
-            Business{businessStats.length !== 1 ? 'es' : ''}
-          </div>
-        </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
-          <div className="text-2xl font-bold text-purple-600 mb-1">
-            {businessStats.reduce((sum, b) => sum + (b.shortlisted_applications || 0), 0)}
-          </div>
-          <div className="text-sm text-gray-600 font-medium">Shortlisted</div>
-        </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
-          <div className="text-2xl font-bold text-blue-600 mb-1">
-            {businessStats.reduce((sum, b) => sum + (b.interviewed_applications || 0), 0)}
-          </div>
-          <div className="text-sm text-gray-600 font-medium">Interviewed</div>
-        </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
-          <div className="text-2xl font-bold text-green-600 mb-1">
-            {businessStats.reduce((sum, b) => sum + b.published_jobs, 0)}
-          </div>
-          <div className="text-sm text-gray-600 font-medium">Active Jobs</div>
-        </div>
-      </div>
 
       {/* Business Tiles */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">

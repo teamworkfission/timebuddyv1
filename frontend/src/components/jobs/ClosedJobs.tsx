@@ -133,14 +133,8 @@ export function ClosedJobs() {
             )}
             <div>
               <h2 className="text-2xl font-bold text-gray-900">
-                {selectedBusinessId ? `${selectedBusinessName} - Closed Jobs` : 'Closed Jobs'}
+                {selectedBusinessId ? selectedBusinessName : 'Closed Jobs'}
               </h2>
-              <p className="text-gray-600">
-                {selectedBusinessId 
-                  ? `Manage closed job posts for ${selectedBusinessName}`
-                  : 'Manage your closed job posts and archived positions'
-                }
-              </p>
             </div>
           </div>
         </div>
@@ -432,27 +426,6 @@ function ClosedBusinessTileView({ onBusinessSelect }: { onBusinessSelect: (busin
 
   return (
     <div className="space-y-6">
-      {/* Summary Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
-          <div className="text-2xl font-bold text-red-600 mb-1">{businessStats.length}</div>
-          <div className="text-sm text-gray-600 font-medium">
-            Business{businessStats.length !== 1 ? 'es' : ''}
-          </div>
-        </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
-          <div className="text-2xl font-bold text-gray-600 mb-1">
-            {businessStats.reduce((sum, b) => sum + b.closed_jobs, 0)}
-          </div>
-          <div className="text-sm text-gray-600 font-medium">Closed Jobs</div>
-        </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
-          <div className="text-2xl font-bold text-blue-600 mb-1">
-            {businessStats.reduce((sum, b) => sum + (b.total_applications || 0), 0)}
-          </div>
-          <div className="text-sm text-gray-600 font-medium">Applications</div>
-        </div>
-      </div>
 
       {/* Business Tiles */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
