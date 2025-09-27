@@ -274,7 +274,7 @@ export function ClosedJobs() {
 
                 {/* Job Description Preview */}
                 <div className="border-t border-gray-200 pt-4">
-                  <p className="text-sm text-gray-600 line-clamp-3">
+                  <p className="text-sm text-gray-600 line-clamp-3 break-words">
                     {job.job_description}
                   </p>
                 </div>

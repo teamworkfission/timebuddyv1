@@ -186,7 +186,7 @@ export function JobCard({ job, isExpanded = false, onToggleExpanded, isAppliedJo
         {/* Job Description */}
         <div className="border-t-2 border-gray-300 pt-4">
           <h4 className="font-semibold text-gray-900 mb-3">Job Description</h4>
-          <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+          <p className="text-gray-700 leading-relaxed whitespace-pre-wrap break-words">
             {job.job_description}
           </p>
         </div>
