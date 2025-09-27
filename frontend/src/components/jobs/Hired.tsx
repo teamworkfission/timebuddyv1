@@ -502,34 +502,6 @@ function HiredBusinessTileView({ onBusinessSelect }: { onBusinessSelect: (busine
 
   return (
     <div className="space-y-6">
-      {/* Summary Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
-          <div className="text-2xl font-bold text-green-600 mb-1">{businessStats.length}</div>
-          <div className="text-sm text-gray-600 font-medium">
-            Business{businessStats.length !== 1 ? 'es' : ''}
-          </div>
-        </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
-          <div className="text-2xl font-bold text-blue-600 mb-1">
-            {businessStats.reduce((sum, b) => sum + (b.hired_applications || 0), 0)}
-          </div>
-          <div className="text-sm text-gray-600 font-medium">Hired</div>
-        </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
-          <div className="text-2xl font-bold text-red-600 mb-1">
-            {businessStats.reduce((sum, b) => sum + b.closed_jobs, 0)}
-          </div>
-          <div className="text-sm text-gray-600 font-medium">Closed Jobs</div>
-        </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4 text-center">
-          <div className="text-2xl font-bold text-purple-600 mb-1">
-            {businessStats.reduce((sum, b) => sum + b.total_jobs, 0)}
-          </div>
-          <div className="text-sm text-gray-600 font-medium">Total Jobs</div>
-        </div>
-      </div>
-
       {/* Business Tiles */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
         {businessStats.map((business) => (
@@ -565,20 +537,12 @@ function HiredBusinessTileView({ onBusinessSelect }: { onBusinessSelect: (busine
                 {/* Hired Statistics */}
                 <div className="grid grid-cols-2 gap-3 pt-2">
                   <div className="text-center">
-                    <div className="text-xl font-bold text-green-600">{business.hired_applications || 0}</div>
-                    <div className="text-xs text-gray-600">Hired</div>
+                    <div className="text-xl font-bold text-blue-600">{business.total_jobs || 0}</div>
+                    <div className="text-xs text-gray-600">Job Posts</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-xl font-bold text-red-600">{business.closed_jobs || 0}</div>
-                    <div className="text-xs text-gray-600">Closed Jobs</div>
-                  </div>
-                </div>
-
-                {/* Status Breakdown */}
-                <div className="pt-2 border-t border-gray-100">
-                  <div className="flex justify-between text-xs text-gray-600">
-                    <span>Total Jobs: {business.total_jobs}</span>
-                    <span>Published: {business.published_jobs}</span>
+                    <div className="text-xl font-bold text-green-600">{business.hired_applications || 0}</div>
+                    <div className="text-xs text-gray-600">Hired</div>
                   </div>
                 </div>
 
