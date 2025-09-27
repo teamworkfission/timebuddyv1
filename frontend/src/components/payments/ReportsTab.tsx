@@ -5,7 +5,7 @@ import {
   PayrollReport,
   getPaymentReports
 } from '../../lib/payments-api';
-import { DateRangePicker } from './DateRangePicker';
+import { MonthNavigator } from './MonthNavigator';
 import { Button } from '../ui/Button';
 import { formatHours } from '../../lib/confirmed-hours-api';
 
@@ -14,10 +14,18 @@ interface ReportsTabProps {
 }
 
 export function ReportsTab({ business }: ReportsTabProps) {
-  const [dateRange, setDateRange] = useState({
-    start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days ago
-    end: new Date().toISOString().split('T')[0]
-  });
+  // Helper function to get current month range
+  const getCurrentMonthRange = () => {
+    const today = new Date();
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    return {
+      start: firstDay.toISOString().split('T')[0],
+      end: lastDay.toISOString().split('T')[0]
+    };
+  };
+
+  const [dateRange, setDateRange] = useState(getCurrentMonthRange());
   
   const [reportData, setReportData] = useState<PayrollReport | null>(null);
   const [loading, setLoading] = useState(false);
@@ -45,28 +53,25 @@ export function ReportsTab({ business }: ReportsTabProps) {
 
   return (
     <div className="space-y-6">
-      {/* Date Range and Export */}
-      <div className="bg-gray-50 p-4 rounded-lg">
-        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-end space-y-4 lg:space-y-0">
-          <div className="flex-1">
-            <DateRangePicker 
-              value={dateRange}
-              onChange={setDateRange}
-              onApply={loadReportData}
-              label="Report Period"
-            />
-          </div>
-          <div className="flex space-x-3">
-            <Button
-              onClick={loadReportData}
-              disabled={loading}
-              variant="outline"
-              className="flex items-center space-x-2"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              <span>Refresh</span>
-            </Button>
-          </div>
+      {/* Month Navigation and Export */}
+      <div className="space-y-4">
+        <MonthNavigator 
+          value={dateRange}
+          onChange={setDateRange}
+          onApply={loadReportData}
+          disabled={loading}
+        />
+        
+        <div className="flex justify-center">
+          <Button
+            onClick={loadReportData}
+            disabled={loading}
+            variant="outline"
+            className="flex items-center space-x-2"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <span>Refresh</span>
+          </Button>
         </div>
       </div>
 
