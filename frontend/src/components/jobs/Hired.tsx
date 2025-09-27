@@ -113,19 +113,6 @@ export function Hired() {
     return `${currency}${job.pay_min}${payType}`;
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'draft':
-        return 'bg-gray-100 text-gray-800';
-      case 'published':
-        return 'bg-green-100 text-green-800';
-      case 'closed':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -210,9 +197,6 @@ export function Hired() {
                       <h3 className="text-xl font-semibold text-gray-900">
                         {job.job_title}
                       </h3>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(job.status)}`}>
-                        {JOB_STATUS_LABELS[job.status as keyof typeof JOB_STATUS_LABELS]}
-                      </span>
                       <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                         Hired
                       </span>
@@ -371,11 +355,14 @@ function HiredBusinessTileView({ onBusinessSelect }: { onBusinessSelect: (busine
       // Get jobs that have hired applications
       const jobsWithHired = await getJobsWithApplicationStatus(['hired']);
       
+      // Filter out closed jobs to prevent counting hired applications from closed posts
+      const activeJobsWithHired = jobsWithHired.filter(job => job.status !== 'closed');
+      
       // Group by business and create stats
       const businessStatsMap = new Map();
       
       // For each job with hired applications, we need to count the actual hired applications
-      for (const job of jobsWithHired) {
+      for (const job of activeJobsWithHired) {
         const businessId = job.business_id;
         if (!businessStatsMap.has(businessId)) {
           businessStatsMap.set(businessId, {

@@ -153,6 +153,22 @@ export class JobsService {
         updateData.published_at = new Date().toISOString();
       } else if (updateJobDto.status === 'closed') {
         updateData.closed_at = new Date().toISOString();
+        
+        // Auto-close related applications when job post is closed
+        // Update all non-rejected applications to 'rejected' status
+        const { error: applicationsError } = await this.supabase.admin
+          .from('employee_job_application')
+          .update({ 
+            status: 'rejected',
+            status_updated_at: new Date().toISOString()
+          })
+          .eq('job_post_id', id)
+          .neq('status', 'rejected');
+
+        if (applicationsError) {
+          console.error('Failed to close related applications:', applicationsError);
+          // Don't fail the entire operation, just log the error
+        }
       }
     }
 
