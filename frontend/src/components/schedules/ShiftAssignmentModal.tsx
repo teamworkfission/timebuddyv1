@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Clock, Plus, Edit2, Trash2, FileText } from 'lucide-react';
+import { X, Clock, Plus, Edit2, Trash2 } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { AMPMTimeInput } from '../ui/AMPMTimeInput';
@@ -45,7 +45,6 @@ export function ShiftAssignmentModal({
   const [mode, setMode] = useState<'template' | 'custom' | 'edit'>('template');
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [customTime, setCustomTime] = useState({ start: '', end: '' });
-  const [notes, setNotes] = useState('');
   const [editingShift, setEditingShift] = useState<Shift | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -91,7 +90,6 @@ export function ShiftAssignmentModal({
       setMode('template');
       setSelectedTemplate('');
       setCustomTime({ start: '', end: '' });
-      setNotes('');
       setEditingShift(null);
       setError(null);
     }
@@ -127,8 +125,7 @@ export function ShiftAssignmentModal({
       end_label: template.end_label,
       start_time: template.start_time, // Legacy fallback
       end_time: template.end_time,     // Legacy fallback
-      shift_template_id: template.id,
-      notes: notes.trim() || undefined
+      shift_template_id: template.id
     };
 
     onAssignShift(shift);
@@ -152,7 +149,6 @@ export function ShiftAssignmentModal({
       // Primary: AM/PM labels
       start_label: customTime.start, // e.g., "9:00 AM"
       end_label: customTime.end,     // e.g., "5:00 PM"
-      notes: notes.trim() || undefined
     };
 
     onAssignShift(shift);
@@ -168,7 +164,6 @@ export function ShiftAssignmentModal({
       start: shiftTime.start,
       end: shiftTime.end
     });
-    setNotes(shift.notes || '');
     
     // If shift has a template, select it
     if (shift.shift_template_id) {
@@ -188,7 +183,6 @@ export function ShiftAssignmentModal({
       // Primary: AM/PM labels
       start_label: customTime.start, // e.g., "9:00 AM"
       end_label: customTime.end,     // e.g., "5:00 PM"
-      notes: notes.trim() || undefined
     };
 
     onUpdateShift(editingShift.id, update);
@@ -208,7 +202,7 @@ export function ShiftAssignmentModal({
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="md">
       <div className="p-6">
         {/* Header */}
-        <div className="mb-6">
+        <div className="mb-4">
           <h2 className="text-xl font-bold text-gray-900 mb-2">
             Assign Shift
           </h2>
@@ -219,8 +213,8 @@ export function ShiftAssignmentModal({
 
         {/* Existing Shifts */}
         {existingShifts.length > 0 && (
-          <div className="mb-6">
-            <h3 className="text-sm font-medium text-gray-900 mb-3">Current Shifts</h3>
+          <div className="mb-4">
+            <h3 className="text-sm font-medium text-gray-900 mb-2">Current Shifts</h3>
             <div className="space-y-2">
               {existingShifts.map((shift) => {
                 const template = shiftTemplates.find(t => t.id === shift.shift_template_id);
@@ -245,12 +239,6 @@ export function ShiftAssignmentModal({
                           </span>
                           <span>({shift.duration_hours.toFixed(1)}h)</span>
                         </div>
-                        {shift.notes && (
-                          <div className="text-xs text-gray-500 flex items-center space-x-1 mt-1">
-                            <FileText className="h-3 w-3" />
-                            <span>{shift.notes}</span>
-                          </div>
-                        )}
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -276,7 +264,7 @@ export function ShiftAssignmentModal({
 
         {/* Mode Selection */}
         {mode !== 'edit' && (
-          <div className="mb-6">
+          <div className="mb-4">
             <div className="flex space-x-2">
               <button
                 onClick={() => setMode('template')}
@@ -304,8 +292,8 @@ export function ShiftAssignmentModal({
 
         {/* Template Selection */}
         {mode === 'template' && (
-          <div className="mb-6">
-            <h3 className="text-sm font-medium text-gray-900 mb-3">Select Shift Template</h3>
+          <div className="mb-4">
+            <h3 className="text-sm font-medium text-gray-900 mb-2">Select Shift Template</h3>
             <div className="grid grid-cols-1 gap-2">
               {shiftTemplates.map((template) => (
                 <button
@@ -340,8 +328,8 @@ export function ShiftAssignmentModal({
 
         {/* Custom Time Selection */}
         {(mode === 'custom' || mode === 'edit') && (
-          <div className="mb-6">
-            <h3 className="text-sm font-medium text-gray-900 mb-3">
+          <div className="mb-4">
+            <h3 className="text-sm font-medium text-gray-900 mb-2">
               {mode === 'edit' ? 'Edit Shift Time' : 'Set Custom Time'}
             </h3>
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
@@ -382,20 +370,6 @@ export function ShiftAssignmentModal({
             </div>
           </div>
         )}
-
-        {/* Notes */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Notes (Optional)
-          </label>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Add any notes for this shift..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            rows={3}
-          />
-        </div>
 
         {/* Error Message */}
         {error && (
