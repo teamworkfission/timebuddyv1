@@ -139,12 +139,13 @@ export function AppliedJobs() {
                 isAppliedJobsContext={true}
               />
               {/* Show application status and date */}
-              <div className="absolute top-2 right-12 flex items-center gap-2">
+              <div className="absolute top-2 right-2 sm:right-12">
                 <span className={`px-2 py-1 text-xs rounded-full font-medium ${getStatusColorClass(application.status)}`}>
-                  {APPLICATION_STATUS_LABELS[application.status]}
-                </span>
-                <span className="px-2 py-1 text-xs rounded-full font-medium bg-blue-100 text-blue-800">
-                  Applied {new Date(application.applied_at).toLocaleDateString()}
+                  {APPLICATION_STATUS_LABELS[application.status]} {
+                    application.status === 'applied' 
+                      ? new Date(application.applied_at).toLocaleDateString()
+                      : new Date(application.status_updated_at || application.applied_at).toLocaleDateString()
+                  }
                 </span>
               </div>
               
