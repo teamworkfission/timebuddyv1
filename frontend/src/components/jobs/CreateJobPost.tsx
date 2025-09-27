@@ -68,7 +68,7 @@ export function CreateJobPost({ editingJob, onSuccess }: CreateJobPostProps) {
     business_type: '',
     phone: '',
     email: '',
-    expected_hours_per_week: 40,
+    expected_hours_per_week: undefined,
     schedule: '',
     pay_type: 'hourly',
     pay_min: undefined,
@@ -418,9 +418,15 @@ export function CreateJobPost({ editingJob, onSuccess }: CreateJobPostProps) {
                 max="80"
                 value={formData.expected_hours_per_week || ''}
                 onChange={(e) => {
-                  const value = parseInt(e.target.value);
-                  if (!isNaN(value) && value > 0) {
-                    handleInputChange('expected_hours_per_week', value);
+                  const inputValue = e.target.value;
+                  if (inputValue === '') {
+                    // Allow clearing the field
+                    handleInputChange('expected_hours_per_week', undefined);
+                  } else {
+                    const value = parseInt(inputValue);
+                    if (!isNaN(value) && value > 0) {
+                      handleInputChange('expected_hours_per_week', value);
+                    }
                   }
                 }}
                 placeholder="40"

@@ -48,7 +48,7 @@ export interface CreateJobData {
   business_type: string;
   phone: string;
   email?: string;
-  expected_hours_per_week: number;
+  expected_hours_per_week?: number;
   schedule: string;
   pay_type: PayType;
   pay_min?: number;
