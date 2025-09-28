@@ -281,7 +281,16 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
         shifts: [...prev.shifts, newShift]
       } : null);
     } catch (err) {
-      setError('Failed to create shift');
+      // Show user-friendly error message
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create shift';
+      
+      // Make overlap errors more user-friendly
+      let displayMessage = errorMessage;
+      if (errorMessage.toLowerCase().includes('shift overlap detected')) {
+        displayMessage = '⚠️ Shift overlap found - This employee already has a shift during this time. Please choose different hours or remove the existing shift.';
+      }
+      
+      setError(displayMessage);
       console.error('Error creating shift:', err);
     }
   };
@@ -305,7 +314,16 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
         shifts: prev.shifts.map(s => s.id === shiftId ? updatedShift : s)
       } : null);
     } catch (err) {
-      setError('Failed to update shift');
+      // Show user-friendly error message
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update shift';
+      
+      // Make overlap errors more user-friendly
+      let displayMessage = errorMessage;
+      if (errorMessage.toLowerCase().includes('shift overlap detected')) {
+        displayMessage = '⚠️ Shift overlap found - This employee already has a shift during this time. Please choose different hours or remove the existing shift.';
+      }
+      
+      setError(displayMessage);
       console.error('Error updating shift:', err);
     }
   };

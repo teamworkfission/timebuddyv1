@@ -272,8 +272,8 @@ export class SchedulesService {
       // Calculate duration for validation
       const durationHours = calculateShiftHours(startLabel, endLabel);
       
-      // Check for duplicate shifts before inserting
-      await this.checkForDuplicateShift(scheduleId, createDto.employee_id, createDto.day_of_week, startMin, endMin, startLabel, endLabel);
+      // Check for overlapping shifts before inserting
+      await this.checkForOverlappingShifts(scheduleId, createDto.employee_id, createDto.day_of_week, startMin, endMin, startLabel, endLabel);
       
       // Insert shift with dual storage format
       const { data, error } = await supabase
@@ -678,10 +678,10 @@ export class SchedulesService {
   }
 
   /**
-   * Check for duplicate shifts and provide clear error messages
-   * Prevents creating identical shifts (same employee, same day, same exact times)
+   * Check for overlapping shifts and provide clear error messages
+   * Prevents creating shifts that overlap with existing shifts for the same employee
    */
-  private async checkForDuplicateShift(
+  private async checkForOverlappingShifts(
     scheduleId: string, 
     employeeId: string, 
     dayOfWeek: number, 
@@ -692,37 +692,50 @@ export class SchedulesService {
   ): Promise<void> {
     const supabase = this.supabaseService.admin;
     
-    // Check if duplicate shift already exists
-    const { data: existingShift, error } = await supabase
+    // Get ALL existing shifts for this employee on this day
+    const { data: existingShifts, error } = await supabase
       .from('shifts')
       .select(`
         id,
+        start_min,
+        end_min,
+        start_label,
+        end_label,
         shift_template_id,
-        shift_templates!inner(name)
+        shift_templates(name)
       `)
       .eq('schedule_id', scheduleId)
       .eq('employee_id', employeeId)
-      .eq('day_of_week', dayOfWeek)
-      .eq('start_min', startMin)
-      .eq('end_min', endMin)
-      .single();
+      .eq('day_of_week', dayOfWeek);
 
-    if (error && error.code !== 'PGRST116') {
-      // Unexpected error (not "not found")
-      throw new Error(`Failed to check for duplicate shift: ${error.message}`);
+    if (error) {
+      throw new Error(`Failed to check for overlapping shifts: ${error.message}`);
     }
 
-    if (existingShift) {
-      // Duplicate found - create helpful error message
-      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-      const dayName = dayNames[dayOfWeek];
-      // Handle the nested shift_templates object safely
-      const templateName = (existingShift as any).shift_templates?.name || 'Unknown';
+    // Check each existing shift for overlap
+    for (const existingShift of existingShifts || []) {
+      const existingStart = existingShift.start_min;
+      const existingEnd = existingShift.end_min;
       
-      throw new BadRequestException(
-        `Duplicate shift detected: Employee already has a ${templateName} shift (${startLabel} - ${endLabel}) on ${dayName}. ` +
-        `Please choose different times or remove the existing shift first.`
-      );
+      // Normalize overnight shifts for comparison (when end < start, it crosses midnight)
+      const newStart = startMin;
+      const newEnd = endMin < startMin ? endMin + 1440 : endMin;
+      const normalizedExistingEnd = existingEnd < existingStart ? existingEnd + 1440 : existingEnd;
+      
+      // Core overlap detection: newStart < existingEnd && newEnd > existingStart
+      const hasOverlap = newStart < normalizedExistingEnd && newEnd > existingStart;
+      
+      if (hasOverlap) {
+        // Overlap found - create helpful error message
+        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const dayName = dayNames[dayOfWeek];
+        const templateName = (existingShift.shift_templates as any)?.name || 'Custom';
+        
+        throw new BadRequestException(
+          `Shift overlap detected: Employee already has a ${templateName} shift (${existingShift.start_label} - ${existingShift.end_label}) on ${dayName} that overlaps with the new shift (${startLabel} - ${endLabel}). ` +
+          `Please choose different times or remove the existing shift first.`
+        );
+      }
     }
   }
 

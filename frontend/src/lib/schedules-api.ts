@@ -305,7 +305,18 @@ export class SchedulesApi {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to create shift: ${response.statusText}`);
+      // Extract detailed error message from response body
+      let errorMessage = 'Failed to create shift';
+      try {
+        const errorData = await response.json();
+        if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+      } catch (e) {
+        // Fallback to status text if JSON parsing fails
+        errorMessage = `Failed to create shift: ${response.statusText}`;
+      }
+      throw new Error(errorMessage);
     }
 
     return response.json();
@@ -320,7 +331,18 @@ export class SchedulesApi {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to update shift: ${response.statusText}`);
+      // Extract detailed error message from response body
+      let errorMessage = 'Failed to update shift';
+      try {
+        const errorData = await response.json();
+        if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+      } catch (e) {
+        // Fallback to status text if JSON parsing fails
+        errorMessage = `Failed to update shift: ${response.statusText}`;
+      }
+      throw new Error(errorMessage);
     }
 
     return response.json();
