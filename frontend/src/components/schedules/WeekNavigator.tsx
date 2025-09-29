@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Calendar, AlertCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { 
   formatWeekRange, 
   getNextWeek, 
@@ -90,7 +90,7 @@ export function WeekNavigator({ currentWeek, onWeekChange, business }: WeekNavig
           onClick={handlePreviousWeek}
           disabled={!canGoPrevious || loading}
           className="flex items-center space-x-1 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          title={!canGoPrevious ? "Cannot schedule in past weeks" : "Previous Week"}
+          title="Previous Week"
         >
           <ChevronLeft className="h-4 w-4" />
           <span>Previous</span>
@@ -127,16 +127,6 @@ export function WeekNavigator({ currentWeek, onWeekChange, business }: WeekNavig
           >
             This Week
           </Button>
-        </div>
-      )}
-      
-      {/* Warning for past weeks */}
-      {business && !canGoPrevious && !loading && (
-        <div className="flex justify-center mt-2">
-          <div className="flex items-center text-amber-600 text-sm" title="Cannot schedule in past weeks">
-            <AlertCircle className="h-4 w-4 mr-1" />
-            <span>Cannot schedule in past weeks</span>
-          </div>
         </div>
       )}
     </div>

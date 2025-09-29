@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Calendar, AlertCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { 
   formatWeekRange, 
   getNextWeek, 
@@ -55,7 +55,7 @@ export function WeekNavigatorV2({ currentWeek, onWeekChange, business }: WeekNav
             onClick={handlePreviousWeek}
             disabled={!canGoPrevious()}
             className="flex items-center space-x-2"
-            title={!canGoPrevious() ? "Cannot schedule in past weeks" : "Previous Week"}
+            title="Previous Week"
           >
             <ChevronLeft className="h-4 w-4" />
             <span className="hidden sm:inline">Previous Week</span>
@@ -97,13 +97,6 @@ export function WeekNavigatorV2({ currentWeek, onWeekChange, business }: WeekNav
             <span className="hidden sm:inline">Next Week</span>
             <ChevronRight className="h-4 w-4" />
           </Button>
-          
-          {!canGoPrevious() && (
-            <div className="flex items-center text-amber-600 text-sm" title="Cannot schedule in past weeks">
-              <AlertCircle className="h-4 w-4 mr-1" />
-              <span className="hidden md:inline">Past week</span>
-            </div>
-          )}
         </div>
       </div>
     </div>
