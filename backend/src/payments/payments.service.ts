@@ -601,4 +601,121 @@ export class PaymentsService {
     }
   }
 
+  // =====================================================
+  // DETAILED MONTHLY EMPLOYEE BREAKDOWN
+  // =====================================================
+
+  async getEmployeeMonthlyBreakdown(
+    businessId: string,
+    startDate: string,
+    endDate: string
+  ) {
+    try {
+      // Get all payment records for the business within the date range
+      const { data: paymentRecords, error } = await this.supabaseService.admin
+        .from('payment_records')
+        .select(`
+          *,
+          employees!inner(
+            id,
+            full_name
+          )
+        `)
+        .eq('business_id', businessId)
+        .gte('period_start', startDate)
+        .lte('period_end', endDate)
+        .order('period_start', { ascending: true });
+
+      if (error) {
+        throw new BadRequestException(`Failed to fetch payment records: ${error.message}`);
+      }
+
+      // Group records by employee
+      const employeeBreakdown = new Map();
+      let totalPaid = 0;
+      let totalHours = 0;
+
+      for (const record of paymentRecords || []) {
+        const employeeId = record.employee_id;
+        const employeeName = record.employees?.full_name || 'Unknown Employee';
+
+        if (!employeeBreakdown.has(employeeId)) {
+          employeeBreakdown.set(employeeId, {
+            employee_id: employeeId,
+            employee_name: employeeName,
+            total_hours: 0,
+            gross_pay: 0,
+            total_advances: 0,
+            total_bonuses: 0,
+            total_deductions: 0,
+            net_pay: 0,
+            final_amount_paid: 0,
+            payment_records: []
+          });
+        }
+
+        const employee = employeeBreakdown.get(employeeId);
+        
+        // Aggregate totals
+        employee.total_hours += record.total_hours || 0;
+        employee.gross_pay += record.gross_pay || 0;
+        employee.total_advances += record.advances || 0;
+        employee.total_bonuses += record.bonuses || 0;
+        employee.total_deductions += record.deductions || 0;
+        employee.net_pay += record.net_pay || 0;
+        
+        // Only count paid records towards final amount paid
+        if (record.status === 'paid') {
+          employee.final_amount_paid += record.net_pay || 0;
+          totalPaid += record.net_pay || 0;
+        }
+
+        totalHours += record.total_hours || 0;
+
+        // Add payment record details
+        employee.payment_records.push({
+          id: record.id,
+          period_start: record.period_start,
+          period_end: record.period_end,
+          total_hours: record.total_hours || 0,
+          hourly_rate: record.hourly_rate || 0,
+          gross_pay: record.gross_pay || 0,
+          advances: record.advances || 0,
+          bonuses: record.bonuses || 0,
+          deductions: record.deductions || 0,
+          net_pay: record.net_pay || 0,
+          status: record.status,
+          payment_method: record.payment_method,
+          notes: record.notes,
+          paid_at: record.paid_at
+        });
+      }
+
+      // Apply consistent precision to all values
+      const employees = Array.from(employeeBreakdown.values()).map(emp => ({
+        ...emp,
+        total_hours: Math.round(emp.total_hours * 100) / 100,
+        gross_pay: Math.round(emp.gross_pay * 100) / 100,
+        total_advances: Math.round(emp.total_advances * 100) / 100,
+        total_bonuses: Math.round(emp.total_bonuses * 100) / 100,
+        total_deductions: Math.round(emp.total_deductions * 100) / 100,
+        net_pay: Math.round(emp.net_pay * 100) / 100,
+        final_amount_paid: Math.round(emp.final_amount_paid * 100) / 100
+      }));
+
+      return {
+        business_id: businessId,
+        period_start: startDate,
+        period_end: endDate,
+        total_paid: Math.round(totalPaid * 100) / 100,
+        total_hours: Math.round(totalHours * 100) / 100,
+        employee_count: employees.length,
+        employees
+      };
+
+    } catch (error) {
+      throw new BadRequestException(`Failed to generate employee breakdown: ${error.message}`);
+    }
+  }
+
 }

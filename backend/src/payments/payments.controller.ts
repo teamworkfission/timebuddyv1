@@ -19,6 +19,7 @@ import { SetEmployeeRateDto } from './dto/set-employee-rate.dto';
 import { CreatePaymentRecordDto } from './dto/create-payment-record.dto';
 import { UpdatePaymentRecordDto, MarkAsPaidDto } from './dto/update-payment-record.dto';
 import { PaymentReportDto } from './dto/payment-report.dto';
+import { MonthlyBreakdownReport } from './dto/employee-breakdown.dto';
 
 @Controller('payments')
 export class PaymentsController {
@@ -248,6 +249,22 @@ export class PaymentsController {
     const start = startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
     return this.paymentsService.getPaymentReports(businessId, start, end);
+  }
+
+  @Get('employee-breakdown/:businessId')
+  async getEmployeeMonthlyBreakdown(
+    @Param('businessId') businessId: string,
+    @Query('start_date') startDate: string,
+    @Query('end_date') endDate: string,
+    @Request() req
+  ): Promise<MonthlyBreakdownReport> {
+    await this.getEmployerIdFromRequest(req);
+    
+    if (!startDate || !endDate) {
+      throw new BadRequestException('start_date and end_date are required');
+    }
+
+    return this.paymentsService.getEmployeeMonthlyBreakdown(businessId, startDate, endDate);
   }
 
 

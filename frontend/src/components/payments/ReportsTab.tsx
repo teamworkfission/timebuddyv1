@@ -3,11 +3,14 @@ import { BarChart3, RefreshCw, DollarSign, Clock, Users } from 'lucide-react';
 import { Business } from '../../lib/business-api';
 import { 
   PayrollReport,
-  getPaymentReports
+  getPaymentReports,
+  MonthlyBreakdownReport,
+  getEmployeeMonthlyBreakdown
 } from '../../lib/payments-api';
 import { MonthNavigator } from './MonthNavigator';
 import { Button } from '../ui/Button';
 import { formatHours } from '../../lib/confirmed-hours-api';
+import { CollapsibleEmployeeCard } from './CollapsibleEmployeeCard';
 
 interface ReportsTabProps {
   business: Business;
@@ -28,6 +31,7 @@ export function ReportsTab({ business }: ReportsTabProps) {
   const [dateRange, setDateRange] = useState(getCurrentMonthRange());
   
   const [reportData, setReportData] = useState<PayrollReport | null>(null);
+  const [breakdownData, setBreakdownData] = useState<MonthlyBreakdownReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,8 +39,15 @@ export function ReportsTab({ business }: ReportsTabProps) {
     try {
       setLoading(true);
       setError(null);
-      const data = await getPaymentReports(business.business_id, dateRange.start, dateRange.end);
-      setReportData(data);
+      
+      // Load both regular report data and detailed breakdown data in parallel
+      const [reportResult, breakdownResult] = await Promise.all([
+        getPaymentReports(business.business_id, dateRange.start, dateRange.end),
+        getEmployeeMonthlyBreakdown(business.business_id, dateRange.start, dateRange.end)
+      ]);
+      
+      setReportData(reportResult);
+      setBreakdownData(breakdownResult);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load report data';
       setError(errorMessage);
@@ -139,63 +150,25 @@ export function ReportsTab({ business }: ReportsTabProps) {
           </div>
 
           {/* Employee Breakdown */}
-          {reportData.employees.length > 0 && (
-            <div className="bg-white rounded-lg border border-gray-200">
-              <div className="p-6 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
-                  <BarChart3 className="w-5 h-5" />
-                  <span>Employee Breakdown</span>
-                </h3>
+          {breakdownData && breakdownData.employees.length > 0 && (
+            <div className="space-y-6">
+              <div className="flex items-center space-x-2">
+                <BarChart3 className="w-5 h-5 text-gray-700" />
+                <h3 className="text-lg font-semibold text-gray-900">Employee Breakdown</h3>
+                <span className="text-sm text-gray-600">
+                  (Click to expand details)
+                </span>
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Employee
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Hours
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Gross Pay
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Net Pay
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Payments
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {reportData.employees.map((employee) => (
-                      <tr key={employee.employee_id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="font-medium text-gray-900">
-                            {employee.employee_name || 'Unknown Employee'}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {formatHours(employee.total_hours)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          ${employee.gross_pay.toFixed(2)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm font-medium text-green-600">
-                            ${employee.net_pay.toFixed(2)}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            {employee.payment_count} payment{employee.payment_count !== 1 ? 's' : ''}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              
+              <div className="space-y-4">
+                {breakdownData.employees
+                  .sort((a, b) => b.final_amount_paid - a.final_amount_paid)
+                  .map((employee) => (
+                    <CollapsibleEmployeeCard 
+                      key={employee.employee_id} 
+                      employee={employee} 
+                    />
+                  ))}
               </div>
             </div>
           )}
@@ -222,7 +195,7 @@ export function ReportsTab({ business }: ReportsTabProps) {
       )}
 
       {/* No Data State */}
-      {reportData && !loading && reportData.employee_count === 0 && (
+      {reportData && breakdownData && !loading && reportData.employee_count === 0 && (
         <div className="text-center py-12">
           <BarChart3 className="w-12 h-12 text-gray-400 mx-auto" />
           <h3 className="text-lg font-medium text-gray-900 mt-4">No Payment Data</h3>
