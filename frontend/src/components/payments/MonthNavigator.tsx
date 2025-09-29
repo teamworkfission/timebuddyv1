@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface DateRange {
   start: string;
@@ -9,14 +9,12 @@ interface DateRange {
 interface MonthNavigatorProps {
   value: DateRange;
   onChange: (range: DateRange) => void;
-  onApply?: () => void;
   disabled?: boolean;
 }
 
 export function MonthNavigator({ 
   value, 
   onChange, 
-  onApply,
   disabled = false
 }: MonthNavigatorProps) {
   const [monthOffset, setMonthOffset] = useState(0); // 0 = current month, -1 = last month, etc.
@@ -46,14 +44,27 @@ export function MonthNavigator({
     });
   };
 
-  // Initialize with current month if no value provided
+  // Initialize with current month if no value provided and sync monthOffset with actual date range
   useEffect(() => {
     if (!value.start || !value.end) {
       const currentMonthRange = getMonthRange(0);
       onChange(currentMonthRange);
       setMonthOffset(0);
+    } else {
+      // Calculate the correct monthOffset based on the current date range
+      const today = new Date();
+      const currentMonth = today.getMonth();
+      const currentYear = today.getFullYear();
+      
+      const rangeStart = new Date(value.start + 'T00:00:00');
+      const rangeMonth = rangeStart.getMonth();
+      const rangeYear = rangeStart.getFullYear();
+      
+      // Calculate the offset from current month to range month
+      const calculatedOffset = (rangeYear - currentYear) * 12 + (rangeMonth - currentMonth);
+      setMonthOffset(calculatedOffset);
     }
-  }, []);
+  }, [value.start, value.end]);
 
   // Handle previous month navigation
   const handlePreviousMonth = () => {
@@ -64,7 +75,17 @@ export function MonthNavigator({
     
     setMonthOffset(newOffset);
     onChange(newRange);
-    onApply?.();
+  };
+
+  // Handle next month navigation
+  const handleNextMonth = () => {
+    if (disabled || monthOffset >= 0) return; // Can't go beyond current month
+    
+    const newOffset = monthOffset + 1;
+    const newRange = getMonthRange(newOffset);
+    
+    setMonthOffset(newOffset);
+    onChange(newRange);
   };
 
   // Handle current month navigation
@@ -75,7 +96,6 @@ export function MonthNavigator({
     
     setMonthOffset(0);
     onChange(newRange);
-    onApply?.();
   };
 
   // Check if we're currently viewing the current month
@@ -83,46 +103,51 @@ export function MonthNavigator({
 
   return (
     <div className="bg-gray-50 p-4 rounded-lg">
-      <div className="flex items-center justify-center space-x-4">
-        {/* Previous Months Button */}
+      <div className="flex items-center justify-center space-x-6">
+        {/* Previous Month Button */}
         <button
           onClick={handlePreviousMonth}
           disabled={disabled}
           className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />
-          <span>previous months</span>
+          <span>previous</span>
         </button>
 
-        {/* Current Month Display/Button */}
+        {/* Month Name Display - Always show actual month being viewed */}
         {isCurrentMonth ? (
-          // When on current month, show as non-clickable text
-          <div className="px-4 py-2 text-lg font-semibold text-gray-900">
-            {formatMonth(monthOffset)}
+          // When on current month, show the actual month name
+          <div className="text-center">
+            <div className="px-4 py-2 text-lg font-semibold text-blue-600">
+              {formatMonth(monthOffset)}
+            </div>
           </div>
         ) : (
           // When on previous months, show as clickable button to return to current
           <button
             onClick={handleCurrentMonth}
             disabled={disabled}
-            className="px-4 py-2 text-lg font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+            className="text-center px-4 py-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
           >
-            current month
+            <div className="text-lg font-semibold">{formatMonth(monthOffset)}</div>
+            <div className="text-xs text-gray-500">click to return to current</div>
           </button>
         )}
 
-        {/* Display the actual month name when not on current month */}
-        {!isCurrentMonth && (
-          <div className="text-sm text-gray-600 bg-white px-3 py-2 rounded-lg border">
-            Viewing: {formatMonth(monthOffset)}
-          </div>
-        )}
+        {/* Next Month Button */}
+        <button
+          onClick={handleNextMonth}
+          disabled={disabled || monthOffset >= 0} // Disable if at current month or beyond
+          className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          <span>next</span>
+          <ChevronRight className="w-4 h-4" />
+        </button>
       </div>
 
-      {/* Optional: Show selected period info */}
+      {/* Show selected period dates only */}
       <div className="mt-3 text-center">
-        <div className="text-sm text-gray-600">
-          <strong>Selected Period:</strong>{' '}
+        <div className="text-xs text-gray-500">
           {value.start && value.end ? (
             <>
               {new Date(value.start + 'T00:00:00').toLocaleDateString()} to{' '}

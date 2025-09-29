@@ -42,10 +42,6 @@ export function ReportsTab({ business }: ReportsTabProps) {
       
       console.log('Loading report data for period:', dateRange.start, 'to', dateRange.end);
       
-      // Clear existing data to prevent showing stale results
-      setReportData(null);
-      setBreakdownData(null);
-      
       // Load both regular report data and detailed breakdown data in parallel
       const [reportResult, breakdownResult] = await Promise.all([
         getPaymentReports(business.business_id, dateRange.start, dateRange.end),
@@ -60,15 +56,24 @@ export function ReportsTab({ business }: ReportsTabProps) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load report data';
       setError(errorMessage);
       console.error('Report loading error:', err);
+      // Clear data on error to prevent showing stale results
+      setReportData(null);
+      setBreakdownData(null);
     } finally {
       setLoading(false);
     }
   };
 
 
+  // Clear data immediately when date range or business changes, then load new data
   useEffect(() => {
+    // Immediately clear existing data to prevent showing stale results
+    setReportData(null);
+    setBreakdownData(null);
+    setError(null);
+    
     loadReportData();
-  }, [dateRange]);
+  }, [dateRange, business.business_id]);
 
   return (
     <div className="space-y-6">
@@ -77,7 +82,6 @@ export function ReportsTab({ business }: ReportsTabProps) {
         <MonthNavigator 
           value={dateRange}
           onChange={setDateRange}
-          onApply={loadReportData}
           disabled={loading}
         />
         
