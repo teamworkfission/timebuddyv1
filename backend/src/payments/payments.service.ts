@@ -502,19 +502,7 @@ export class PaymentsService {
       // Single source of truth: Always use payment records with status = 'paid'
       const paymentRecords = await this.getPaymentRecords(businessId, startDate, endDate);
       
-      const employeeHoursData: Record<string, number> = {};
-      const employeePaymentCounts: Record<string, number> = {};
       let totalHours = 0;
-
-      // Process only paid payment records
-      paymentRecords
-        .filter(record => record.status === 'paid')
-        .forEach(record => {
-          const hours = Math.round(record.total_hours * 100) / 100;
-          employeeHoursData[record.employee_id] = (employeeHoursData[record.employee_id] || 0) + hours;
-          employeePaymentCounts[record.employee_id] = (employeePaymentCounts[record.employee_id] || 0) + 1;
-          totalHours += hours;
-        });
 
       // Get employee details
       const { data: employees, error } = await this.supabaseService.admin
@@ -536,34 +524,39 @@ export class PaymentsService {
         employeeMap.set(emp.employee_id, employeeName);
       });
 
-      // Get employee rates for pay calculation
-      const currentRates = await this.getCurrentEmployeeRates(businessId);
-      const rateMap = new Map();
-      currentRates.forEach(rate => {
-        rateMap.set(rate.employee_id, rate.hourly_rate);
-      });
+      // No need to get rates since we use actual payment record amounts
 
-      // Build employee stats from hours data
+      // Build employee stats from actual payment records (not theoretical calculations)
       const employeeStats = new Map();
       let totalPaid = 0;
 
-      Object.entries(employeeHoursData).forEach(([employeeId, hours]) => {
-        const employeeName = employeeMap.get(employeeId) || 'Unknown';
-        const hourlyRate = rateMap.get(employeeId) || 0;
-        const grossPay = hours * hourlyRate;
-        const netPay = grossPay; // Simplified for now
+      // Process paid payment records to get actual amounts
+      paymentRecords
+        .filter(record => record.status === 'paid')
+        .forEach(record => {
+          const employeeId = record.employee_id;
+          const employeeName = employeeMap.get(employeeId) || 'Unknown';
 
-        totalPaid += netPay;
+          if (!employeeStats.has(employeeId)) {
+            employeeStats.set(employeeId, {
+              employee_id: employeeId,
+              employee_name: employeeName,
+              total_hours: 0,
+              gross_pay: 0,
+              net_pay: 0,
+              payment_count: 0,
+            });
+          }
 
-        employeeStats.set(employeeId, {
-          employee_id: employeeId,
-          employee_name: employeeName,
-          total_hours: hours,
-          gross_pay: grossPay,
-          net_pay: netPay,
-          payment_count: employeePaymentCounts[employeeId] || 0,
+          const employee = employeeStats.get(employeeId);
+          employee.total_hours += record.total_hours || 0;
+          employee.gross_pay += record.gross_pay || 0;
+          employee.net_pay += record.net_pay || 0;
+          employee.payment_count += 1;
+          
+          totalPaid += record.net_pay || 0;
+          totalHours += record.total_hours || 0;
         });
-      });
 
       // Create timeline data from paid payment records
       const timelineMap = new Map();
