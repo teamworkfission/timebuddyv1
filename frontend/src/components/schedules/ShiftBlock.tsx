@@ -1,4 +1,4 @@
-import { Shift, ShiftTemplate, formatTime } from '../../lib/schedules-api';
+import { Shift, ShiftTemplate, formatShiftTime } from '../../lib/schedules-api';
 
 interface ShiftBlockProps {
   shift: Shift;
@@ -7,6 +7,7 @@ interface ShiftBlockProps {
 }
 
 export function ShiftBlock({ shift, template }: ShiftBlockProps) {
+  const shiftTime = formatShiftTime(shift);
 
   return (
     <div
@@ -20,7 +21,7 @@ export function ShiftBlock({ shift, template }: ShiftBlockProps) {
       
       {/* Time range */}
       <div className="text-[11px] opacity-90">
-        {formatTime(shift.start_time)} – {formatTime(shift.end_time)}
+        {shiftTime.start} – {shiftTime.end}
       </div>
     </div>
   );

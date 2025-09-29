@@ -77,10 +77,12 @@ export function WeeklyScheduleView({
 
   const handleShiftUpdate = (shiftId: string, shift: UpdateShiftDto) => {
     onShiftUpdate(shiftId, shift);
+    setSelectedCell(null); // Close modal after successful update
   };
 
   const handleShiftDelete = (shiftId: string) => {
     onShiftDelete(shiftId);
+    setSelectedCell(null); // Close modal after successful delete
   };
 
   if (employees.length === 0) {

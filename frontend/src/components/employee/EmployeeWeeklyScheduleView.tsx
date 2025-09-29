@@ -1,4 +1,4 @@
-import { Shift } from '../../lib/schedules-api';
+import { Shift, formatShiftTime } from '../../lib/schedules-api';
 
 interface Business {
   business_id: string;
@@ -65,9 +65,6 @@ export function EmployeeWeeklyScheduleView({
     return EMPLOYER_COLORS[index % EMPLOYER_COLORS.length];
   };
 
-  const formatTime = (label: string): string => {
-    return label || ''; // Already in AM/PM format from backend
-  };
 
   const calculateWeekTotal = (): number => {
     return filteredShifts.reduce((total, shift) => total + (shift.duration_hours || 0), 0);
@@ -139,7 +136,7 @@ export function EmployeeWeeklyScheduleView({
                             className={`${businessColor} text-white p-2 rounded text-xs`}
                           >
                             <div className="font-medium">
-                              {formatTime(shift.start_label)} - {formatTime(shift.end_label)}
+                              {formatShiftTime(shift).start} - {formatShiftTime(shift).end}
                             </div>
                             {!selectedBusinessId && business && (
                               <div className="text-xs opacity-90 mt-1">
@@ -197,7 +194,7 @@ export function EmployeeWeeklyScheduleView({
                         >
                           <div className="flex items-center justify-between">
                             <div className="font-medium">
-                              {formatTime(shift.start_label)} - {formatTime(shift.end_label)}
+                              {formatShiftTime(shift).start} - {formatShiftTime(shift).end}
                             </div>
                             <div className="text-sm opacity-90">
                               {shift.duration_hours}h

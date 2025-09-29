@@ -1,6 +1,6 @@
 import React from 'react';
 import { Clock, User, Calendar } from 'lucide-react';
-import { WeeklySchedule, ShiftTemplate, formatTime } from '../../lib/schedules-api';
+import { WeeklySchedule, ShiftTemplate, formatTime, formatShiftTime } from '../../lib/schedules-api';
 
 interface PostedScheduleViewProps {
   weeklySchedule: WeeklySchedule;
@@ -165,7 +165,7 @@ export function PostedScheduleView({ weeklySchedule, shiftTemplates }: PostedSch
                             <div className="flex items-center space-x-1 text-sm text-gray-600 mb-1">
                               <Clock className="h-3 w-3" />
                               <span>
-                                {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
+                                {formatShiftTime(shift).start} - {formatShiftTime(shift).end}
                               </span>
                             </div>
                             <div className="text-xs text-gray-500">

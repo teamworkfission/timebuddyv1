@@ -323,6 +323,10 @@ export class SchedulesService {
     }
   }
 
+  /**
+   * Update shift with dual storage support (AM/PM labels + legacy TIME format)
+   * Supports both legacy format and new AM/PM format for seamless transition
+   */
   async updateShift(shiftId: string, updateDto: UpdateShiftDto): Promise<Shift> {
     const supabase = this.supabaseService.admin;
     
@@ -342,21 +346,83 @@ export class SchedulesService {
       await this.validateShiftNotInPast(shiftData.schedule_id, updateDto.day_of_week);
     }
     
-    // Normalize time formats if provided
-    const normalizedDto = { ...updateDto };
-    if (updateDto.start_time) {
-      normalizedDto.start_time = this.normalizeTimeFormat(updateDto.start_time);
-    }
-    if (updateDto.end_time) {
-      normalizedDto.end_time = this.normalizeTimeFormat(updateDto.end_time);
+    // Prepare update data with dual format support
+    const updateData: any = {
+      updated_at: new Date().toISOString(),
+    };
+
+    // Copy non-time fields directly
+    if (updateDto.day_of_week !== undefined) updateData.day_of_week = updateDto.day_of_week;
+    if (updateDto.shift_template_id !== undefined) updateData.shift_template_id = updateDto.shift_template_id;
+    if (updateDto.notes !== undefined) updateData.notes = updateDto.notes;
+
+    // Handle time updates with dual format conversion
+    const hasNewFormat = (updateDto as any).start_label || (updateDto as any).end_label;
+    const hasLegacyFormat = updateDto.start_time || updateDto.end_time;
+
+    if (hasNewFormat || hasLegacyFormat) {
+      let startLabel: string;
+      let endLabel: string;
+      let startMin: number;
+      let endMin: number;
+      let startTime: string;
+      let endTime: string;
+
+      try {
+        if (hasNewFormat) {
+          // New AM/PM format - canonicalize and validate
+          if ((updateDto as any).start_label) {
+            startLabel = canonicalizeTimeInput((updateDto as any).start_label);
+            startMin = parse12hToMinutes(startLabel);
+            startTime = minutesToLegacyTime(startMin);
+            
+            updateData.start_label = startLabel;
+            updateData.start_min = startMin;
+            updateData.start_time = startTime;
+          }
+          
+          if ((updateDto as any).end_label) {
+            endLabel = canonicalizeTimeInput((updateDto as any).end_label);
+            endMin = parse12hToMinutes(endLabel);
+            endTime = minutesToLegacyTime(endMin);
+            
+            updateData.end_label = endLabel;
+            updateData.end_min = endMin;
+            updateData.end_time = endTime;
+          }
+
+        } else if (hasLegacyFormat) {
+          // Legacy TIME format - normalize and convert
+          if (updateDto.start_time) {
+            startTime = this.normalizeTimeFormat(updateDto.start_time);
+            startLabel = this.convertLegacyTimeToAmPm(startTime);
+            startMin = parse12hToMinutes(startLabel);
+            
+            updateData.start_time = startTime;
+            updateData.start_label = startLabel;
+            updateData.start_min = startMin;
+          }
+          
+          if (updateDto.end_time) {
+            endTime = this.normalizeTimeFormat(updateDto.end_time);
+            endLabel = this.convertLegacyTimeToAmPm(endTime);
+            endMin = parse12hToMinutes(endLabel);
+            
+            updateData.end_time = endTime;
+            updateData.end_label = endLabel;
+            updateData.end_min = endMin;
+          }
+        }
+
+      } catch (parseError) {
+        const errorMessage = parseError instanceof Error ? parseError.message : 'Unknown parsing error';
+        throw new BadRequestException(`Invalid time format: ${errorMessage}`);
+      }
     }
     
     const { data, error } = await supabase
       .from('shifts')
-      .update({
-        ...normalizedDto,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq('id', shiftId)
       .select()
       .single();
