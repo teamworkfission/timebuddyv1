@@ -12,6 +12,7 @@ import {
   getBusinessEmployees
 } from '../../lib/payments-api';
 import { formatHours, getEmployerConfirmedHoursList, ConfirmedHoursRecord } from '../../lib/confirmed-hours-api';
+import { getCurrentWeekStart } from '../../lib/date-utils';
 import { PaymentWeekNavigator } from './PaymentWeekNavigator';
 import { PendingHoursApproval } from './PendingHoursApproval';
 import { EnhancedPaymentTable } from './EnhancedPaymentTable';
@@ -23,13 +24,6 @@ interface PaymentsTabProps {
 }
 
 export function PaymentsTab({ business }: PaymentsTabProps) {
-  // Helper function to get current week start (Sunday)
-  const getCurrentWeekStart = (): string => {
-    const today = new Date();
-    const sunday = new Date(today);
-    sunday.setDate(today.getDate() - today.getDay());
-    return sunday.toISOString().split('T')[0];
-  };
 
   // Helper function to convert week start to date range
   const weekToDateRange = (weekStart: string) => {
@@ -42,7 +36,7 @@ export function PaymentsTab({ business }: PaymentsTabProps) {
     };
   };
 
-  const [currentWeek, setCurrentWeek] = useState(getCurrentWeekStart());
+  const [currentWeek, setCurrentWeek] = useState(() => getCurrentWeekStart());
   const [employees, setEmployees] = useState<EmployeeWithHours[]>([]);
   const [pendingHours, setPendingHours] = useState<ConfirmedHoursRecord[]>([]);
   const [loading, setLoading] = useState(false);

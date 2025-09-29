@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ChevronDown, ChevronUp, Clock, DollarSign, TrendingUp, TrendingDown, Calendar, CreditCard } from 'lucide-react';
 import { EmployeeBreakdown, PaymentRecordBreakdown, formatCurrency } from '../../lib/payments-api';
 import { formatHours } from '../../lib/confirmed-hours-api';
+import { formatWeekRange } from '../../lib/date-utils';
 
 interface CollapsibleEmployeeCardProps {
   employee: EmployeeBreakdown;
@@ -175,7 +176,7 @@ function PaymentRecordItem({ record }: PaymentRecordItemProps) {
         <div className="flex items-center space-x-1">
           <Calendar className="w-4 h-4 text-gray-600" />
           <span className="text-sm font-medium text-gray-900">
-            {new Date(record.period_start).toLocaleDateString()} - {new Date(record.period_end).toLocaleDateString()}
+            Week of {formatWeekRange(record.period_start)}
           </span>
         </div>
         <div className={`px-2 py-1 rounded-full text-xs font-medium ${

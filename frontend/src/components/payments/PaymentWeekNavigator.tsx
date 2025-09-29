@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Business } from '../../lib/business-api';
+import { getCurrentWeekStart, getNextWeek, getPreviousWeek, formatWeekRange } from '../../lib/date-utils';
 
 interface PaymentWeekNavigatorProps {
   currentWeek: string;
@@ -9,50 +10,13 @@ interface PaymentWeekNavigatorProps {
   business?: Business;
 }
 
-// Utility functions for week navigation
-const getWeekStart = (date: Date): string => {
-  const sunday = new Date(date);
-  sunday.setDate(date.getDate() - date.getDay());
-  return sunday.toISOString().split('T')[0];
-};
-
-const getCurrentWeek = (): string => {
-  return getWeekStart(new Date());
-};
-
-const getPreviousWeek = (weekStart: string): string => {
-  const date = new Date(weekStart + 'T00:00:00');
-  date.setDate(date.getDate() - 7);
-  return getWeekStart(date);
-};
-
-const getNextWeek = (weekStart: string): string => {
-  const date = new Date(weekStart + 'T00:00:00');
-  date.setDate(date.getDate() + 7);
-  return getWeekStart(date);
-};
-
-const formatWeekRange = (weekStart: string): string => {
-  const start = new Date(weekStart + 'T00:00:00');
-  const end = new Date(start);
-  end.setDate(start.getDate() + 6);
-  
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  };
-  
-  if (start.getMonth() === end.getMonth()) {
-    return `${formatDate(start)} - ${formatDate(end)}`;
-  } else {
-    return `${formatDate(start)} - ${formatDate(end)}`;
-  }
-};
+// All utility functions now imported from date-utils.ts for consistency
 
 export function PaymentWeekNavigator({ currentWeek, onWeekChange, business }: PaymentWeekNavigatorProps) {
   const [isCurrentWeek, setIsCurrentWeek] = useState(false);
 
   useEffect(() => {
-    setIsCurrentWeek(currentWeek === getCurrentWeek());
+    setIsCurrentWeek(currentWeek === getCurrentWeekStart());
   }, [currentWeek]);
 
   const handlePreviousWeek = () => {
@@ -64,7 +28,7 @@ export function PaymentWeekNavigator({ currentWeek, onWeekChange, business }: Pa
   };
 
   const handleThisWeek = () => {
-    onWeekChange(getCurrentWeek());
+    onWeekChange(getCurrentWeekStart());
   };
 
   return (

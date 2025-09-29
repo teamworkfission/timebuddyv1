@@ -40,11 +40,19 @@ export function ReportsTab({ business }: ReportsTabProps) {
       setLoading(true);
       setError(null);
       
+      console.log('Loading report data for period:', dateRange.start, 'to', dateRange.end);
+      
+      // Clear existing data to prevent showing stale results
+      setReportData(null);
+      setBreakdownData(null);
+      
       // Load both regular report data and detailed breakdown data in parallel
       const [reportResult, breakdownResult] = await Promise.all([
         getPaymentReports(business.business_id, dateRange.start, dateRange.end),
         getEmployeeMonthlyBreakdown(business.business_id, dateRange.start, dateRange.end)
       ]);
+      
+      console.log('Report data loaded:', { reportResult, breakdownResult });
       
       setReportData(reportResult);
       setBreakdownData(breakdownResult);
@@ -113,7 +121,7 @@ export function ReportsTab({ business }: ReportsTabProps) {
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-blue-600">
-                    ${reportData.total_paid.toFixed(2)}
+                    ${loading ? '...' : reportData.total_paid.toFixed(2)}
                   </div>
                   <div className="text-sm text-blue-700">Total Paid</div>
                 </div>
@@ -127,7 +135,7 @@ export function ReportsTab({ business }: ReportsTabProps) {
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-green-600">
-                    {reportData.employee_count}
+                    {loading ? '...' : reportData.employee_count}
                   </div>
                   <div className="text-sm text-green-700">Employees Paid</div>
                 </div>
@@ -141,7 +149,7 @@ export function ReportsTab({ business }: ReportsTabProps) {
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-purple-600">
-                    {formatHours(reportData.total_hours)}
+                    {loading ? '...' : formatHours(reportData.total_hours)}
                   </div>
                   <div className="text-sm text-purple-700">Total Hours</div>
                 </div>
