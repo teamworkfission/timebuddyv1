@@ -430,12 +430,17 @@ export class PaymentsService {
         .eq('business_id', businessId)
         .order('created_at', { ascending: false });
 
+      // FIXED: Use overlapping range logic instead of strict containment
+      // Include payment periods that have ANY overlap with the requested date range
+      // This ensures cross-month weeks appear in reports for both months they span
       if (startDate) {
-        query = query.gte('period_start', startDate);
+        // Payment period must end after (or on) the report start date
+        query = query.gte('period_end', startDate);
       }
       
       if (endDate) {
-        query = query.lte('period_end', endDate);
+        // Payment period must start before (or on) the report end date  
+        query = query.lte('period_start', endDate);
       }
 
       if (employeeId) {
@@ -530,13 +535,24 @@ export class PaymentsService {
       const employeeStats = new Map();
       let totalPaid = 0;
 
-      // Process paid payment records to get actual amounts
-      paymentRecords
-        .filter(record => record.status === 'paid')
-        .forEach(record => {
-          const employeeId = record.employee_id;
-          const employeeName = employeeMap.get(employeeId) || 'Unknown';
+      // Process paid payment records with MONTHLY ALLOCATION
+      for (const record of paymentRecords.filter(r => r.status === 'paid')) {
+        const employeeId = record.employee_id;
+        const employeeName = employeeMap.get(employeeId) || 'Unknown';
 
+        // Calculate monthly allocation for this payment period
+        const monthlyAllocation = await this.calculateMonthlyAllocation(
+          businessId, 
+          employeeId, 
+          record.period_start, 
+          record.period_end, 
+          record.hourly_rate,
+          startDate, 
+          endDate
+        );
+
+        // Only include if there are allocated hours/pay for this period
+        if (monthlyAllocation.hours > 0) {
           if (!employeeStats.has(employeeId)) {
             employeeStats.set(employeeId, {
               employee_id: employeeId,
@@ -549,23 +565,35 @@ export class PaymentsService {
           }
 
           const employee = employeeStats.get(employeeId);
-          employee.total_hours += record.total_hours || 0;
-          employee.gross_pay += record.gross_pay || 0;
-          employee.net_pay += record.net_pay || 0;
+          employee.total_hours += monthlyAllocation.hours;
+          employee.gross_pay += monthlyAllocation.amount;
+          employee.net_pay += monthlyAllocation.amount;
           employee.payment_count += 1;
           
-          totalPaid += record.net_pay || 0;
-          totalHours += record.total_hours || 0;
-        });
+          totalPaid += monthlyAllocation.amount;
+          totalHours += monthlyAllocation.hours;
+        }
+      }
 
-      // Create timeline data from paid payment records
+      // Create timeline data from paid payment records with MONTHLY ALLOCATION
       const timelineMap = new Map();
-      paymentRecords
-        .filter(record => record.status === 'paid' && record.paid_at)
-        .forEach(record => {
+      for (const record of paymentRecords.filter(r => r.status === 'paid' && r.paid_at)) {
+        // Calculate allocation for this payment
+        const monthlyAllocation = await this.calculateMonthlyAllocation(
+          businessId, 
+          record.employee_id, 
+          record.period_start, 
+          record.period_end, 
+          record.hourly_rate,
+          startDate, 
+          endDate
+        );
+        
+        if (monthlyAllocation.amount > 0) {
           const date = record.paid_at!.split('T')[0]; // Extract date part
-          timelineMap.set(date, (timelineMap.get(date) || 0) + record.net_pay);
-        });
+          timelineMap.set(date, (timelineMap.get(date) || 0) + monthlyAllocation.amount);
+        }
+      }
 
       const timelineData = Array.from(timelineMap.entries()).map(([date, amount]) => ({
         date,
@@ -605,6 +633,7 @@ export class PaymentsService {
   ) {
     try {
       // Get all payment records for the business within the date range
+      // FIXED: Use overlapping range logic to include cross-month payments
       const { data: paymentRecords, error } = await this.supabaseService.admin
         .from('payment_records')
         .select(`
@@ -615,8 +644,8 @@ export class PaymentsService {
           )
         `)
         .eq('business_id', businessId)
-        .gte('period_start', startDate)
-        .lte('period_end', endDate)
+        .gte('period_end', startDate)
+        .lte('period_start', endDate)
         .order('period_start', { ascending: true });
 
       if (error) {
@@ -649,39 +678,53 @@ export class PaymentsService {
 
         const employee = employeeBreakdown.get(employeeId);
         
-        // Aggregate totals
-        employee.total_hours += record.total_hours || 0;
-        employee.gross_pay += record.gross_pay || 0;
-        employee.total_advances += record.advances || 0;
-        employee.total_bonuses += record.bonuses || 0;
-        employee.total_deductions += record.deductions || 0;
-        employee.net_pay += record.net_pay || 0;
+        // Calculate monthly allocation for this payment period
+        const monthlyAllocation = await this.calculateMonthlyAllocation(
+          businessId, 
+          record.employee_id, 
+          record.period_start, 
+          record.period_end, 
+          record.hourly_rate,
+          startDate, 
+          endDate
+        );
+        
+        // Use allocated amounts instead of full payment amounts
+        employee.total_hours += monthlyAllocation.hours;
+        employee.gross_pay += monthlyAllocation.amount;
+        employee.total_advances += (record.advances || 0) * (monthlyAllocation.hours / (record.total_hours || 1));
+        employee.total_bonuses += (record.bonuses || 0) * (monthlyAllocation.hours / (record.total_hours || 1));
+        employee.total_deductions += (record.deductions || 0) * (monthlyAllocation.hours / (record.total_hours || 1));
+        employee.net_pay += monthlyAllocation.amount;
         
         // Only count paid records towards final amount paid
         if (record.status === 'paid') {
-          employee.final_amount_paid += record.net_pay || 0;
-          totalPaid += record.net_pay || 0;
+          employee.final_amount_paid += monthlyAllocation.amount;
+          totalPaid += monthlyAllocation.amount;
         }
+        
+        totalHours += monthlyAllocation.hours;
 
-        totalHours += record.total_hours || 0;
-
-        // Add payment record details
-        employee.payment_records.push({
-          id: record.id,
-          period_start: record.period_start,
-          period_end: record.period_end,
-          total_hours: record.total_hours || 0,
-          hourly_rate: record.hourly_rate || 0,
-          gross_pay: record.gross_pay || 0,
-          advances: record.advances || 0,
-          bonuses: record.bonuses || 0,
-          deductions: record.deductions || 0,
-          net_pay: record.net_pay || 0,
-          status: record.status,
-          payment_method: record.payment_method,
-          notes: record.notes,
-          paid_at: record.paid_at
-        });
+        // Only add payment record if there are allocated hours for this period
+        if (monthlyAllocation.hours > 0) {
+          employee.payment_records.push({
+            id: record.id,
+            period_start: record.period_start,
+            period_end: record.period_end,
+            total_hours: monthlyAllocation.hours, // Show allocated hours only
+            hourly_rate: record.hourly_rate || 0,
+            gross_pay: monthlyAllocation.amount, // Show allocated amount only
+            advances: (record.advances || 0) * (monthlyAllocation.hours / (record.total_hours || 1)),
+            bonuses: (record.bonuses || 0) * (monthlyAllocation.hours / (record.total_hours || 1)),
+            deductions: (record.deductions || 0) * (monthlyAllocation.hours / (record.total_hours || 1)),
+            net_pay: monthlyAllocation.amount, // Show allocated amount only
+            status: record.status,
+            payment_method: record.payment_method,
+            notes: record.notes,
+            paid_at: record.paid_at,
+            is_partial_allocation: monthlyAllocation.hours < (record.total_hours || 0)
+          });
+        }
       }
 
       // Apply consistent precision to all values
@@ -711,4 +754,102 @@ export class PaymentsService {
     }
   }
 
+  /**
+   * Calculate the portion of a cross-month payment that belongs to a specific reporting period
+   * Uses daily hour breakdown to accurately allocate payments across months
+   */
+  private async calculateMonthlyAllocation(
+    businessId: string,
+    employeeId: string,
+    paymentPeriodStart: string,
+    paymentPeriodEnd: string,
+    hourlyRate: number,
+    reportStart: string,
+    reportEnd: string
+  ): Promise<{ hours: number; amount: number }> {
+    try {
+      // Get the daily hour breakdown for this payment period
+      const { data: confirmedHours, error } = await this.supabaseService.admin
+        .from('employee_confirmed_hours')
+        .select('week_start_date, sunday_hours, monday_hours, tuesday_hours, wednesday_hours, thursday_hours, friday_hours, saturday_hours')
+        .eq('business_id', businessId)
+        .eq('employee_id', employeeId)
+        .eq('week_start_date', paymentPeriodStart)
+        .eq('status', 'approved')
+        .single();
+
+      if (error || !confirmedHours) {
+        // Fallback: If no daily breakdown, assume uniform distribution
+        console.warn(`No daily hour breakdown found for employee ${employeeId} for week ${paymentPeriodStart}, using uniform distribution`);
+        const paymentStartDate = new Date(paymentPeriodStart + 'T00:00:00');
+        const paymentEndDate = new Date(paymentPeriodEnd + 'T00:00:00');
+        const reportStartDate = new Date(reportStart + 'T00:00:00');
+        const reportEndDate = new Date(reportEnd + 'T00:00:00');
+        
+        const overlapStart = new Date(Math.max(paymentStartDate.getTime(), reportStartDate.getTime()));
+        const overlapEnd = new Date(Math.min(paymentEndDate.getTime(), reportEndDate.getTime()));
+        
+        if (overlapStart <= overlapEnd) {
+          const overlapDays = Math.ceil((overlapEnd.getTime() - overlapStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+          const totalPaymentDays = Math.ceil((paymentEndDate.getTime() - paymentStartDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+          
+          // Get total hours from payment record (this is a simplified fallback)
+          const { data: paymentRecord } = await this.supabaseService.admin
+            .from('payment_records')
+            .select('total_hours')
+            .eq('business_id', businessId)
+            .eq('employee_id', employeeId)
+            .eq('period_start', paymentPeriodStart)
+            .eq('period_end', paymentPeriodEnd)
+            .single();
+            
+          const totalHours = paymentRecord?.total_hours || 0;
+          const allocatedHours = Math.round((totalHours * (overlapDays / totalPaymentDays)) * 100) / 100;
+          const allocatedAmount = Math.round((allocatedHours * hourlyRate) * 100) / 100;
+          
+          return { hours: allocatedHours, amount: allocatedAmount };
+        }
+        
+        return { hours: 0, amount: 0 };
+      }
+
+      // Calculate which daily hours fall within the reporting period
+      const weekStartDate = new Date(confirmedHours.week_start_date + 'T00:00:00');
+      const reportStartDate = new Date(reportStart + 'T00:00:00');
+      const reportEndDate = new Date(reportEnd + 'T00:00:00');
+      
+      let allocatedHours = 0;
+      
+      // Check each day of the week
+      const dailyHours = [
+        confirmedHours.sunday_hours || 0,    // Day 0: Sunday
+        confirmedHours.monday_hours || 0,    // Day 1: Monday  
+        confirmedHours.tuesday_hours || 0,   // Day 2: Tuesday
+        confirmedHours.wednesday_hours || 0, // Day 3: Wednesday
+        confirmedHours.thursday_hours || 0,  // Day 4: Thursday
+        confirmedHours.friday_hours || 0,    // Day 5: Friday
+        confirmedHours.saturday_hours || 0   // Day 6: Saturday
+      ];
+      
+      for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+        const currentDate = new Date(weekStartDate);
+        currentDate.setDate(weekStartDate.getDate() + dayOffset);
+        
+        // Check if this day falls within the reporting period
+        if (currentDate >= reportStartDate && currentDate <= reportEndDate) {
+          allocatedHours += dailyHours[dayOffset];
+        }
+      }
+      
+      const allocatedAmount = Math.round((allocatedHours * hourlyRate) * 100) / 100;
+      
+      return { 
+        hours: Math.round(allocatedHours * 100) / 100, 
+        amount: allocatedAmount 
+      };
+    } catch (error) {
+      console.error(`Error calculating monthly allocation: ${error.message}`);
+      return { hours: 0, amount: 0 };
+    }
+  }
 }
