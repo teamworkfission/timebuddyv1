@@ -506,6 +506,27 @@ export function BusinessForm({ onSuccess, onCancel, initialData, mode = 'create'
           </div>
         )}
 
+        {/* Admin Approval Notice - Only for new businesses */}
+        {mode === 'create' && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <div className="flex items-start space-x-3">
+              <div className="flex-shrink-0">
+                <svg className="w-5 h-5 text-amber-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h4 className="text-sm font-semibold text-amber-800 mb-1">
+                  🔍 Business Verification Process
+                </h4>
+                <p className="text-sm text-amber-700">
+                  Your business will be submitted for admin approval. Once approved, you'll be able to start hiring employees and managing schedules. You'll receive an email notification when the review is complete.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Delete Section - Only show for existing businesses */}
         {mode === 'edit' && initialData && (
           <div className="pt-6 border-t border-gray-200">
@@ -560,8 +581,8 @@ export function BusinessForm({ onSuccess, onCancel, initialData, mode = 'create'
             size="md"
           >
             {loading 
-              ? `${mode === 'edit' ? 'Updating' : 'Creating'} Business...` 
-              : `${mode === 'edit' ? 'Update' : 'Create'} Business`
+              ? `${mode === 'edit' ? 'Updating' : 'Submitting for Approval'}...` 
+              : `${mode === 'edit' ? 'Update Business' : 'Submit for Approval'}`
             }
           </Button>
         </div>
