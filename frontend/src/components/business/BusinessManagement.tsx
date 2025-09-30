@@ -266,46 +266,169 @@ export function BusinessManagement({ onBack }: BusinessManagementProps) {
               </div>
             </div>
 
-            {/* Business Grid - Mobile First Design */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-              {businesses.map((business) => (
-                <BusinessTile 
-                  key={business.business_id}
-                  business={business}
-                  onEdit={handleEditBusiness}
-                  onAddEmployee={handleAddEmployee}
-                  onViewEmployees={handleViewEmployees}
-                  onPaymentsReports={handlePaymentsReports}
-                />
-              ))}
-              
-              {/* Add Business Button Card - Mobile Optimized */}
-              <div 
-                onClick={handleAddBusiness}
-                className="bg-white rounded-xl shadow-sm border-2 border-dashed border-gray-300 hover:border-blue-400 hover:shadow-md active:scale-95 transition-all duration-200 cursor-pointer flex items-center justify-center min-h-[280px] sm:min-h-[320px] group touch-manipulation"
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    handleAddBusiness();
-                  }
-                }}
-                aria-label="Add new business"
-              >
-                <div className="text-center p-4 sm:p-6">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:bg-blue-200 transition-colors">
-                    <span className="text-lg sm:text-2xl text-blue-600">➕</span>
-                  </div>
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
-                    Add Business
-                  </h3>
-                  <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-                    Add another business location
-                  </p>
-                </div>
-              </div>
-            </div>
+            {/* Approved Businesses Section */}
+            {(() => {
+              const approvedBusinesses = businesses.filter(b => b.verification_status === 'approved');
+              const pendingBusinesses = businesses.filter(b => !b.verification_status || b.verification_status === 'pending');
+              const rejectedBusinesses = businesses.filter(b => b.verification_status === 'rejected');
+
+              return (
+                <>
+                  {/* Approved Businesses Grid */}
+                  {approvedBusinesses.length > 0 && (
+                    <>
+                      <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
+                          <span className="w-3 h-3 bg-green-500 rounded-full"></span>
+                          <span>Active Businesses</span>
+                          <span className="text-sm font-normal text-gray-500">({approvedBusinesses.length})</span>
+                        </h2>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 mb-8">
+                        {approvedBusinesses.map((business) => (
+                          <BusinessTile 
+                            key={business.business_id}
+                            business={business}
+                            onEdit={handleEditBusiness}
+                            onAddEmployee={handleAddEmployee}
+                            onViewEmployees={handleViewEmployees}
+                            onPaymentsReports={handlePaymentsReports}
+                          />
+                        ))}
+                        
+                        {/* Add Business Button Card - Mobile Optimized */}
+                        <div 
+                          onClick={handleAddBusiness}
+                          className="bg-white rounded-xl shadow-sm border-2 border-dashed border-gray-300 hover:border-blue-400 hover:shadow-md active:scale-95 transition-all duration-200 cursor-pointer flex items-center justify-center min-h-[280px] sm:min-h-[320px] group touch-manipulation"
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              handleAddBusiness();
+                            }
+                          }}
+                          aria-label="Add new business"
+                        >
+                          <div className="text-center p-4 sm:p-6">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:bg-blue-200 transition-colors">
+                              <span className="text-lg sm:text-2xl text-blue-600">➕</span>
+                            </div>
+                            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+                              Add Business
+                            </h3>
+                            <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                              Add another business location
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Pending Businesses Section */}
+                  {pendingBusinesses.length > 0 && (
+                    <>
+                      <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
+                          <span className="w-3 h-3 bg-amber-500 rounded-full"></span>
+                          <span>Pending Approval</span>
+                          <span className="text-sm font-normal text-gray-500">({pendingBusinesses.length})</span>
+                        </h2>
+                      </div>
+                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                        <div className="flex items-center space-x-2">
+                          <svg className="w-5 h-5 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                          </svg>
+                          <p className="text-sm text-amber-800">
+                            <strong>These businesses are awaiting admin approval.</strong> Once approved, you'll be able to manage employees and access all business features.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 mb-8">
+                        {pendingBusinesses.map((business) => (
+                          <BusinessTile 
+                            key={business.business_id}
+                            business={business}
+                            onEdit={handleEditBusiness}
+                            onAddEmployee={handleAddEmployee}
+                            onViewEmployees={handleViewEmployees}
+                            onPaymentsReports={handlePaymentsReports}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
+
+                  {/* Rejected Businesses Section */}
+                  {rejectedBusinesses.length > 0 && (
+                    <>
+                      <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
+                          <span className="w-3 h-3 bg-red-500 rounded-full"></span>
+                          <span>Rejected Applications</span>
+                          <span className="text-sm font-normal text-gray-500">({rejectedBusinesses.length})</span>
+                        </h2>
+                      </div>
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                        <div className="flex items-center space-x-2">
+                          <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                          </svg>
+                          <p className="text-sm text-red-800">
+                            <strong>These business applications have been rejected.</strong> Please contact support for more information about reapplying.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+                        {rejectedBusinesses.map((business) => (
+                          <BusinessTile 
+                            key={business.business_id}
+                            business={business}
+                            onEdit={handleEditBusiness}
+                            onAddEmployee={handleAddEmployee}
+                            onViewEmployees={handleViewEmployees}
+                            onPaymentsReports={handlePaymentsReports}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
+
+                  {/* Show Add Business Card only if no approved businesses or as part of approved section */}
+                  {approvedBusinesses.length === 0 && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+                      <div 
+                        onClick={handleAddBusiness}
+                        className="bg-white rounded-xl shadow-sm border-2 border-dashed border-gray-300 hover:border-blue-400 hover:shadow-md active:scale-95 transition-all duration-200 cursor-pointer flex items-center justify-center min-h-[280px] sm:min-h-[320px] group touch-manipulation"
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            handleAddBusiness();
+                          }
+                        }}
+                        aria-label="Add new business"
+                      >
+                        <div className="text-center p-4 sm:p-6">
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:bg-blue-200 transition-colors">
+                            <span className="text-lg sm:text-2xl text-blue-600">➕</span>
+                          </div>
+                          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+                            Add Business
+                          </h3>
+                          <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                            Add another business location
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </>
         )}
       </div>
