@@ -501,7 +501,8 @@ export function BusinessForm({ onSuccess, onCancel, initialData, mode = 'create'
             
             {/* Compact Requirements */}
             <div className="mt-3 text-xs text-blue-600">
-              <p>📋 PDF, JPG, PNG, DOC, DOCX • Max 5MB • License/Registration required</p>
+              <p>📋 PDF, JPG, PNG, DOC, DOCX • Max 5MB</p>
+              <p className="mt-1">✅ Accepted: Business License, Registration Certificate, Tax ID, Articles of Incorporation, Operating Agreement, or other official business documents</p>
             </div>
           </div>
         )}
@@ -520,7 +521,7 @@ export function BusinessForm({ onSuccess, onCancel, initialData, mode = 'create'
                   🔍 Business Verification Process
                 </h4>
                 <p className="text-sm text-amber-700">
-                  Your business will be submitted for admin approval. Once approved, you'll be able to start hiring employees and managing schedules. You'll receive an email notification when the review is complete.
+                  Your business will be submitted for admin approval. Once approved, you'll be able to start hiring employees and managing schedules.
                 </p>
               </div>
             </div>
