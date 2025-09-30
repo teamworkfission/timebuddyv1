@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from './Button';
+import { SupportForm } from '../support/SupportForm';
 
 interface ProfileDropdownProps {
   email: string;
@@ -22,6 +23,7 @@ export function ProfileDropdown({
 }: ProfileDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [copiedGid, setCopiedGid] = useState(false);
+  const [showSupportForm, setShowSupportForm] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
@@ -202,6 +204,21 @@ export function ProfileDropdown({
               </div>
             )}
 
+            {/* Support Button */}
+            <div className="px-2 py-1">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsOpen(false);
+                  setShowSupportForm(true);
+                }}
+                className="w-full text-left justify-start px-3 py-2 text-sm hover:bg-gray-50"
+              >
+                <span className="mr-2">❓</span>
+                Support
+              </Button>
+            </div>
+
             {/* Logout Button */}
             <div className="px-2 py-1">
               <Button
@@ -219,6 +236,13 @@ export function ProfileDropdown({
           </div>
         </div>
       )}
+
+      {/* Support Form Modal */}
+      <SupportForm 
+        isOpen={showSupportForm}
+        onClose={() => setShowSupportForm(false)}
+        userEmail={email}
+      />
     </div>
   );
 }

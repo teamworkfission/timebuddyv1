@@ -97,4 +97,26 @@ export class AdminController {
       req.user.email
     );
   }
+
+  @Get('support/tickets')
+  @UseGuards(AdminGuard)
+  async getSupportTickets() {
+    return this.adminService.getSupportTickets();
+  }
+
+  @Post('support/tickets/:id/update-status')
+  @UseGuards(AdminGuard)
+  @HttpCode(HttpStatus.OK)
+  async updateTicketStatus(
+    @Param('id') ticketId: string,
+    @Body() body: { status: string; admin_notes?: string },
+    @Request() req: any,
+  ) {
+    return this.adminService.updateTicketStatus(
+      ticketId, 
+      body.status, 
+      body.admin_notes,
+      req.user.email
+    );
+  }
 }

@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
 
 export interface AdminBusiness {
   business_id: string;
@@ -149,6 +149,68 @@ export async function rejectBusiness(businessId: string, notes?: string): Promis
 
 export function getGoogleMapsUrl(address: string): string {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+}
+
+// Support Ticket Interfaces
+export interface SupportTicket {
+  id: string;
+  user_id: string;
+  user_email: string;
+  user_role: 'employee' | 'employer';
+  issue_type: string;
+  subject: string;
+  description: string;
+  screenshot_url?: string;
+  status: 'open' | 'in_progress' | 'resolved' | 'closed';
+  priority: 'low' | 'normal' | 'high' | 'urgent';
+  created_at: string;
+  updated_at?: string;
+  resolved_at?: string;
+  admin_notes?: string;
+  resolved_by?: string;
+}
+
+export interface TicketStats {
+  total: number;
+  open: number;
+  in_progress: number;
+  resolved: number;
+  closed: number;
+}
+
+// Support Ticket API Functions
+export async function getSupportTickets(): Promise<SupportTicket[]> {
+  const headers = await getAdminHeaders();
+  
+  const response = await fetch(`${API_BASE_URL}/admin/support/tickets`, {
+    headers,
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch support tickets');
+  }
+
+  return response.json();
+}
+
+export async function updateTicketStatus(
+  ticketId: string, 
+  status: string, 
+  adminNotes?: string
+): Promise<SupportTicket> {
+  const headers = await getAdminHeaders();
+  
+  const response = await fetch(`${API_BASE_URL}/admin/support/tickets/${ticketId}/update-status`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ status, admin_notes: adminNotes }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to update ticket status');
+  }
+
+  return response.json();
 }
 
 export function getDocumentUrl(documentUrl?: string): string | null {

@@ -11,6 +11,7 @@ import { JoinRequestsModule } from './join-requests/join-requests.module';
 import { SchedulesModule } from './schedules/schedules.module';
 import { PaymentsModule } from './payments/payments.module';
 import { AdminModule } from './admin/admin.module';
+import { SupportModule } from './support/support.module';
 import { validateEnv } from './config/env.validation';
 
 @Module({
@@ -35,6 +36,7 @@ import { validateEnv } from './config/env.validation';
     SchedulesModule,
     PaymentsModule,
     AdminModule,
+    SupportModule,
   ],
 })
 export class AppModule {}

@@ -179,4 +179,75 @@ export class AdminService {
       rejected: stats.rejected || 0,
     };
   }
+
+  async getSupportTickets() {
+    const { data, error } = await this.supabase.admin
+      .from('support_tickets')
+      .select(`
+        id,
+        user_id,
+        user_email,
+        user_role,
+        issue_type,
+        subject,
+        description,
+        screenshot_url,
+        status,
+        priority,
+        created_at,
+        updated_at,
+        resolved_at,
+        admin_notes,
+        resolved_by
+      `)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw new Error(`Failed to fetch support tickets: ${error.message}`);
+    }
+
+    return data || [];
+  }
+
+  async updateTicketStatus(ticketId: string, status: string, adminNotes?: string, adminEmail?: string) {
+    // Validate status
+    const validStatuses = ['open', 'in_progress', 'resolved', 'closed'];
+    if (!validStatuses.includes(status)) {
+      throw new Error(`Invalid status. Must be one of: ${validStatuses.join(', ')}`);
+    }
+
+    const updateData: any = {
+      status,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (adminNotes) {
+      updateData.admin_notes = adminNotes;
+    }
+
+    if (status === 'resolved' || status === 'closed') {
+      updateData.resolved_at = new Date().toISOString();
+      updateData.resolved_by = adminEmail || 'admin';
+    }
+
+    const { data, error } = await this.supabase.admin
+      .from('support_tickets')
+      .update(updateData)
+      .eq('id', ticketId)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to update support ticket: ${error.message}`);
+    }
+
+    return {
+      id: data.id,
+      status: data.status,
+      updated_at: data.updated_at,
+      resolved_at: data.resolved_at,
+      resolved_by: data.resolved_by,
+      admin_notes: data.admin_notes,
+    };
+  }
 }
