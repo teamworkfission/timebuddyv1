@@ -438,43 +438,70 @@ export function BusinessForm({ onSuccess, onCancel, initialData, mode = 'create'
         {/* Document Upload Section - Only for new businesses */}
         {mode === 'create' && (
           <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-            <h4 className="text-sm font-semibold text-blue-900 mb-2">
-              📄 Business Verification Document *
-            </h4>
-            <p className="text-sm text-blue-700 mb-3">
-              Upload your business license, registration, or other official document to verify your business.
-            </p>
+            <div className="flex items-center space-x-2 mb-3">
+              <div className="flex-shrink-0 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
+                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <h4 className="text-sm font-semibold text-blue-900">
+                Business Verification Document *
+              </h4>
+            </div>
             
-            <div className="space-y-2">
-              <input
-                type="file"
-                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                onChange={(e) => setDocumentFile(e.target.files?.[0] || null)}
-                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                disabled={loading || documentUploading}
-                required
-              />
+            <div className="space-y-3">
+              {/* Compact File Input */}
+              <div className="relative">
+                <input
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                  onChange={(e) => setDocumentFile(e.target.files?.[0] || null)}
+                  className="hidden"
+                  disabled={loading || documentUploading}
+                  required
+                  id="document-upload"
+                />
+                <label
+                  htmlFor="document-upload"
+                  className="flex items-center justify-center w-full p-3 border-2 border-dashed border-blue-300 rounded-lg cursor-pointer bg-white hover:bg-blue-50 transition-colors duration-200"
+                >
+                  <div className="flex items-center space-x-3">
+                    <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <div>
+                      <p className="text-sm font-semibold text-blue-900">📎 Attach Document</p>
+                      <p className="text-xs text-blue-600">Click to browse files</p>
+                    </div>
+                  </div>
+                </label>
+              </div>
               
+              {/* File Selected Display */}
               {documentFile && (
-                <div className="flex items-center space-x-2 text-sm">
-                  <span className="text-green-600">✓</span>
-                  <span className="text-gray-700">{documentFile.name}</span>
-                  <span className="text-gray-500">({(documentFile.size / 1024 / 1024).toFixed(1)} MB)</span>
+                <div className="flex items-center space-x-2 p-2 bg-green-50 border border-green-200 rounded-md">
+                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-green-800 truncate">{documentFile.name}</p>
+                    <p className="text-xs text-green-600">{(documentFile.size / 1024 / 1024).toFixed(1)} MB</p>
+                  </div>
                 </div>
               )}
               
+              {/* Upload Progress */}
               {documentUploading && (
-                <div className="flex items-center space-x-2 text-sm text-blue-600">
+                <div className="flex items-center space-x-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
                   <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                  <span>Uploading document...</span>
+                  <p className="text-sm text-blue-800">Uploading...</p>
                 </div>
               )}
             </div>
             
+            {/* Compact Requirements */}
             <div className="mt-3 text-xs text-blue-600">
-              <p>• Accepted formats: PDF, JPG, PNG, DOC, DOCX</p>
-              <p>• Maximum file size: 5MB</p>
-              <p>• Your business will be pending verification until approved by admin</p>
+              <p>📋 PDF, JPG, PNG, DOC, DOCX • Max 5MB • License/Registration required</p>
             </div>
           </div>
         )}
