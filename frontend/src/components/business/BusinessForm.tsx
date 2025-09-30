@@ -172,9 +172,26 @@ export function BusinessForm({ onSuccess, onCancel, initialData, mode = 'create'
       }
 
       if (mode === 'edit' && initialData) {
-        await updateBusiness(initialData.business_id, formData);
+        // Handle document upload for edit mode
+        let documentUrl = initialData.document_url; // Keep existing document by default
+        
+        if (documentFile) {
+          // User uploaded a new document - replace the existing one
+          const uploadResult = await uploadDocument(documentFile);
+          if (!uploadResult) {
+            throw new Error('Failed to upload business document');
+          }
+          documentUrl = uploadResult;
+        }
+
+        const updateData = {
+          ...formData,
+          document_url: documentUrl
+        };
+
+        await updateBusiness(initialData.business_id, updateData);
       } else {
-        // Upload document if provided for new businesses
+        // Create mode - upload document if provided for new businesses
         let documentUrl = formData.document_url;
         if (documentFile) {
           const uploadResult = await uploadDocument(documentFile);
@@ -435,80 +452,112 @@ export function BusinessForm({ onSuccess, onCancel, initialData, mode = 'create'
           </div>
         )}
 
-        {/* Document Upload Section - Only for new businesses */}
-        {mode === 'create' && (
-          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-            <div className="flex items-center space-x-2 mb-3">
-              <div className="flex-shrink-0 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
-                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-              <h4 className="text-sm font-semibold text-blue-900">
-                Business Verification Document *
-              </h4>
+        {/* Document Upload Section - For both create and edit modes */}
+        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+          <div className="flex items-center space-x-2 mb-3">
+            <div className="flex-shrink-0 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
+              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
             </div>
-            
-            <div className="space-y-3">
-              {/* Compact File Input */}
-              <div className="relative">
-                <input
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                  onChange={(e) => setDocumentFile(e.target.files?.[0] || null)}
-                  className="hidden"
-                  disabled={loading || documentUploading}
-                  required
-                  id="document-upload"
-                />
-                <label
-                  htmlFor="document-upload"
-                  className="flex items-center justify-center w-full p-3 border-2 border-dashed border-blue-300 rounded-lg cursor-pointer bg-white hover:bg-blue-50 transition-colors duration-200"
-                >
-                  <div className="flex items-center space-x-3">
-                    <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                    </svg>
-                    <div>
-                      <p className="text-sm font-semibold text-blue-900">📎 Attach Document</p>
-                      <p className="text-xs text-blue-600">Click to browse files</p>
-                    </div>
-                  </div>
-                </label>
-              </div>
-              
-              {/* File Selected Display */}
-              {documentFile && (
-                <div className="flex items-center space-x-2 p-2 bg-green-50 border border-green-200 rounded-md">
-                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-green-800 truncate">{documentFile.name}</p>
-                    <p className="text-xs text-green-600">{(documentFile.size / 1024 / 1024).toFixed(1)} MB</p>
-                  </div>
-                </div>
-              )}
-              
-              {/* Upload Progress */}
-              {documentUploading && (
-                <div className="flex items-center space-x-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
-                  <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                  <p className="text-sm text-blue-800">Uploading...</p>
-                </div>
-              )}
-            </div>
-            
-            {/* Compact Requirements */}
-            <div className="mt-3 text-xs text-blue-600">
-              <p>📋 PDF, JPG, PNG, DOC, DOCX • Max 5MB</p>
-              <p className="mt-1">✅ Accepted: Business License, Registration Certificate, Tax ID, Articles of Incorporation, Operating Agreement, or other official business documents</p>
-            </div>
+            <h4 className="text-sm font-semibold text-blue-900">
+              Business Verification Document {mode === 'create' ? '*' : ''}
+            </h4>
           </div>
-        )}
 
-        {/* Admin Approval Notice - Only for new businesses */}
-        {mode === 'create' && (
+          {/* Show existing document for edit mode */}
+          {mode === 'edit' && initialData?.document_url && (
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center space-x-2 mb-2">
+                <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="text-sm font-medium text-green-800">Current Document</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="flex-1">
+                  <p className="text-xs text-green-700">Document successfully uploaded and on file</p>
+                </div>
+                <a
+                  href={initialData.document_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-blue-600 hover:text-blue-800 underline"
+                >
+                  View Document
+                </a>
+              </div>
+              <p className="text-xs text-green-600 mt-1 italic">
+                {mode === 'edit' ? '💡 You can keep this document or upload a new one below' : ''}
+              </p>
+            </div>
+          )}
+          
+          <div className="space-y-3">
+            {/* File Input */}
+            <div className="relative">
+              <input
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                onChange={(e) => setDocumentFile(e.target.files?.[0] || null)}
+                className="hidden"
+                disabled={loading || documentUploading}
+                required={mode === 'create'}
+                id="document-upload"
+              />
+              <label
+                htmlFor="document-upload"
+                className="flex items-center justify-center w-full p-3 border-2 border-dashed border-blue-300 rounded-lg cursor-pointer bg-white hover:bg-blue-50 transition-colors duration-200"
+              >
+                <div className="flex items-center space-x-3">
+                  <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                  <div>
+                    <p className="text-sm font-semibold text-blue-900">
+                      📎 {mode === 'edit' ? 'Upload New Document (Optional)' : 'Attach Document'}
+                    </p>
+                    <p className="text-xs text-blue-600">
+                      {mode === 'edit' ? 'Only upload if you want to replace current document' : 'Click to browse files'}
+                    </p>
+                  </div>
+                </div>
+              </label>
+            </div>
+            
+            {/* New File Selected Display */}
+            {documentFile && (
+              <div className="flex items-center space-x-2 p-2 bg-green-50 border border-green-200 rounded-md">
+                <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-green-800 truncate">
+                    {mode === 'edit' ? 'New document: ' : ''}{documentFile.name}
+                  </p>
+                  <p className="text-xs text-green-600">{(documentFile.size / 1024 / 1024).toFixed(1)} MB</p>
+                </div>
+              </div>
+            )}
+            
+            {/* Upload Progress */}
+            {documentUploading && (
+              <div className="flex items-center space-x-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
+                <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                <p className="text-sm text-blue-800">Uploading...</p>
+              </div>
+            )}
+          </div>
+          
+          {/* Requirements */}
+          <div className="mt-3 text-xs text-blue-600">
+            <p>📋 PDF, JPG, PNG, DOC, DOCX • Max 5MB</p>
+            <p className="mt-1">✅ Accepted: Business License, Registration Certificate, Tax ID, Articles of Incorporation, Operating Agreement, or other official business documents</p>
+          </div>
+        </div>
+
+        {/* Admin Approval Notice - For both create and edit modes */}
+        {mode === 'create' ? (
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
             <div className="flex items-start space-x-3">
               <div className="flex-shrink-0">
@@ -522,6 +571,27 @@ export function BusinessForm({ onSuccess, onCancel, initialData, mode = 'create'
                 </h4>
                 <p className="text-sm text-amber-700">
                   Your business will be submitted for admin approval. Once approved, you'll be able to start hiring employees and managing schedules.
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : mode === 'edit' && initialData && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-start space-x-3">
+              <div className="flex-shrink-0">
+                <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h4 className="text-sm font-semibold text-blue-800 mb-1">
+                  📝 Business Update Process
+                </h4>
+                <p className="text-sm text-blue-700">
+                  {initialData.verification_status === 'rejected' 
+                    ? 'Based on admin feedback, please make the necessary changes and resubmit for approval.' 
+                    : 'Any changes to your business will require admin re-approval. Your business will be marked as pending until reviewed.'
+                  }
                 </p>
               </div>
             </div>
@@ -582,8 +652,8 @@ export function BusinessForm({ onSuccess, onCancel, initialData, mode = 'create'
             size="md"
           >
             {loading 
-              ? `${mode === 'edit' ? 'Updating' : 'Submitting for Approval'}...` 
-              : `${mode === 'edit' ? 'Update Business' : 'Submit for Approval'}`
+              ? `${mode === 'edit' ? 'Submitting Update for Approval' : 'Submitting for Approval'}...` 
+              : `${mode === 'edit' ? 'Submit Update for Approval' : 'Submit for Approval'}`
             }
           </Button>
         </div>

@@ -68,9 +68,18 @@ export class BusinessesService {
     // First check if business exists and belongs to employer
     await this.findOne(id, employerId);
 
+    // Add status transition logic - any update requires re-approval
+    const updateData = {
+      ...updateBusinessDto,
+      verification_status: 'pending',
+      // Clear previous verification data when requiring re-approval
+      verified_at: null,
+      verified_by: null
+    };
+
     const { data, error } = await this.supabase.admin
       .from('businesses')
-      .update(updateBusinessDto)
+      .update(updateData)
       .eq('business_id', id)
       .eq('employer_id', employerId)
       .select()
