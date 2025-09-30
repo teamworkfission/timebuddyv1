@@ -60,13 +60,20 @@ export function BusinessActions({
 
       {isRejected && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-          <div className="flex items-center space-x-2">
-            <svg className="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+          <div className="flex items-start space-x-2">
+            <svg className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
             </svg>
-            <div>
-              <p className="text-xs font-medium text-red-800">Application Rejected</p>
-              <p className="text-xs text-red-700">Please contact support for more information</p>
+            <div className="flex-1">
+              <p className="text-xs font-medium text-red-800 mb-1">Application Rejected</p>
+              {business.verification_notes ? (
+                <div className="text-xs text-red-700">
+                  <p className="font-medium mb-1">Admin Comment:</p>
+                  <p className="bg-red-100 p-2 rounded text-red-800 leading-relaxed">{business.verification_notes}</p>
+                </div>
+              ) : (
+                <p className="text-xs text-red-700">Please contact support for more information</p>
+              )}
             </div>
           </div>
         </div>
