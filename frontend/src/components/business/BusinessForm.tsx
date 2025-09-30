@@ -166,6 +166,11 @@ export function BusinessForm({ onSuccess, onCancel, initialData, mode = 'create'
         throw new Error('Please fill in all required fields');
       }
 
+      // Validate document upload for new businesses
+      if (mode === 'create' && !documentFile) {
+        throw new Error('Please upload a business verification document');
+      }
+
       if (mode === 'edit' && initialData) {
         await updateBusiness(initialData.business_id, formData);
       } else {
@@ -430,6 +435,49 @@ export function BusinessForm({ onSuccess, onCancel, initialData, mode = 'create'
           </div>
         )}
 
+        {/* Document Upload Section - Only for new businesses */}
+        {mode === 'create' && (
+          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <h4 className="text-sm font-semibold text-blue-900 mb-2">
+              📄 Business Verification Document *
+            </h4>
+            <p className="text-sm text-blue-700 mb-3">
+              Upload your business license, registration, or other official document to verify your business.
+            </p>
+            
+            <div className="space-y-2">
+              <input
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                onChange={(e) => setDocumentFile(e.target.files?.[0] || null)}
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                disabled={loading || documentUploading}
+                required
+              />
+              
+              {documentFile && (
+                <div className="flex items-center space-x-2 text-sm">
+                  <span className="text-green-600">✓</span>
+                  <span className="text-gray-700">{documentFile.name}</span>
+                  <span className="text-gray-500">({(documentFile.size / 1024 / 1024).toFixed(1)} MB)</span>
+                </div>
+              )}
+              
+              {documentUploading && (
+                <div className="flex items-center space-x-2 text-sm text-blue-600">
+                  <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                  <span>Uploading document...</span>
+                </div>
+              )}
+            </div>
+            
+            <div className="mt-3 text-xs text-blue-600">
+              <p>• Accepted formats: PDF, JPG, PNG, DOC, DOCX</p>
+              <p>• Maximum file size: 5MB</p>
+              <p>• Your business will be pending verification until approved by admin</p>
+            </div>
+          </div>
+        )}
 
         {/* Delete Section - Only show for existing businesses */}
         {mode === 'edit' && initialData && (
@@ -491,48 +539,6 @@ export function BusinessForm({ onSuccess, onCancel, initialData, mode = 'create'
           </Button>
         </div>
 
-        {/* Document Upload Section - Only for new businesses */}
-        {mode === 'create' && (
-          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mt-6">
-            <h4 className="text-sm font-semibold text-blue-900 mb-2">
-              📄 Business Verification Document
-            </h4>
-            <p className="text-sm text-blue-700 mb-3">
-              Upload your business license, registration, or other official document to verify your business.
-            </p>
-            
-            <div className="space-y-2">
-              <input
-                type="file"
-                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                onChange={(e) => setDocumentFile(e.target.files?.[0] || null)}
-                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                disabled={loading || documentUploading}
-              />
-              
-              {documentFile && (
-                <div className="flex items-center space-x-2 text-sm">
-                  <span className="text-green-600">✓</span>
-                  <span className="text-gray-700">{documentFile.name}</span>
-                  <span className="text-gray-500">({(documentFile.size / 1024 / 1024).toFixed(1)} MB)</span>
-                </div>
-              )}
-              
-              {documentUploading && (
-                <div className="flex items-center space-x-2 text-sm text-blue-600">
-                  <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                  <span>Uploading document...</span>
-                </div>
-              )}
-            </div>
-            
-            <div className="mt-3 text-xs text-blue-600">
-              <p>• Accepted formats: PDF, JPG, PNG, DOC, DOCX</p>
-              <p>• Maximum file size: 5MB</p>
-              <p>• Your business will be pending verification until approved by admin</p>
-            </div>
-          </div>
-        )}
       </form>
 
       {/* Delete Confirmation Modal - Double Confirmation */}
