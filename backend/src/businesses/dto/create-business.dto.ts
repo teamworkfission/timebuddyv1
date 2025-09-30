@@ -68,6 +68,10 @@ export class CreateBusinessDto {
   @MaxLength(200)
   street_address?: string;
 
+  // Business verification document
+  @IsOptional()
+  @IsString()
+  document_url?: string;
 
 }
 

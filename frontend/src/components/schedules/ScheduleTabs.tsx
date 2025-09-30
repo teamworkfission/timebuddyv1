@@ -12,6 +12,7 @@ interface ScheduleTabsProps {
   hasPostedVersion?: boolean;
   onCopyPreviousWeek?: () => void;
   canCopyPreviousWeek?: boolean;
+  employeeCount?: number;
 }
 
 export function ScheduleTabs({
@@ -24,7 +25,8 @@ export function ScheduleTabs({
   shiftCount = 0,
   hasPostedVersion = false,
   onCopyPreviousWeek,
-  canCopyPreviousWeek = false
+  canCopyPreviousWeek = false,
+  employeeCount = 0
 }: ScheduleTabsProps) {
   return (
     <div className="bg-white rounded-lg shadow">
@@ -131,7 +133,7 @@ export function ScheduleTabs({
           </div>
         </div>
 
-        {scheduleStatus === 'draft' && shiftCount === 0 && (
+        {scheduleStatus === 'draft' && shiftCount === 0 && employeeCount > 0 && (
           <p className="mt-2 text-sm text-amber-600">
             Assign at least one shift to enable posting this schedule.
           </p>

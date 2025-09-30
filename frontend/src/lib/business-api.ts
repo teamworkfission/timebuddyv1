@@ -19,6 +19,13 @@ export interface Business {
   county?: string;
   zip_code?: string;
   street_address?: string;
+  // Business verification document
+  document_url?: string;
+  // Verification status fields
+  verification_status?: 'pending' | 'approved' | 'rejected';
+  verification_notes?: string;
+  verified_at?: string;
+  verified_by?: string;
 }
 
 export type BusinessType = 
@@ -47,6 +54,8 @@ export interface CreateBusinessData {
   county?: string;
   zip_code?: string;
   street_address?: string;
+  // Business verification document
+  document_url?: string;
 }
 
 export interface BusinessStats {

@@ -14,7 +14,9 @@ export class BusinessesService {
   async create(createBusinessDto: CreateBusinessDto, employerId: string) {
     const businessData = {
       ...createBusinessDto,
-      employer_id: employerId
+      employer_id: employerId,
+      // All new businesses start as pending verification
+      verification_status: 'pending'
     };
 
     const { data, error } = await this.supabase.admin

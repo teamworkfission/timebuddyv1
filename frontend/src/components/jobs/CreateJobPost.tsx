@@ -286,7 +286,7 @@ export function CreateJobPost({ editingJob, onSuccess }: CreateJobPostProps) {
           </h3>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-bold text-gray-700 mb-2">
               Choose Business <span className="text-red-500 text-lg font-bold">*</span>
             </label>
             <select
@@ -339,7 +339,7 @@ export function CreateJobPost({ editingJob, onSuccess }: CreateJobPostProps) {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-bold text-gray-700 mb-2">
                 Job Title <span className="text-red-500 text-lg font-bold">*</span>
               </label>
               <input
@@ -352,7 +352,7 @@ export function CreateJobPost({ editingJob, onSuccess }: CreateJobPostProps) {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-bold text-gray-700 mb-2">
                 Job Type <span className="text-red-500 text-lg font-bold">*</span>
               </label>
               <select
@@ -372,7 +372,7 @@ export function CreateJobPost({ editingJob, onSuccess }: CreateJobPostProps) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-bold text-gray-700 mb-2">
                 Phone Number <span className="text-red-500 text-lg font-bold">*</span>
               </label>
               <input
@@ -409,7 +409,7 @@ export function CreateJobPost({ editingJob, onSuccess }: CreateJobPostProps) {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-bold text-gray-700 mb-2">
                 Expected Hours per Week <span className="text-red-500 text-lg font-bold">*</span>
               </label>
               <input
@@ -435,7 +435,7 @@ export function CreateJobPost({ editingJob, onSuccess }: CreateJobPostProps) {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-bold text-gray-700 mb-2">
                 Schedule <span className="text-red-500 text-lg font-bold">*</span>
               </label>
               <input
@@ -458,7 +458,7 @@ export function CreateJobPost({ editingJob, onSuccess }: CreateJobPostProps) {
           </h3>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-bold text-gray-700 mb-2">
               Pay Type <span className="text-red-500 text-lg font-bold">*</span>
             </label>
             <select
@@ -476,7 +476,7 @@ export function CreateJobPost({ editingJob, onSuccess }: CreateJobPostProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-bold text-gray-700 mb-2">
               Pay Structure
             </label>
             <div className="flex space-x-4">
@@ -505,7 +505,7 @@ export function CreateJobPost({ editingJob, onSuccess }: CreateJobPostProps) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-bold text-gray-700 mb-2">
                 {payRange === 'single' ? 'Pay Amount' : 'Minimum Pay'} <span className="text-red-500 text-lg font-bold">*</span>
               </label>
               <input
@@ -554,7 +554,7 @@ export function CreateJobPost({ editingJob, onSuccess }: CreateJobPostProps) {
 
           {/* Supplemental Pay */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
+            <label className="block text-sm font-bold text-gray-700 mb-3">
               Supplemental Pay Options
             </label>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -574,7 +574,7 @@ export function CreateJobPost({ editingJob, onSuccess }: CreateJobPostProps) {
 
           {/* Benefits */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
+            <label className="block text-sm font-bold text-gray-700 mb-3">
               Benefits Options
             </label>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -601,7 +601,7 @@ export function CreateJobPost({ editingJob, onSuccess }: CreateJobPostProps) {
           </h3>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-bold text-gray-700 mb-2">
               Job Description <span className="text-red-500 text-lg font-bold">*</span>
             </label>
             <textarea

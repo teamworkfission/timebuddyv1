@@ -607,6 +607,7 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
                 hasPostedVersion={hasPostedVersion}
                 onCopyPreviousWeek={handleCopyPreviousWeek}
                 canCopyPreviousWeek={canCopyPreviousWeek}
+                employeeCount={weeklySchedule?.employees?.length || 0}
               />
             </div>
 

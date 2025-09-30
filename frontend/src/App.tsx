@@ -4,6 +4,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { LandingPage } from './pages/LandingPage';
 import { EmployeeDashboard } from './pages/EmployeeDashboard';
 import { EmployerDashboard } from './pages/EmployerDashboard';
+import { AdminPanelPage } from './pages/admin/AdminPanelPage';
 
 // Wrapper component that provides AuthProvider inside Router context
 function AuthLayout() {
@@ -38,16 +39,13 @@ const router = createBrowserRouter(
         } 
       />
       
+      {/* Admin Routes - No authentication required as it has its own login */}
+      <Route path="admin" element={<AdminPanelPage />} />
+      
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Route>
-  ),
-  {
-    future: {
-      v7_startTransition: true,
-      v7_relativeSplatPath: true,
-    },
-  }
+  )
 );
 
 function App() {
