@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { SupabaseService } from '../config/supabase.service';
 import { VerifyBusinessDto } from './dto/verify-business.dto';
 
@@ -213,7 +213,7 @@ export class AdminService {
     // Validate status
     const validStatuses = ['open', 'in_progress', 'resolved', 'closed'];
     if (!validStatuses.includes(status)) {
-      throw new Error(`Invalid status. Must be one of: ${validStatuses.join(', ')}`);
+      throw new BadRequestException(`Invalid status. Must be one of: ${validStatuses.join(', ')}`);
     }
 
     const updateData: any = {
@@ -238,7 +238,7 @@ export class AdminService {
       .single();
 
     if (error) {
-      throw new Error(`Failed to update support ticket: ${error.message}`);
+      throw new InternalServerErrorException(`Failed to update support ticket: ${error.message}`);
     }
 
     return {
