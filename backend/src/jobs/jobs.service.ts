@@ -45,16 +45,21 @@ export class JobsService {
   constructor(private readonly supabase: SupabaseService) {}
 
   async create(createJobDto: CreateJobDto, employerId: string): Promise<JobWithBusiness> {
-    // Verify the business belongs to the employer
+    // Verify the business belongs to the employer AND is approved
     const { data: business, error: businessError } = await this.supabase.admin
       .from('businesses')
-      .select('business_id, employer_id, name, type, location, phone, email')
+      .select('business_id, employer_id, name, type, location, phone, email, verification_status')
       .eq('business_id', createJobDto.business_id)
       .eq('employer_id', employerId)
       .single();
 
     if (businessError || !business) {
       throw new ForbiddenException('Business not found or does not belong to you');
+    }
+
+    // Check if business is approved for job posting
+    if (business.verification_status !== 'approved') {
+      throw new ForbiddenException('Business must be verified and approved before posting jobs. Please contact admin for verification.');
     }
 
     // Validate pay range
@@ -230,6 +235,7 @@ export class JobsService {
       .from('businesses')
       .select('business_id, name, type, location, phone, email')
       .eq('employer_id', employerId)
+      .eq('verification_status', 'approved') // Only return approved businesses
       .order('name');
 
     if (error) {
