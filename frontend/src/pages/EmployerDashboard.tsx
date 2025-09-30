@@ -14,7 +14,6 @@ export function EmployerDashboard() {
   const [businessStats, setBusinessStats] = useState<BusinessStats | null>(null);
   const [jobStats, setJobStats] = useState<JobStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const loadBusinessStats = async () => {
     try {
@@ -115,60 +114,14 @@ export function EmployerDashboard() {
               </span>
             </div>
             
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="sm:hidden relative w-10 h-10 flex items-center justify-center rounded-lg text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              aria-label="Toggle menu"
-            >
-              <div className="w-5 h-5 flex flex-col justify-center items-center">
-                <span className={`block h-0.5 w-5 bg-current transform transition duration-200 ${
-                  mobileMenuOpen ? 'rotate-45 translate-y-1' : '-translate-y-1'
-                }`} />
-                <span className={`block h-0.5 w-5 bg-current transform transition duration-200 ${
-                  mobileMenuOpen ? 'opacity-0' : 'opacity-100'
-                }`} />
-                <span className={`block h-0.5 w-5 bg-current transform transition duration-200 ${
-                  mobileMenuOpen ? '-rotate-45 -translate-y-1' : 'translate-y-1'
-                }`} />
-              </div>
-            </button>
+            {/* Mobile Profile Section */}
+            <div className="sm:hidden flex items-center">
+              <ProfileDropdown email={profile?.email || ''} onLogout={logout} />
+            </div>
 
             {/* Desktop Profile Section */}
             <div className="hidden sm:flex items-center">
               <ProfileDropdown email={profile?.email || ''} onLogout={logout} />
-            </div>
-          </div>
-
-          {/* Mobile Menu */}
-          <div className={`sm:hidden overflow-hidden transition-all duration-200 ease-in-out ${
-            mobileMenuOpen ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0'
-          }`}>
-            <div className="py-4 border-t border-gray-200 bg-gray-50">
-              <div className="flex items-center space-x-3 px-4 py-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-lg">👤</span>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-gray-900 truncate">
-                    {profile?.email}
-                  </p>
-                  <p className="text-xs text-gray-500">Employer Account</p>
-                </div>
-              </div>
-              <div className="px-4 pb-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => {
-                    logout();
-                    setMobileMenuOpen(false);
-                  }}
-                  className="w-full justify-center"
-                >
-                  Logout
-                </Button>
-              </div>
             </div>
           </div>
         </div>
