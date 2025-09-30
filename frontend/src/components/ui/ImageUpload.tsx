@@ -174,7 +174,7 @@ export function ImageUpload({
       
       <div
         className={`
-          border-2 border-dashed rounded-lg p-6 text-center transition-all duration-200
+          border-2 border-dashed rounded-lg p-4 text-center transition-all duration-200
           ${dragActive 
             ? 'border-blue-400 bg-blue-50' 
             : 'border-gray-300 hover:border-blue-300 hover:bg-gray-50'
@@ -191,12 +191,12 @@ export function ImageUpload({
           {loading ? (
             <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
           ) : (
-            <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 48 48">
+            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path 
                 strokeLinecap="round" 
                 strokeLinejoin="round" 
                 strokeWidth={2} 
-                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2 2l1.586-1.586a2 2 0 012.828 0L32 30m-12-14v18m0 0l4-4m-4 4l-4-4m12 2h8m0 0v4m0-4l-4 4m4-4l-4-4"
+                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
               />
             </svg>
           )}
