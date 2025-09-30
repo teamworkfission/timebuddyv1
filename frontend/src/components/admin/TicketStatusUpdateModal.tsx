@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
 import { Input } from '../ui/Input';
@@ -16,6 +16,37 @@ export function TicketStatusUpdateModal({ ticket, isOpen, onClose, onUpdate }: T
   const [adminNotes, setAdminNotes] = useState(ticket.admin_notes || '');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside or pressing Escape
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    }
+
+    function handleEscapeKey(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setIsDropdownOpen(false);
+      }
+    }
+
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleEscapeKey);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+        document.removeEventListener('keydown', handleEscapeKey);
+      };
+    }
+  }, [isDropdownOpen]);
+
+  const handleStatusSelect = (status: string) => {
+    setSelectedStatus(status);
+    setIsDropdownOpen(false);
+  };
 
   const statusOptions = [
     { value: 'open', label: 'Open', color: 'text-red-600', description: 'Ticket is new and needs attention' },
@@ -75,42 +106,80 @@ export function TicketStatusUpdateModal({ ticket, isOpen, onClose, onUpdate }: T
           </p>
         </div>
 
-        {/* Status Selection */}
+        {/* Status Selection Dropdown */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-3">
             Update Status
           </label>
-          <div className="space-y-2">
-            {statusOptions.map((option) => (
-              <label
-                key={option.value}
-                className="flex items-start p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer"
-              >
-                <input
-                  type="radio"
-                  name="status"
-                  value={option.value}
-                  checked={selectedStatus === option.value}
-                  onChange={(e) => setSelectedStatus(e.target.value)}
-                  className="mt-1 mr-3 text-blue-600"
-                />
-                <div className="flex-1">
-                  <div className={`font-medium ${option.color}`}>
-                    {option.label}
+          <div className="relative" ref={dropdownRef}>
+            {/* Dropdown Trigger */}
+            <button
+              type="button"
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="w-full flex items-center justify-between px-4 py-3 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <div className="flex items-center">
+                <div className={`w-3 h-3 rounded-full mr-3 ${
+                  selectedStatus === 'open' ? 'bg-red-500' :
+                  selectedStatus === 'in_progress' ? 'bg-yellow-500' :
+                  selectedStatus === 'resolved' ? 'bg-green-500' : 'bg-gray-500'
+                }`}></div>
+                <div>
+                  <div className={`font-medium ${newStatusInfo?.color}`}>
+                    {newStatusInfo?.label}
                   </div>
-                  <div className="text-sm text-gray-600 mt-1">
-                    {option.description}
+                  <div className="text-sm text-gray-600 text-left">
+                    {newStatusInfo?.description}
                   </div>
                 </div>
-                {selectedStatus === option.value && (
-                  <div className="text-blue-600">
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                )}
-              </label>
-            ))}
+              </div>
+              <div className={`transform transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}>
+                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </button>
+
+            {/* Dropdown Menu */}
+            {isDropdownOpen && (
+              <div className="absolute z-50 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg">
+                <div className="py-1">
+                  {statusOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => handleStatusSelect(option.value)}
+                      className={`w-full flex items-start px-4 py-3 hover:bg-gray-50 focus:outline-none focus:bg-gray-50 ${
+                        selectedStatus === option.value ? 'bg-blue-50' : ''
+                      }`}
+                    >
+                      <div className={`w-3 h-3 rounded-full mr-3 mt-1 ${
+                        option.value === 'open' ? 'bg-red-500' :
+                        option.value === 'in_progress' ? 'bg-yellow-500' :
+                        option.value === 'resolved' ? 'bg-green-500' : 'bg-gray-500'
+                      }`}></div>
+                      <div className="flex-1 text-left">
+                        <div className={`font-medium ${option.color} ${
+                          selectedStatus === option.value ? 'text-blue-800' : ''
+                        }`}>
+                          {option.label}
+                          {selectedStatus === option.value && (
+                            <span className="ml-2 text-blue-600">
+                              <svg className="w-4 h-4 inline" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                              </svg>
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-sm text-gray-600 mt-1">
+                          {option.description}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
