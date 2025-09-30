@@ -13,8 +13,21 @@ export class AdminGuard implements CanActivate {
       throw new UnauthorizedException('Missing or invalid authorization header');
     }
 
+    const token = authHeader.substring(7);
+
     try {
-      const token = authHeader.substring(7);
+      // Handle static admin token for MVP
+      if (token === 'admin-session-token') {
+        // Add admin user info to request
+        request.user = {
+          id: '11111111-1111-1111-1111-111111111111',
+          email: 'admin@timebuddy.app',
+          role: 'admin'
+        };
+        return true;
+      }
+
+      // Handle regular Supabase tokens for other admin users (future)
       const user = await this.authService.verifyToken(token);
       
       if (user.role !== 'admin') {
