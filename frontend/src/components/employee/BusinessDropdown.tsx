@@ -18,8 +18,6 @@ export function BusinessDropdown({
   onBusinessSelect,
   loading = false 
 }: BusinessDropdownProps) {
-  const selectedBusiness = businesses.find(b => b.business_id === selectedBusinessId);
-
   return (
     <div className="relative">
       <select

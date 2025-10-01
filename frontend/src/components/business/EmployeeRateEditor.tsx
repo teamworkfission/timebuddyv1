@@ -11,7 +11,6 @@ interface EmployeeRateEditorProps {
 
 export function EmployeeRateEditor({ 
   employeeId, 
-  employeeName, 
   currentRate, 
   onSaveRate, 
   disabled = false 

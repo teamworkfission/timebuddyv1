@@ -1,5 +1,4 @@
 import { useAuth } from '../contexts/AuthProvider';
-import { Button } from '../components/ui/Button';
 import { ProfileDropdown } from '../components/ui/ProfileDropdown';
 import { useState, useEffect } from 'react';
 import { BusinessManagement } from '../components/business/BusinessManagement';
@@ -108,7 +107,7 @@ export function EmployerDashboard() {
           <div className="flex justify-between items-center h-14 sm:h-16">
             {/* Logo */}
             <div className="flex items-center">
-              <h1 className="text-xl sm:text-2xl font-bold text-blue-600">PtimeBuddy</h1>
+              <div className="text-xl sm:text-2xl font-bold text-blue-600">PtimeBuddy</div>
               <span className="ml-2 px-2 py-1 text-xs font-medium bg-blue-100 text-blue-600 rounded-full hidden sm:inline-block">
                 Employer
               </span>

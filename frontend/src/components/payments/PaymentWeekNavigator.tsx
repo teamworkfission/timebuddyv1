@@ -12,7 +12,7 @@ interface PaymentWeekNavigatorProps {
 
 // All utility functions now imported from date-utils.ts for consistency
 
-export function PaymentWeekNavigator({ currentWeek, onWeekChange, business }: PaymentWeekNavigatorProps) {
+export function PaymentWeekNavigator({ currentWeek, onWeekChange }: PaymentWeekNavigatorProps) {
   const [isCurrentWeek, setIsCurrentWeek] = useState(false);
 
   useEffect(() => {

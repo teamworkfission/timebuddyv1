@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface AMPMTimeInputProps {
   value?: string;           // "9:00 AM" or "9 AM" or ""
@@ -83,18 +83,6 @@ export function AMPMTimeInput({
     }
   }, [value]);
 
-  // Convert AM/PM to 24-hour format (used for parsing legacy values)
-  const convertTo24Hour = useCallback((hour: number, minute: number, period: 'AM' | 'PM'): string => {
-    let hour24 = hour;
-    
-    if (period === 'AM' && hour === 12) {
-      hour24 = 0;
-    } else if (period === 'PM' && hour !== 12) {
-      hour24 = hour + 12;
-    }
-    
-    return `${hour24.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-  }, []);
 
   // Update parent when internal state changes
   useEffect(() => {

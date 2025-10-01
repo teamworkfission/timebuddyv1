@@ -18,8 +18,7 @@ export function RejectionModal({
   onReject,
   employeeName,
   hoursAmount,
-  weekRange,
-  loading = false
+  weekRange
 }: RejectionModalProps) {
   const [rejectionReason, setRejectionReason] = useState('');
   const [notes, setNotes] = useState('');

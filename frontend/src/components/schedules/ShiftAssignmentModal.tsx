@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Clock, Plus, Edit2, Trash2 } from 'lucide-react';
+import { Clock, Plus, Edit2, Trash2 } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { AMPMTimeInput } from '../ui/AMPMTimeInput';
@@ -199,7 +199,7 @@ export function ShiftAssignmentModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} maxWidth="md">
+    <Modal isOpen={isOpen} onClose={onClose} maxWidth="md" title="Shift Assignment">
       <div className="p-6">
         {/* Header */}
         <div className="mb-4">

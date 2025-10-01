@@ -138,7 +138,7 @@ export function JobBrowse({ initialSearchParams, autoLoad = false }: JobBrowsePr
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
         <div className="max-w-4xl mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold text-blue-600 mb-4">PtimeBuddy Jobs</h1>
+          <div className="text-2xl font-bold text-blue-600 mb-4">PtimeBuddy Jobs</div>
           
           {/* Search Bar */}
           <div className="space-y-3">

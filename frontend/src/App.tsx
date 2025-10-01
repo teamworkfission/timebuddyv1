@@ -1,16 +1,22 @@
+import { Suspense } from 'react';
 import { createBrowserRouter, RouterProvider, createRoutesFromElements, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthProvider';
 import { ProtectedRoute } from './components/ProtectedRoute';
-import { LandingPage } from './pages/LandingPage';
-import { EmployeeDashboard } from './pages/EmployeeDashboard';
-import { EmployerDashboard } from './pages/EmployerDashboard';
-import { AdminPanelPage } from './pages/admin/AdminPanelPage';
+import { PageLoadingFallback } from './components/ui/PageLoadingFallback';
+import { 
+  LandingPageLazy, 
+  EmployeeDashboardLazy, 
+  EmployerDashboardLazy, 
+  AdminPanelPageLazy 
+} from './pages/LazyPages';
 
 // Wrapper component that provides AuthProvider inside Router context
 function AuthLayout() {
   return (
     <AuthProvider>
-      <Outlet />
+      <Suspense fallback={<PageLoadingFallback />}>
+        <Outlet />
+      </Suspense>
     </AuthProvider>
   );
 }
@@ -19,14 +25,14 @@ const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path="/" element={<AuthLayout />}>
       {/* Public Routes */}
-      <Route index element={<LandingPage />} />
+      <Route index element={<LandingPageLazy />} />
       
       {/* Protected Routes */}
       <Route 
         path="app/employee" 
         element={
           <ProtectedRoute requireRole="employee">
-            <EmployeeDashboard />
+            <EmployeeDashboardLazy />
           </ProtectedRoute>
         } 
       />
@@ -34,13 +40,13 @@ const router = createBrowserRouter(
         path="app/employer" 
         element={
           <ProtectedRoute requireRole="employer">
-            <EmployerDashboard />
+            <EmployerDashboardLazy />
           </ProtectedRoute>
         } 
       />
       
       {/* Admin Routes - No authentication required as it has its own login */}
-      <Route path="admin" element={<AdminPanelPage />} />
+      <Route path="admin" element={<AdminPanelPageLazy />} />
       
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -34,7 +34,7 @@ const DAYS = [
 
 type DayKey = typeof DAYS[number]['key'];
 
-export function WeeklyHoursInput({ businessId, weekStart, onBack }: WeeklyHoursInputProps) {
+export function WeeklyHoursInput({ businessId, weekStart }: WeeklyHoursInputProps) {
   const [data, setData] = useState<WeeklyHoursData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

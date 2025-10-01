@@ -1,6 +1,5 @@
-import React from 'react';
 import { Clock, User, Calendar } from 'lucide-react';
-import { WeeklySchedule, ShiftTemplate, formatTime, formatShiftTime } from '../../lib/schedules-api';
+import { WeeklySchedule, ShiftTemplate, formatShiftTime } from '../../lib/schedules-api';
 
 interface PostedScheduleViewProps {
   weeklySchedule: WeeklySchedule;

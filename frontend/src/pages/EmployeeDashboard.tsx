@@ -83,7 +83,7 @@ export function EmployeeDashboard() {
                   <span>←</span>
                   <span>Back to Jobs</span>
                 </Button>
-                <h1 className="text-2xl font-bold text-blue-600">PtimeBuddy</h1>
+                <div className="text-2xl font-bold text-blue-600">PtimeBuddy</div>
               </div>
               <div className="flex items-center">
                 <ProfileDropdown 

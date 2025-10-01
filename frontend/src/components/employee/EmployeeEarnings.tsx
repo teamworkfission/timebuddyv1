@@ -6,12 +6,10 @@ import {
   getCurrentWeekStart,
   getNextWeek,
   getPreviousWeek,
-  formatWeekRange,
-  getConfirmedHoursList,
-  ConfirmedHoursRecord
+  formatWeekRange
 } from '../../lib/confirmed-hours-api';
 import { EmployeeSchedulesAPI } from '../../lib/schedules-api';
-import { ChevronLeft, ChevronRight, Calendar, Clock, TrendingUp, CheckCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, Clock } from 'lucide-react';
 
 interface Business {
   business_id: string;

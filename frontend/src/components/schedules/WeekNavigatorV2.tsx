@@ -15,7 +15,7 @@ interface WeekNavigatorProps {
   business: Business; // Required for timezone-aware calculations
 }
 
-export function WeekNavigatorV2({ currentWeek, onWeekChange, business }: WeekNavigatorProps) {
+export function WeekNavigatorV2({ currentWeek, onWeekChange }: WeekNavigatorProps) {
   const canGoPrevious = () => {
     const previousWeek = getPreviousWeek(currentWeek);
     const windowStart = getCurrentWeekStart();

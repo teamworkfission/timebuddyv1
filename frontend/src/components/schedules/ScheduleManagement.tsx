@@ -298,13 +298,10 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
   const handleShiftUpdate = async (shiftId: string, shift: UpdateShiftDto) => {
     if (!weeklySchedule || !weeklySchedule.id) return; // Cannot update shifts in empty schedule
 
-    let targetSchedule = weeklySchedule;
-
     // If user is trying to edit a posted schedule reference, unpost it first
     if ((weeklySchedule as any).__isPostedReference) {
       const draftSchedule = await handleCreateDraftFromPosted();
       if (!draftSchedule) return; // Failed to convert to draft
-      targetSchedule = draftSchedule;
     }
 
     try {
@@ -331,13 +328,10 @@ export function ScheduleManagement({ onBack }: ScheduleManagementProps) {
   const handleShiftDelete = async (shiftId: string) => {
     if (!weeklySchedule || !weeklySchedule.id) return; // Cannot delete shifts in empty schedule
 
-    let targetSchedule = weeklySchedule;
-
     // If user is trying to edit a posted schedule reference, unpost it first
     if ((weeklySchedule as any).__isPostedReference) {
       const draftSchedule = await handleCreateDraftFromPosted();
       if (!draftSchedule) return; // Failed to convert to draft
-      targetSchedule = draftSchedule;
     }
 
     try {

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { ProfileDropdown } from '../components/ui/ProfileDropdown';
 import { AuthModal } from '../components/AuthModal';
@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthProvider';
 
 export function LandingPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, profile, loading, processingAuth, authError, retryAuth, logout } = useAuth();
   const [authModal, setAuthModal] = useState<{
     isOpen: boolean;
@@ -24,7 +25,28 @@ export function LandingPage() {
 
   const closeAuthModal = () => {
     setAuthModal(prev => ({ ...prev, isOpen: false }));
+    // Clear URL parameters when closing the modal
+    setSearchParams({});
   };
+
+  // Check for URL parameters and auto-open auth modal
+  useEffect(() => {
+    // Only process URL parameters if not already logged in
+    if (user && profile) return;
+    if (loading || processingAuth) return;
+    
+    const role = searchParams.get('role');
+    const mode = searchParams.get('mode');
+    
+    if (role === 'employee' || role === 'employer') {
+      const authMode = mode === 'signin' || mode === 'signup' ? mode : 'signin';
+      setAuthModal({
+        isOpen: true,
+        role: role as 'employee' | 'employer',
+        mode: authMode as 'signup' | 'signin'
+      });
+    }
+  }, [searchParams, user, profile, loading, processingAuth]);
 
   // Show loading state during auth processing or initial load
   if (loading || processingAuth) {
@@ -45,7 +67,7 @@ export function LandingPage() {
         <header className="bg-white border-b border-gray-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
-              <h1 className="text-2xl font-bold text-blue-600">PtimeBuddy</h1>
+              <div className="text-2xl font-bold text-blue-600">PtimeBuddy</div>
               <div className="flex items-center">
                 <Button variant="outline" onClick={logout}>
                   Sign Out
@@ -108,7 +130,7 @@ export function LandingPage() {
         <header className="bg-white border-b border-gray-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
-              <h1 className="text-2xl font-bold text-blue-600">PtimeBuddy</h1>
+              <div className="text-2xl font-bold text-blue-600">PtimeBuddy</div>
               <div className="flex items-center">
                 <ProfileDropdown email={profile.email} onLogout={logout} />
               </div>
@@ -143,7 +165,7 @@ export function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-blue-600">PtimeBuddy</h1>
+              <div className="text-2xl font-bold text-blue-600">PtimeBuddy</div>
             </div>
             <nav className="flex items-center space-x-4">
               <Button 

@@ -8,7 +8,6 @@
  * Standard hours precision: 2 decimal places maximum
  * Matches database DECIMAL(5,2) precision
  */
-const HOURS_DECIMAL_PRECISION = 2;
 
 /**
  * Standardized hours calculation with consistent precision

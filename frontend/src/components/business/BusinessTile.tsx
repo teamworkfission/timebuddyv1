@@ -11,7 +11,7 @@ interface BusinessTileProps {
   onPaymentsReports?: (business: Business) => void;
 }
 
-export function BusinessTile({ business, onEdit, onDelete, onAddEmployee, onViewEmployees, onPaymentsReports }: BusinessTileProps) {
+export function BusinessTile({ business, onEdit, onAddEmployee, onViewEmployees, onPaymentsReports }: BusinessTileProps) {
   const getBusinessTypeIcon = (type: string) => {
     const icons: Record<string, string> = {
       restaurant: '🍽️',

@@ -6,7 +6,6 @@ import {
   getJobsWithApplicationStatus, 
   updateJobPost, 
   deleteJobPost,
-  JOB_STATUS_LABELS,
   JOB_TYPE_LABELS
 } from '../../lib/jobs-api';
 import { getApplicationsByJobPost } from '../../lib/job-applications-api';
@@ -16,7 +15,7 @@ export function Shortlisted() {
   const [jobs, setJobs] = useState<JobPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<'all' | 'draft' | 'published'>('all');
+  const [filter] = useState<'all' | 'draft' | 'published'>('all');
   const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
   const [selectedBusinessName, setSelectedBusinessName] = useState<string>('');
   
@@ -50,7 +49,7 @@ export function Shortlisted() {
       // Apply status filter if not 'all' and filter out closed jobs
       const filteredJobs = filter === 'all' 
         ? jobData.filter(job => job.status !== 'closed')
-        : jobData.filter(job => job.status === filter && job.status !== 'closed');
+        : jobData.filter(job => job.status === filter);
       
       setJobs(filteredJobs);
     } catch (error) {

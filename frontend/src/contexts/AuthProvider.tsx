@@ -186,8 +186,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch (error) {
         console.error('❌ Auth completion failed:', error);
         console.error('❌ Error details:', {
-          message: error.message,
-          stack: error.stack,
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
           userId: session.user?.id,
           email: session.user?.email
         });

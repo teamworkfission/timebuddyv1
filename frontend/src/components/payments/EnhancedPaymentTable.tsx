@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Check, Clock, CheckCircle, Users, AlertTriangle } from 'lucide-react';
+import { useState } from 'react';
+import { Clock, CheckCircle, Users, AlertTriangle } from 'lucide-react';
 import { EmployeeWithHours, formatCurrency } from '../../lib/payments-api';
 import { Button } from '../ui/Button';
 
@@ -30,8 +30,6 @@ interface EmployeeFormData {
 
 export function EnhancedPaymentTable({
   employees,
-  businessId,
-  dateRange,
   onSave,
   onMarkPaid,
   loading = false,
@@ -290,7 +288,7 @@ export function EnhancedPaymentTable({
                         </div>
                       ) : (
                         <>
-                          {employee.paymentRecord?.status !== 'paid' && (
+                          {employee.paymentRecord?.status === 'calculated' && (
                             <Button
                               size="sm"
                               onClick={() => handleSaveEmployee(employee)}
@@ -301,7 +299,7 @@ export function EnhancedPaymentTable({
                             </Button>
                           )}
                           
-                          {employee.paymentRecord && employee.paymentRecord.status !== 'paid' && (
+                          {employee.paymentRecord && employee.paymentRecord.status === 'calculated' && (
                             <Button
                               size="sm"
                               variant="outline"

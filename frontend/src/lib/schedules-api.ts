@@ -1,5 +1,4 @@
 import { supabase } from './supabase';
-import { Business } from './business-api';
 import { getCurrentWeekStart } from './date-utils';
 
 // Re-export date utilities for components that import from schedules-api
