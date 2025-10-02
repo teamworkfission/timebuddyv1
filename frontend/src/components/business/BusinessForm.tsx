@@ -3,6 +3,7 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { GooglePlacesAutocomplete } from '../ui/GooglePlacesAutocomplete';
 import { StateDropdown, getStateCodeFromName } from '../ui/StateDropdown';
+import { SearchableSelect } from '../ui/SearchableSelect';
 import { createBusiness, updateBusiness, deleteBusiness, BUSINESS_TYPES, BUSINESS_TYPE_LABELS, CreateBusinessData, Business } from '../../lib/business-api';
 import { supabase } from '../../lib/supabase';
 
@@ -288,25 +289,17 @@ export function BusinessForm({ onSuccess, onCancel, initialData, mode = 'create'
         </div>
 
         {/* Business Type */}
-        <div>
-          <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-2">
-            Business Type *
-          </label>
-          <select
-            id="type"
-            name="type"
-            required
-            value={formData.type}
-            onChange={handleInputChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            {BUSINESS_TYPES.map(type => (
-              <option key={type} value={type}>
-                {BUSINESS_TYPE_LABELS[type]}
-              </option>
-            ))}
-          </select>
-        </div>
+        <SearchableSelect
+          label="Business Type"
+          options={BUSINESS_TYPES.map(type => ({
+            value: type,
+            label: BUSINESS_TYPE_LABELS[type],
+          }))}
+          value={formData.type}
+          onChange={(value) => setFormData(prev => ({ ...prev, type: value as any }))}
+          placeholder="Search business type..."
+          required
+        />
 
         {/* Email */}
         <div>

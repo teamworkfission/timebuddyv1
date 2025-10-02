@@ -40,6 +40,20 @@ export type BusinessType =
   | 'delivery_service'
   | 'warehouse'
   | 'office'
+  | 'liquor_store'
+  | 'smoke_vape_shop'
+  | 'salon_barber'
+  | 'nail_beauty_spa'
+  | 'cleaning_services'
+  | 'event_staffing'
+  | 'childcare_daycare'
+  | 'senior_care'
+  | 'hospitality'
+  | 'construction'
+  | 'landscaping'
+  | 'moving_storage'
+  | 'car_wash_detailing'
+  | 'security_services'
   | 'other';
 
 export interface CreateBusinessData {
@@ -88,6 +102,20 @@ export const BUSINESS_TYPE_LABELS: Record<BusinessType, string> = {
   delivery_service: 'Delivery Service',
   warehouse: 'Warehouse',
   office: 'Office',
+  liquor_store: 'Liquor Store / Package Store',
+  smoke_vape_shop: 'Smoke / Vape Shop',
+  salon_barber: 'Salon / Barber Shop',
+  nail_beauty_spa: 'Nail / Beauty Spa',
+  cleaning_services: 'Cleaning Services',
+  event_staffing: 'Event Staffing',
+  childcare_daycare: 'Childcare / Daycare',
+  senior_care: 'Senior Care / Assisted Living',
+  hospitality: 'Hospitality (Hotels / Motels)',
+  construction: 'Construction / Handyman',
+  landscaping: 'Landscaping / Lawn Care',
+  moving_storage: 'Moving / Storage Services',
+  car_wash_detailing: 'Car Wash / Auto Detailing',
+  security_services: 'Security Services',
   other: 'Other',
 };
 

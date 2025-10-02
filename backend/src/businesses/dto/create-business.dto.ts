@@ -13,6 +13,20 @@ const BUSINESS_TYPES = [
   'delivery_service',
   'warehouse',
   'office',
+  'liquor_store',
+  'smoke_vape_shop',
+  'salon_barber',
+  'nail_beauty_spa',
+  'cleaning_services',
+  'event_staffing',
+  'childcare_daycare',
+  'senior_care',
+  'hospitality',
+  'construction',
+  'landscaping',
+  'moving_storage',
+  'car_wash_detailing',
+  'security_services',
   'other'
 ] as const;
 
