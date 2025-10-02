@@ -200,21 +200,21 @@ export function EmployeeEarnings() {
     <div className="min-h-screen bg-gray-50">
       {/* Tab Navigation */}
       <div className="bg-white border-b border-gray-200">
-        <div className="max-w-6xl mx-auto">
-          <nav className="flex">
+        <div className="max-w-6xl mx-auto px-4 py-2">
+          <nav className="flex gap-2 sm:gap-3">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 sm:flex-none sm:px-8 py-4 text-sm font-medium border-b-2 transition-colors duration-200 ${
+                className={`flex-1 sm:flex-none sm:min-w-[180px] px-4 sm:px-6 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
                   activeTab === tab.id
-                    ? 'border-blue-500 text-blue-600 bg-blue-50'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'bg-green-500 text-white shadow-md'
+                    : 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'
                 }`}
               >
                 <div className="flex items-center justify-center gap-2">
                   <span className="text-lg">{tab.icon}</span>
-                  <span className="hidden sm:inline">{tab.label}</span>
+                  <span className="text-sm sm:text-base">{tab.label}</span>
                 </div>
               </button>
             ))}
