@@ -18,7 +18,7 @@ export function EmployeeScheduleFilter({
   return (
     <div className="mb-4">
       <label htmlFor="employer-filter" className="block text-sm font-medium text-gray-700 mb-2">
-        Filter by Employer
+        Select Employer
       </label>
       <div className="relative">
         <select
@@ -27,7 +27,7 @@ export function EmployeeScheduleFilter({
           value={selectedBusinessId || ''}
           onChange={(e) => onBusinessSelect(e.target.value || null)}
         >
-          <option value="">All Employers</option>
+          <option value="">-- Select an Employer --</option>
           {businesses.map((business) => (
             <option key={business.business_id} value={business.business_id}>
               {business.name}

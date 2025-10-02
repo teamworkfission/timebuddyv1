@@ -97,6 +97,16 @@ export function EmployeeSchedule() {
     }
   };
 
+  // Auto-select business if there's only one
+  useEffect(() => {
+    if (scheduleData?.businesses) {
+      if (scheduleData.businesses.length === 1 && !selectedBusinessId) {
+        // Auto-select the only business
+        setSelectedBusinessId(scheduleData.businesses[0].business_id);
+      }
+    }
+  }, [scheduleData?.businesses, selectedBusinessId]);
+
   // Load initial data
   useEffect(() => {
     if (userId) {
@@ -203,7 +213,7 @@ export function EmployeeSchedule() {
                 </div>
               </div>
 
-              {/* Employer Filter */}
+              {/* Employer Filter - Always show if multiple businesses */}
               {scheduleData?.businesses && scheduleData.businesses.length > 1 && (
                 <EmployeeScheduleFilter
                   businesses={scheduleData.businesses}
@@ -247,8 +257,21 @@ export function EmployeeSchedule() {
               </div>
             )}
 
-            {/* Schedule Content */}
-            {!loading && !error && scheduleData && (
+            {/* Show "Please select" message if multiple businesses and none selected */}
+            {!loading && !error && scheduleData && scheduleData.businesses.length > 1 && !selectedBusinessId && (
+              <div className="bg-white rounded-lg shadow p-8 text-center">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
+                  <span className="text-2xl">📅</span>
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Select an Employer</h3>
+                <p className="text-gray-500 max-w-sm mx-auto">
+                  Please select an employer from the dropdown above to view your schedule.
+                </p>
+              </div>
+            )}
+
+            {/* Schedule Content - Only show if business is selected OR if there's only one business */}
+            {!loading && !error && scheduleData && selectedBusinessId && (
               <EmployeeWeeklyScheduleView
                 weekStartDate={currentWeek}
                 allShifts={getAllShifts()}
