@@ -47,16 +47,32 @@ export function EmployeeSchedule() {
       const data = await EmployeeSchedulesAPI.getEmployeeWeeklySchedules(weekStart);
       setScheduleData(data);
       
+      // DEBUG: Log schedule data to check if posted_at is being returned
+      console.log('🔍 DEBUG: Schedule data received:', data);
+      console.log('🔍 DEBUG: Schedules array:', data.schedules);
+      if (data.schedules && data.schedules.length > 0) {
+        console.log('🔍 DEBUG: First schedule posted_at:', data.schedules[0].posted_at);
+      }
+      
       // Get the most recent posted_at timestamp from all schedules
       const latestPostedAt = data.schedules?.reduce((latest, schedule) => {
+        console.log('🔍 DEBUG: Schedule posted_at:', schedule.posted_at);
         if (!schedule.posted_at) return latest;
         if (!latest) return schedule.posted_at;
         return new Date(schedule.posted_at) > new Date(latest) ? schedule.posted_at : latest;
       }, null as string | null);
       
+      console.log('🔍 DEBUG: Latest posted_at:', latestPostedAt);
+      console.log('🔍 DEBUG: Week start:', weekStart);
+      console.log('🔍 DEBUG: User ID:', userId);
+      
       // Update schedules count for notification badge - only show if NOT viewed or if schedule was updated
       const schedulesExist = (data.schedules?.length || 0) > 0;
       const isViewed = userId && hasBeenViewed(userId, 'schedules', weekStart, latestPostedAt || undefined);
+      
+      console.log('🔍 DEBUG: Schedules exist:', schedulesExist);
+      console.log('🔍 DEBUG: Is viewed:', isViewed);
+      
       setSchedulesCount(schedulesExist && !isViewed ? data.schedules.length : 0);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load schedule');
