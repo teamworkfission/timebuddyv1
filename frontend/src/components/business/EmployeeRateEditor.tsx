@@ -107,20 +107,26 @@ export function EmployeeRateEditor({
 
   return (
     <div className="space-y-1">
-      <div className="flex items-center space-x-2 group">
-        <span>💰</span>
-        <span className="text-sm font-medium text-gray-900">
-          {currentRate && currentRate > 0 
-            ? `$${currentRate.toFixed(2)}/hr`
-            : 'Rate not set'
-          }
-        </span>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <span>💰</span>
+          <span className="text-sm font-medium text-gray-900">
+            {currentRate && currentRate > 0 
+              ? `$${currentRate.toFixed(2)}/hr`
+              : 'Rate not set'
+            }
+          </span>
+        </div>
         <button
           onClick={() => setIsEditing(true)}
           disabled={disabled}
-          className="opacity-0 group-hover:opacity-100 text-blue-600 hover:text-blue-800 text-xs font-medium transition-opacity disabled:opacity-50"
+          className="flex items-center space-x-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-2 py-1 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[36px]"
+          title={currentRate && currentRate > 0 ? 'Edit rate' : 'Set rate'}
         >
-          {currentRate && currentRate > 0 ? 'Edit' : 'Set Rate'}
+          <span className="text-base">✏️</span>
+          <span className="text-xs font-medium">
+            {currentRate && currentRate > 0 ? 'Edit' : 'Set Rate'}
+          </span>
         </button>
       </div>
       

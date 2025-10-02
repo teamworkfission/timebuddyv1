@@ -145,25 +145,35 @@ export function EmployeeList({ businessId, businessName, onBack }: EmployeeListP
         </div>
       )}
 
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200">
+      {/* Header - Mobile Optimized */}
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
+          <div className="py-4 space-y-3 sm:space-y-0 sm:flex sm:items-center sm:justify-between sm:h-16 sm:py-0">
+            {/* Top row - Back button and title (mobile), side by side (desktop) */}
+            <div className="flex items-center justify-between sm:justify-start sm:space-x-4 sm:flex-1">
               <Button 
                 variant="outline" 
                 onClick={onBack}
-                className="flex items-center space-x-2"
+                className="flex items-center space-x-2 min-h-[44px] px-4"
+                size="sm"
               >
-                <span>←</span>
-                <span>Back to Businesses</span>
+                <span className="text-lg">←</span>
+                <span className="hidden sm:inline">Back to Businesses</span>
+                <span className="sm:hidden">Back</span>
               </Button>
-              <div>
-                <h1 className="text-xl font-semibold text-gray-900">{businessName}</h1>
-                <p className="text-sm text-gray-500">Employee Management</p>
+              <div className="flex-1 sm:flex-none min-w-0">
+                <h1 className="text-lg sm:text-xl font-semibold text-gray-900 truncate">{businessName}</h1>
+                <p className="text-xs sm:text-sm text-gray-500">Employee Management</p>
               </div>
             </div>
-            <Button onClick={loadEmployees} variant="secondary" size="sm">
+            
+            {/* Refresh button - full width on mobile, auto on desktop */}
+            <Button 
+              onClick={loadEmployees} 
+              variant="secondary" 
+              size="sm"
+              className="w-full sm:w-auto min-h-[44px]"
+            >
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
@@ -217,107 +227,124 @@ export function EmployeeList({ businessId, businessName, onBack }: EmployeeListP
 
             <div className="divide-y divide-gray-200">
               {employees.map((employee) => (
-                <div key={employee.employee.id} className="p-6">
-                  <div className="flex items-start justify-between">
+                <div key={employee.employee.id} className="p-4 sm:p-6">
+                  {/* Mobile: Stack vertically, Desktop: Side by side */}
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between space-y-4 sm:space-y-0">
                     <div className="flex-1">
-                      <div className="flex items-center space-x-4 mb-4">
-                        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                          <span className="text-lg font-medium text-blue-600">
+                      {/* Employee Header - Mobile Optimized */}
+                      <div className="flex items-center space-x-3 sm:space-x-4 mb-4">
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                          <span className="text-lg sm:text-xl font-medium text-blue-600">
                             {employee.employee.full_name.charAt(0).toUpperCase()}
                           </span>
                         </div>
-                        <div>
-                          <h3 className="text-lg font-medium text-gray-900">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-base sm:text-lg font-medium text-gray-900 truncate">
                             {employee.employee.full_name}
                           </h3>
-                          <div className="flex items-center space-x-4 text-sm text-gray-500">
-                            <span>GID: {employee.employee.employee_gid}</span>
-                            <span>•</span>
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 text-xs sm:text-sm text-gray-500">
+                            <span className="truncate">GID: {employee.employee.employee_gid}</span>
+                            <span className="hidden sm:inline">•</span>
                             <span>Joined {new Date(employee.joined_at).toLocaleDateString()}</span>
                           </div>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-900 mb-2">Contact Information</h4>
+                      {/* Information Cards - Mobile: Stack, Desktop: 3 columns */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                        {/* Contact Information Card */}
+                        <div className="bg-gray-50 p-3 sm:p-4 rounded-lg border border-gray-200">
+                          <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+                            <span className="mr-2">📱</span>
+                            Contact Information
+                          </h4>
                           <div className="space-y-2 text-sm">
                             {/* Email - Clickable mailto link */}
-                            <div className="flex items-center space-x-2 group">
-                              <span>📧</span>
-                              <a 
-                                href={`mailto:${employee.employee.email}`}
-                                className="text-blue-600 hover:text-blue-800 hover:underline transition-colors cursor-pointer"
-                                title="Send email"
-                              >
-                                {employee.employee.email}
-                              </a>
-                              <button
-                                onClick={() => handleCopyToClipboard(employee.employee.email, 'Email')}
-                                className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-600 transition-opacity"
-                                title="Copy email"
-                              >
-                                📋
-                              </button>
+                            <div className="flex items-start space-x-2 group min-h-[44px] sm:min-h-0">
+                              <span className="flex-shrink-0 mt-1">📧</span>
+                              <div className="flex-1 min-w-0 flex items-center space-x-1">
+                                <a 
+                                  href={`mailto:${employee.employee.email}`}
+                                  className="text-blue-600 hover:text-blue-800 hover:underline transition-colors cursor-pointer truncate flex-1 py-2 sm:py-0"
+                                  title="Send email"
+                                >
+                                  {employee.employee.email}
+                                </a>
+                                <button
+                                  onClick={() => handleCopyToClipboard(employee.employee.email, 'Email')}
+                                  className="sm:opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-600 transition-opacity p-2 sm:p-1 min-h-[44px] sm:min-h-0"
+                                  title="Copy email"
+                                >
+                                  📋
+                                </button>
+                              </div>
                             </div>
                             
                             {/* Phone - Clickable tel link */}
-                            <div className="flex items-center space-x-2 group">
-                              <span>📞</span>
-                              <a 
-                                href={`tel:${employee.employee.phone}`}
-                                className="text-blue-600 hover:text-blue-800 hover:underline transition-colors cursor-pointer"
-                                title="Call phone number"
-                              >
-                                {employee.employee.phone}
-                              </a>
-                              <button
-                                onClick={() => handleCopyToClipboard(employee.employee.phone, 'Phone')}
-                                className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-600 transition-opacity"
-                                title="Copy phone number"
-                              >
-                                📋
-                              </button>
+                            <div className="flex items-start space-x-2 group min-h-[44px] sm:min-h-0">
+                              <span className="flex-shrink-0 mt-1">📞</span>
+                              <div className="flex-1 min-w-0 flex items-center space-x-1">
+                                <a 
+                                  href={`tel:${employee.employee.phone}`}
+                                  className="text-blue-600 hover:text-blue-800 hover:underline transition-colors cursor-pointer truncate flex-1 py-2 sm:py-0"
+                                  title="Call phone number"
+                                >
+                                  {employee.employee.phone}
+                                </a>
+                                <button
+                                  onClick={() => handleCopyToClipboard(employee.employee.phone, 'Phone')}
+                                  className="sm:opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-600 transition-opacity p-2 sm:p-1 min-h-[44px] sm:min-h-0"
+                                  title="Copy phone number"
+                                >
+                                  📋
+                                </button>
+                              </div>
                             </div>
                             
                             {/* Location - Clickable Google Maps link */}
-                            <div className="flex items-center space-x-2 group">
-                              <span>📍</span>
-                              <a 
-                                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${employee.employee.city}, ${employee.employee.state}`)}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-600 hover:text-blue-800 hover:underline transition-colors cursor-pointer"
-                                title="View on Google Maps"
-                              >
-                                {employee.employee.city}, {employee.employee.state}
-                              </a>
-                              <button
-                                onClick={() => handleCopyToClipboard(`${employee.employee.city}, ${employee.employee.state}`, 'Location')}
-                                className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-600 transition-opacity"
-                                title="Copy location"
-                              >
-                                📋
-                              </button>
+                            <div className="flex items-start space-x-2 group min-h-[44px] sm:min-h-0">
+                              <span className="flex-shrink-0 mt-1">📍</span>
+                              <div className="flex-1 min-w-0 flex items-center space-x-1">
+                                <a 
+                                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${employee.employee.city}, ${employee.employee.state}`)}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:text-blue-800 hover:underline transition-colors cursor-pointer truncate flex-1 py-2 sm:py-0"
+                                  title="View on Google Maps"
+                                >
+                                  {employee.employee.city}, {employee.employee.state}
+                                </a>
+                                <button
+                                  onClick={() => handleCopyToClipboard(`${employee.employee.city}, ${employee.employee.state}`, 'Location')}
+                                  className="sm:opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-600 transition-opacity p-2 sm:p-1 min-h-[44px] sm:min-h-0"
+                                  title="Copy location"
+                                >
+                                  📋
+                                </button>
+                              </div>
                             </div>
                           </div>
                         </div>
 
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-900 mb-2">Work Details</h4>
-                          <div className="space-y-1 text-sm text-gray-600">
-                            <div className="flex items-center space-x-2">
-                              <span>{getTransportationIcon(employee.employee.transportation)}</span>
+                        {/* Work Details Card */}
+                        <div className="bg-gray-50 p-3 sm:p-4 rounded-lg border border-gray-200">
+                          <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+                            <span className="mr-2">💼</span>
+                            Work Details
+                          </h4>
+                          <div className="space-y-2 text-sm text-gray-600">
+                            <div className="flex items-center space-x-2 min-h-[44px] sm:min-h-0 py-1">
+                              <span className="text-base">{getTransportationIcon(employee.employee.transportation)}</span>
                               <span>{getTransportationLabel(employee.employee.transportation)}</span>
                             </div>
                             {employee.employee.skills && employee.employee.skills.length > 0 && (
                               <div>
-                                <span className="font-medium">Skills:</span>
-                                <div className="flex flex-wrap gap-1 mt-1">
+                                <span className="font-medium text-gray-900">Skills:</span>
+                                <div className="flex flex-wrap gap-1.5 mt-2">
                                   {employee.employee.skills.map((skill, index) => (
                                     <span
                                       key={index}
-                                      className="inline-block bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded"
+                                      className="inline-block bg-blue-100 text-blue-800 text-xs px-2.5 py-1.5 rounded-md font-medium"
                                     >
                                       {skill}
                                     </span>
@@ -325,11 +352,18 @@ export function EmployeeList({ businessId, businessName, onBack }: EmployeeListP
                                 </div>
                               </div>
                             )}
+                            {(!employee.employee.skills || employee.employee.skills.length === 0) && (
+                              <p className="text-gray-400 italic">No skills listed</p>
+                            )}
                           </div>
                         </div>
 
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-900 mb-2">Pay Information</h4>
+                        {/* Pay Information Card */}
+                        <div className="bg-gray-50 p-3 sm:p-4 rounded-lg border border-gray-200">
+                          <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+                            <span className="mr-2">💰</span>
+                            Pay Information
+                          </h4>
                           <EmployeeRateEditor
                             employeeId={employee.employee.id}
                             employeeName={employee.employee.full_name}
@@ -339,33 +373,35 @@ export function EmployeeList({ businessId, businessName, onBack }: EmployeeListP
                         </div>
                       </div>
 
-                      <div className="flex items-center space-x-4">
+                      {/* Role and Actions Section - Mobile Optimized */}
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-gray-200">
                         <div className="flex items-center space-x-2">
-                          <label className="text-sm font-medium text-gray-700">Role:</label>
+                          <label className="text-sm font-medium text-gray-700 flex-shrink-0">Role:</label>
                           <select
                             value={employee.role}
                             onChange={(e) => handleRoleChange(employee, e.target.value)}
                             disabled={updatingRole === employee.employee.id}
-                            className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            className="flex-1 sm:flex-none text-sm border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[44px]"
                           >
                             <option value="employee">Employee</option>
                             <option value="supervisor">Supervisor</option>
                             <option value="manager">Manager</option>
                           </select>
                           {updatingRole === employee.employee.id && (
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 flex-shrink-0"></div>
                           )}
                         </div>
                       </div>
                     </div>
 
-                    <div className="ml-6">
+                    {/* Remove Button - Mobile: Full Width, Desktop: Side */}
+                    <div className="w-full sm:w-auto sm:ml-6">
                       <Button
                         variant="secondary"
                         size="sm"
                         onClick={() => handleRemoveEmployee(employee)}
                         disabled={removing === employee.employee.id}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        className="w-full sm:w-auto text-red-600 hover:text-red-700 hover:bg-red-50 min-h-[44px] justify-center"
                       >
                         {removing === employee.employee.id ? (
                           <>
@@ -373,7 +409,10 @@ export function EmployeeList({ businessId, businessName, onBack }: EmployeeListP
                             Removing...
                           </>
                         ) : (
-                          'Remove'
+                          <>
+                            <span className="mr-2">🗑️</span>
+                            Remove Employee
+                          </>
                         )}
                       </Button>
                     </div>
