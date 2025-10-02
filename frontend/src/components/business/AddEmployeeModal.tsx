@@ -117,6 +117,16 @@ export function AddEmployeeModal({
             <p className="text-sm text-gray-600 mb-4">
               Invite an employee to join <strong>{businessName}</strong> by entering their Employee GID.
             </p>
+            
+            {/* How to find GID instruction */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+              <p className="text-xs font-medium text-blue-900 mb-1">
+                📋 How employees can find their GID:
+              </p>
+              <p className="text-xs text-blue-700">
+                Ask your employee to log in → Click their <strong>Profile</strong> dropdown (top right) → Their GID is displayed at the top.
+              </p>
+            </div>
           </div>
 
           {/* GID Input */}

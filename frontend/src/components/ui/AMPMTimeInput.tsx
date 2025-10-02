@@ -101,7 +101,8 @@ export function AMPMTimeInput({
   }, [hour, minute, period, onChange]); // Include onChange but use ref to prevent loops
 
   const baseSelectClass = `
-    px-3 py-2 border border-gray-300 rounded-md 
+    px-2 py-2 sm:px-3 border border-gray-300 rounded-md 
+    text-sm sm:text-base
     focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
     disabled:bg-gray-50 disabled:text-gray-500
     ${error ? 'border-red-500 focus:ring-red-500' : ''}
@@ -115,17 +116,17 @@ export function AMPMTimeInput({
         </label>
       )}
       
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
         {/* Hour Selection */}
         <div>
-          <label className="block text-xs text-gray-500 mb-1">Hour</label>
+          <label className="block text-xs text-gray-500 mb-1 truncate">Hour</label>
           <select
             value={hour}
             onChange={(e) => setHour(e.target.value ? parseInt(e.target.value) : '')}
             disabled={disabled}
             className={`w-full ${baseSelectClass}`}
           >
-            <option value="">Hr</option>
+            <option value="">--</option>
             {HOUR_OPTIONS.map(({ value, label }) => (
               <option key={value} value={value}>
                 {label}
@@ -136,7 +137,7 @@ export function AMPMTimeInput({
 
         {/* Minute Selection */}
         <div>
-          <label className="block text-xs text-gray-500 mb-1">Min</label>
+          <label className="block text-xs text-gray-500 mb-1 truncate">Min</label>
           <select
             value={minute}
             onChange={(e) => setMinute(parseInt(e.target.value))}
@@ -153,7 +154,7 @@ export function AMPMTimeInput({
 
         {/* AM/PM Selection */}
         <div>
-          <label className="block text-xs text-gray-500 mb-1">Period</label>
+          <label className="block text-xs text-gray-500 mb-1 truncate">Period</label>
           <select
             value={period}
             onChange={(e) => setPeriod(e.target.value as 'AM' | 'PM')}
@@ -169,9 +170,9 @@ export function AMPMTimeInput({
       {/* Selected Time Display - Better Integration */}
       {hour !== '' && (
         <div className="mt-2 p-2 bg-blue-50 rounded-md border border-blue-200">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-blue-700">Selected Time:</span>
-            <span className="text-sm font-semibold text-blue-900">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+            <span className="text-xs sm:text-sm text-blue-700">Selected Time:</span>
+            <span className="text-sm sm:text-base font-semibold text-blue-900">
               {hour}:{minute.toString().padStart(2, '0')} {period}
             </span>
           </div>

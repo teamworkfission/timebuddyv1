@@ -22,11 +22,9 @@ const PRESET_COLORS = [
   '#3B82F6', // Blue
   '#10B981', // Green
   '#8B5CF6', // Purple
-  '#F59E0B', // Yellow
-  '#EF4444', // Red
-  '#06B6D4', // Cyan
-  '#84CC16', // Lime
   '#F97316', // Orange
+  '#EF4444', // Red
+  '#F59E0B', // Yellow
 ];
 
 export function ShiftTemplateManager({
@@ -169,20 +167,7 @@ export function ShiftTemplateManager({
 
   return (
     <Modal isOpen={true} onClose={onClose} maxWidth="lg" title="Manage Shift Templates">
-      <div className="p-6">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold text-gray-900">
-            Manage Shift Templates
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
+      <div className="p-4 sm:p-6">
         {/* Error Message */}
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
