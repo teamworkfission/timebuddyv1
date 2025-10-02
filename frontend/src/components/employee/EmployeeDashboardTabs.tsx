@@ -61,7 +61,15 @@ export function EmployeeDashboardTabs({ userEmail, onLogout, onJobProfile, isPro
         // Fetch schedules for current week
         const scheduleData = await EmployeeSchedulesAPI.getEmployeeWeeklySchedules(currentWeek);
         const hasSchedules = (scheduleData.schedules?.length || 0) > 0;
-        const schedulesViewed = hasBeenViewed(userId, 'schedules', currentWeek);
+        
+        // Get the latest posted_at timestamp from all schedules
+        const latestPostedAt = scheduleData.schedules?.reduce((latest: string | null, schedule: any) => {
+          if (!schedule.posted_at) return latest;
+          if (!latest) return schedule.posted_at;
+          return new Date(schedule.posted_at) > new Date(latest) ? schedule.posted_at : latest;
+        }, null as string | null);
+        
+        const schedulesViewed = hasBeenViewed(userId, 'schedules', currentWeek, latestPostedAt || undefined);
         const unviewedSchedulesCount = hasSchedules && !schedulesViewed ? scheduleData.schedules.length : 0;
 
         // Set total count of UNVIEWED items only

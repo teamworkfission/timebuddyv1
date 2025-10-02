@@ -47,9 +47,16 @@ export function EmployeeSchedule() {
       const data = await EmployeeSchedulesAPI.getEmployeeWeeklySchedules(weekStart);
       setScheduleData(data);
       
-      // Update schedules count for notification badge - only show if NOT viewed
+      // Get the most recent posted_at timestamp from all schedules
+      const latestPostedAt = data.schedules?.reduce((latest, schedule) => {
+        if (!schedule.posted_at) return latest;
+        if (!latest) return schedule.posted_at;
+        return new Date(schedule.posted_at) > new Date(latest) ? schedule.posted_at : latest;
+      }, null as string | null);
+      
+      // Update schedules count for notification badge - only show if NOT viewed or if schedule was updated
       const schedulesExist = (data.schedules?.length || 0) > 0;
-      const isViewed = userId && hasBeenViewed(userId, 'schedules', weekStart);
+      const isViewed = userId && hasBeenViewed(userId, 'schedules', weekStart, latestPostedAt || undefined);
       setSchedulesCount(schedulesExist && !isViewed ? data.schedules.length : 0);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load schedule');
@@ -90,7 +97,14 @@ export function EmployeeSchedule() {
 
     // Mark the tab as viewed and remove its badge
     if (tabId === 'schedule') {
-      markAsViewed(userId, 'schedules', currentWeek);
+      // Get the latest posted_at timestamp from current schedule data
+      const latestPostedAt = scheduleData?.schedules?.reduce((latest: string | null, schedule: any) => {
+        if (!schedule.posted_at) return latest;
+        if (!latest) return schedule.posted_at;
+        return new Date(schedule.posted_at) > new Date(latest) ? schedule.posted_at : latest;
+      }, null as string | null);
+      
+      markAsViewed(userId, 'schedules', currentWeek, latestPostedAt || undefined);
       setSchedulesCount(0);
     } else if (tabId === 'join-requests') {
       markAsViewed(userId, 'join_requests');
