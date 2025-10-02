@@ -142,171 +142,171 @@ Duties:
   },
 
   liquor_store: {
-    title: 'Liquor Store Associate',
-    description: `Assist customers with product selections in a retail alcohol and spirits environment. Check IDs, process sales, and maintain inventory.
+    title: 'Liquor Store Clerk / Cashier',
+    description: `Assist customers with purchases of beer, wine, and spirits while ensuring ID verification and compliance with state laws.
 
 Duties:
-• Greet customers and provide product recommendations
-• Verify customer age and check valid identification
-• Process sales transactions and handle cash/card payments
-• Stock shelves and organize inventory by category
-• Maintain store cleanliness and comply with state regulations`,
+• Greet and assist customers
+• Check IDs and enforce age restrictions
+• Operate register and handle payments
+• Stock shelves and coolers
+• Maintain a clean, orderly store`,
   },
 
   smoke_vape_shop: {
-    title: 'Smoke Shop / Vape Shop Associate',
-    description: `Provide knowledgeable customer service in a tobacco and vaping products retail environment. Ensure compliance with age verification requirements.
+    title: 'Vape Shop Associate',
+    description: `Provide customer service and sales support in a smoke and vape shop, ensuring compliance with age restrictions.
 
 Duties:
-• Assist customers with product selection and education
-• Verify age and check valid identification for all sales
-• Operate point-of-sale system and process transactions
-• Stock and organize tobacco, vaping, and accessory products
-• Maintain clean and compliant retail environment`,
+• Greet customers and answer product questions
+• Verify customer ID for tobacco/vape sales
+• Restock products and maintain displays
+• Operate POS system and process sales
+• Keep store clean and organized`,
   },
 
   salon_barber: {
-    title: 'Salon / Barber Shop Assistant',
-    description: `Support salon or barbershop operations by assisting stylists, managing appointments, and maintaining a welcoming environment.
+    title: 'Salon Assistant / Receptionist',
+    description: `Support daily salon operations by assisting stylists, managing appointments, and welcoming clients.
 
 Duties:
-• Greet clients and manage appointment scheduling
-• Assist stylists with shampooing, blow-drying, and cleanup
-• Maintain cleanliness of workstations and equipment
-• Handle payments and product sales
-• Restock supplies and launder towels`,
+• Greet clients and manage scheduling
+• Assist stylists with prep and cleanup
+• Shampoo or blow-dry clients (if trained)
+• Keep salon clean and stocked with supplies
+• Handle payments and product sales`,
   },
 
   nail_beauty_spa: {
-    title: 'Spa / Salon Receptionist',
-    description: `Provide front desk support for a nail salon or beauty spa. Manage bookings, greet clients, and ensure a relaxing atmosphere.
+    title: 'Spa Receptionist / Assistant',
+    description: `Assist spa professionals by greeting clients, maintaining a clean environment, and providing customer service.
 
 Duties:
-• Answer phones and schedule appointments
-• Greet clients and offer beverages or magazines
-• Process payments and handle retail product sales
-• Maintain cleanliness of reception and waiting areas
-• Assist with inventory and supply ordering`,
+• Welcome guests and manage check-ins
+• Support nail technicians or estheticians
+• Clean and sanitize stations
+• Restock spa products and supplies
+• Answer calls and handle bookings`,
   },
 
   cleaning_services: {
-    title: 'Cleaning Specialist',
-    description: `Provide professional cleaning services for residential or commercial properties. Ensure thorough and detail-oriented work.
+    title: 'Cleaner / Janitorial Staff',
+    description: `Perform cleaning duties in residential, office, or commercial spaces to ensure a safe and sanitary environment.
 
 Duties:
-• Clean and sanitize rooms, bathrooms, and common areas
-• Vacuum, mop, and dust all surfaces
-• Empty trash and replace liners
-• Restock cleaning supplies and toiletries
-• Follow safety protocols and use proper equipment`,
+• Sweep, mop, vacuum, and dust
+• Sanitize restrooms and common areas
+• Take out trash and recyclables
+• Restock cleaning supplies
+• Follow client or supervisor instructions`,
   },
 
   event_staffing: {
-    title: 'Event Staff / Server',
-    description: `Support event setup, service, and breakdown for weddings, corporate events, and parties. Provide excellent guest service.
+    title: 'Event Staff Member',
+    description: `Provide guest support and operational assistance at events such as concerts, weddings, or conferences.
 
 Duties:
-• Set up tables, chairs, and event decor
-• Serve food and beverages to guests
-• Clear tables and maintain cleanliness during events
-• Assist with event breakdown and cleanup
-• Follow event coordinator instructions and timelines`,
+• Greet and direct guests
+• Assist with setup and teardown
+• Serve food or beverages (if assigned)
+• Monitor crowd and event safety
+• Work ticketing, ushering, or registration desks`,
   },
 
   childcare_daycare: {
-    title: 'Childcare Assistant / Daycare Aide',
-    description: `Assist with the care and supervision of children in a daycare or childcare setting. Support educational activities and maintain a safe environment.
+    title: 'Childcare Assistant',
+    description: `Help with daily care and supervision of children in daycare or after-school settings.
 
 Duties:
-• Supervise children during play and learning activities
-• Assist with meals, snacks, and nap time
-• Help with diaper changes and bathroom needs
-• Maintain cleanliness and organize toys/materials
-• Follow safety protocols and report concerns to lead teacher`,
+• Supervise children during play and activities
+• Assist with meals, snacks, and clean-up
+• Support teachers with classroom tasks
+• Ensure safety and follow childcare policies
+• Communicate with parents as needed`,
   },
 
   senior_care: {
-    title: 'Senior Care Assistant / Caregiver',
-    description: `Provide compassionate care and support to seniors in assisted living or home care settings. Assist with daily activities and companionship.
+    title: 'Care Aide / Support Staff',
+    description: `Provide assistance and support to seniors in assisted living or residential care facilities.
 
 Duties:
-• Assist with daily living activities (bathing, dressing, grooming)
-• Help with meal preparation and feeding
-• Provide medication reminders as directed
-• Offer companionship and engage in activities
-• Monitor and report changes in health or behavior`,
+• Help residents with meals and mobility
+• Provide companionship and conversation
+• Assist with light housekeeping
+• Support staff in daily operations
+• Follow health and safety protocols`,
   },
 
   hospitality: {
-    title: 'Hotel / Motel Front Desk Associate',
-    description: `Provide guest services at hotel or motel front desk. Handle check-ins, reservations, and guest inquiries with professionalism.
+    title: 'Hotel Associate',
+    description: `Support hotel operations in front desk, housekeeping, or guest services roles.
 
 Duties:
-• Check guests in and out, process payments
-• Answer phones and manage reservations
-• Provide information about hotel amenities and local attractions
-• Handle guest complaints and resolve issues
-• Maintain lobby cleanliness and restock brochures`,
+• Welcome and assist guests at check-in/out
+• Clean and prepare guest rooms
+• Assist with laundry and supplies
+• Support banquet/events staff if needed
+• Ensure guest satisfaction and safety`,
   },
 
   construction: {
-    title: 'Construction Laborer / Handyman',
-    description: `Assist with construction projects, repairs, and general maintenance work. Perform hands-on tasks and support skilled tradespeople.
+    title: 'General Laborer',
+    description: `Assist skilled workers and contractors with construction, repair, or maintenance projects.
 
 Duties:
-• Assist with site preparation and cleanup
-• Load and unload materials and equipment
-• Perform basic carpentry, painting, or repair tasks
-• Follow safety protocols and wear protective equipment
-• Take direction from contractors and project managers`,
+• Carry tools and materials
+• Perform basic construction tasks
+• Assist in cleanup and site prep
+• Follow supervisor instructions
+• Maintain safety on job site`,
   },
 
   landscaping: {
-    title: 'Landscaping / Lawn Care Worker',
-    description: `Maintain outdoor spaces through mowing, trimming, planting, and general landscaping duties. Work outdoors in various weather conditions.
+    title: 'Groundskeeper / Lawn Care Worker',
+    description: `Maintain lawns, gardens, and outdoor spaces for residential or commercial clients.
 
 Duties:
-• Mow lawns and trim edges
-• Plant flowers, shrubs, and trees
-• Weed garden beds and apply mulch
-• Operate landscaping equipment safely
-• Clean up debris and maintain tools`,
+• Mow, trim, and edge lawns
+• Plant and water greenery
+• Rake leaves and clean outdoor areas
+• Operate basic landscaping tools
+• Follow safety practices outdoors`,
   },
 
   moving_storage: {
-    title: 'Moving / Warehouse Helper',
-    description: `Assist with moving household or commercial goods. Load, transport, and unload items safely and efficiently.
+    title: 'Mover / Loader',
+    description: `Assist in packing, loading, transporting, and unloading household or commercial items.
 
 Duties:
-• Load and unload trucks with furniture and boxes
-• Wrap and protect items during transport
-• Carry items up and down stairs
-• Assist with packing and organizing storage units
-• Follow safety protocols and prevent damage`,
+• Pack items safely into boxes
+• Load/unload trucks and vans
+• Move furniture and equipment
+• Handle items with care
+• Follow supervisor's moving plan`,
   },
 
   car_wash_detailing: {
-    title: 'Car Wash / Detailing Technician',
-    description: `Clean and detail vehicles to a high standard. Perform exterior washing, interior cleaning, and finishing touches.
+    title: 'Car Wash Attendant / Detailer',
+    description: `Clean, wash, and detail customer vehicles for a professional finish.
 
 Duties:
 • Wash and dry vehicle exteriors
-• Vacuum and clean vehicle interiors
-• Apply wax, polish, and tire shine
-• Clean windows, mirrors, and dashboards
-• Maintain equipment and supply inventory`,
+• Vacuum and clean interiors
+• Apply wax or detailing products
+• Handle cash and process payments
+• Keep work area tidy and safe`,
   },
 
   security_services: {
-    title: 'Security Guard / Officer',
-    description: `Provide security and safety services for properties, events, or facilities. Monitor premises and respond to incidents.
+    title: 'Security Guard / Event Security',
+    description: `Maintain safety and order at events, venues, or businesses.
 
 Duties:
-• Patrol assigned areas and monitor surveillance systems
-• Check credentials and control access to facilities
-• Respond to alarms and security incidents
-• Write reports and document incidents
-• Provide customer service and assist visitors`,
+• Monitor entry and exits
+• Check IDs when required
+• Patrol premises for safety
+• Assist with crowd control
+• Report any incidents or concerns`,
   },
 
   other: {
