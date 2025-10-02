@@ -69,6 +69,7 @@ export class CreateJobDto {
   @MaxLength(15)
   phone: string;
 
+  @ValidateIf((object, value) => value !== null && value !== undefined && value !== '')
   @IsEmail()
   @IsOptional()
   email?: string;
