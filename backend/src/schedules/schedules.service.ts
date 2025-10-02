@@ -624,15 +624,30 @@ export class SchedulesService {
           console.log(`📊 Using confirmed hours for ${schedule.business_name}: ${confirmedHours}h (calculated: ${calculatedHours}h)`);
         }
         
-        return {
+        const scheduleWithDetails = {
           ...schedule,
           business_name: schedule.businesses?.name,
           shifts,
           employees,
           total_hours_by_employee: { [employee.id]: totalHours },
         };
+        
+        // DEBUG: Log to verify posted_at is included
+        console.log('🔍 BACKEND DEBUG: Schedule object:', {
+          id: scheduleWithDetails.id,
+          business_name: scheduleWithDetails.business_name,
+          posted_at: scheduleWithDetails.posted_at,
+          status: scheduleWithDetails.status,
+        });
+        
+        return scheduleWithDetails;
       })
     );
+
+    console.log('🔍 BACKEND DEBUG: Final response schedules count:', schedulesWithShifts.length);
+    if (schedulesWithShifts.length > 0) {
+      console.log('🔍 BACKEND DEBUG: First schedule posted_at:', schedulesWithShifts[0].posted_at);
+    }
 
     return {
       schedules: schedulesWithShifts,

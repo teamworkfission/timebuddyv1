@@ -42,27 +42,49 @@ export function hasBeenViewed(
   const key = `${STORAGE_KEY_PREFIX}${employeeGid}_${type}`;
   const stored = localStorage.getItem(key);
   
+  console.log('🔍 TRACKER DEBUG: Checking if viewed:', {
+    type,
+    weekStart,
+    schedulePostedAt,
+    stored: !!stored
+  });
+  
   if (!stored) return false;
   
   try {
     const state: ViewedState = JSON.parse(stored);
     
+    console.log('🔍 TRACKER DEBUG: Stored state:', state);
+    
     // For schedules, check if the specific week has been viewed
     if (type === 'schedules' && weekStart) {
       // Week must match
-      if (state.weekViewed !== weekStart) return false;
+      if (state.weekViewed !== weekStart) {
+        console.log('🔍 TRACKER DEBUG: Week mismatch, not viewed');
+        return false;
+      }
       
       // If schedule has a posted_at timestamp, check if it's newer than last viewed
       if (schedulePostedAt && state.schedulePostedAt) {
         const currentPostedTime = new Date(schedulePostedAt).getTime();
         const viewedPostedTime = new Date(state.schedulePostedAt).getTime();
         
+        console.log('🔍 TRACKER DEBUG: Timestamp comparison:', {
+          current: schedulePostedAt,
+          currentTime: currentPostedTime,
+          viewed: state.schedulePostedAt,
+          viewedTime: viewedPostedTime,
+          isNewer: currentPostedTime > viewedPostedTime
+        });
+        
         // If current schedule is newer than the one we viewed, consider it not viewed
         if (currentPostedTime > viewedPostedTime) {
+          console.log('🔍 TRACKER DEBUG: Schedule updated, showing badge');
           return false;
         }
       }
       
+      console.log('🔍 TRACKER DEBUG: Schedule already viewed');
       return true;
     }
     

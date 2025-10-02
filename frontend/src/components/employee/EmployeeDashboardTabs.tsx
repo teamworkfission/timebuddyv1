@@ -62,15 +62,26 @@ export function EmployeeDashboardTabs({ userEmail, onLogout, onJobProfile, isPro
         const scheduleData = await EmployeeSchedulesAPI.getEmployeeWeeklySchedules(currentWeek);
         const hasSchedules = (scheduleData.schedules?.length || 0) > 0;
         
+        console.log('🔍 MAIN DASHBOARD DEBUG: Schedule data received:', scheduleData);
+        console.log('🔍 MAIN DASHBOARD DEBUG: Schedules array:', scheduleData.schedules);
+        
         // Get the latest posted_at timestamp from all schedules
         const latestPostedAt = scheduleData.schedules?.reduce((latest: string | null, schedule: any) => {
+          console.log('🔍 MAIN DASHBOARD DEBUG: Schedule posted_at:', schedule.posted_at);
           if (!schedule.posted_at) return latest;
           if (!latest) return schedule.posted_at;
           return new Date(schedule.posted_at) > new Date(latest) ? schedule.posted_at : latest;
         }, null as string | null);
         
+        console.log('🔍 MAIN DASHBOARD DEBUG: Latest posted_at:', latestPostedAt);
+        console.log('🔍 MAIN DASHBOARD DEBUG: Week:', currentWeek);
+        console.log('🔍 MAIN DASHBOARD DEBUG: User ID:', userId);
+        
         const schedulesViewed = hasBeenViewed(userId, 'schedules', currentWeek, latestPostedAt || undefined);
         const unviewedSchedulesCount = hasSchedules && !schedulesViewed ? scheduleData.schedules.length : 0;
+        
+        console.log('🔍 MAIN DASHBOARD DEBUG: Schedules viewed:', schedulesViewed);
+        console.log('🔍 MAIN DASHBOARD DEBUG: Unviewed count:', unviewedSchedulesCount);
 
         // Set total count of UNVIEWED items only
         setScheduleNotificationCount(unviewedSchedulesCount + unviewedJoinRequestsCount);
