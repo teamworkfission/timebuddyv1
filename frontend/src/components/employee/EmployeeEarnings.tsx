@@ -104,7 +104,7 @@ export function EmployeeEarnings() {
             </div>
             
             {/* Business and Week Selection */}
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col gap-4">
               {/* Business Dropdown */}
               <BusinessDropdown
                 businesses={businesses}
@@ -113,32 +113,46 @@ export function EmployeeEarnings() {
                 loading={loading}
               />
               
-              {/* Week Navigation */}
-              <div className="flex items-center bg-white rounded-lg shadow-sm border">
-                <button
-                  onClick={() => handleWeekNavigation('prev')}
-                  className="p-2 hover:bg-gray-50 rounded-l-lg transition-colors duration-200"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-                <div className="px-4 py-2 flex items-center space-x-2 min-w-[200px] justify-center">
-                  <Calendar className="h-4 w-4 text-gray-500" />
-                  <span className="font-medium">{formatWeekRange(currentWeek)}</span>
+              {/* Week Navigation - Mobile Optimized */}
+              <div className="bg-white rounded-lg shadow-md border border-gray-200 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  {/* Previous Week Button */}
+                  <button
+                    onClick={() => handleWeekNavigation('prev')}
+                    className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-green-50 hover:bg-green-100 text-green-600 hover:text-green-700 transition-all duration-200 border border-green-200 hover:border-green-300 active:scale-95"
+                    aria-label="Previous week"
+                  >
+                    <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+                  </button>
+                  
+                  {/* Week Display */}
+                  <div className="flex-1 flex flex-col items-center justify-center px-2 sm:px-4">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <Calendar className="h-4 w-4 text-green-600" />
+                      <span className="text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wide">
+                        Week
+                      </span>
+                    </div>
+                    <div className="text-sm sm:text-base font-bold text-gray-900 text-center">
+                      {formatWeekRange(currentWeek)}
+                    </div>
+                  </div>
+                  
+                  {/* Next Week Button */}
+                  <button
+                    onClick={() => handleWeekNavigation('next')}
+                    disabled={isNextWeekDisabled()}
+                    className={`flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-lg transition-all duration-200 border active:scale-95 ${
+                      isNextWeekDisabled()
+                        ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                        : 'bg-green-50 hover:bg-green-100 text-green-600 hover:text-green-700 border-green-200 hover:border-green-300'
+                    }`}
+                    title={isNextWeekDisabled() ? 'Cannot navigate to future weeks' : 'Next week'}
+                    aria-label="Next week"
+                  >
+                    <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
+                  </button>
                 </div>
-                <button
-                  onClick={() => handleWeekNavigation('next')}
-                  disabled={isNextWeekDisabled()}
-                  className={`p-2 rounded-r-lg transition-colors duration-200 ${
-                    isNextWeekDisabled()
-                      ? 'cursor-not-allowed bg-gray-100 text-gray-400'
-                      : 'hover:bg-gray-50 text-gray-700'
-                  }`}
-                  title={isNextWeekDisabled() ? 'Cannot navigate to future weeks' : 'Next week'}
-                >
-                  <ChevronRight className={`h-5 w-5 ${
-                    isNextWeekDisabled() ? 'text-gray-400' : 'text-gray-700'
-                  }`} />
-                </button>
               </div>
             </div>
           </div>

@@ -77,33 +77,43 @@ export function EmployeeSchedule() {
       default:
         return (
           <div className="max-w-6xl mx-auto px-4 py-6">
-            {/* Mobile-Friendly Week Navigation */}
+            {/* Week Navigation - Mobile Optimized */}
             <div className="mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <button
-                  onClick={handlePreviousWeek}
-                  className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  disabled={loading}
-                >
-                  <ChevronLeft className="h-4 w-4 mr-1" />
-                  <span className="hidden sm:inline">Previous</span>
-                </button>
-                
-                <div className="flex items-center text-center">
-                  <Calendar className="h-5 w-5 text-gray-400 mr-2" />
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    {formatWeekRange(currentWeek)}
-                  </h2>
+              <div className="bg-white rounded-lg shadow-md border border-gray-200 p-3 mb-4">
+                <div className="flex items-center justify-between gap-2">
+                  {/* Previous Week Button */}
+                  <button
+                    onClick={handlePreviousWeek}
+                    disabled={loading}
+                    className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 transition-all duration-200 border border-blue-200 hover:border-blue-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                    aria-label="Previous week"
+                  >
+                    <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+                  </button>
+                  
+                  {/* Week Display */}
+                  <div className="flex-1 flex flex-col items-center justify-center px-2 sm:px-4">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <Calendar className="h-4 w-4 text-blue-600" />
+                      <span className="text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wide">
+                        Week
+                      </span>
+                    </div>
+                    <div className="text-sm sm:text-base font-bold text-gray-900 text-center">
+                      {formatWeekRange(currentWeek)}
+                    </div>
+                  </div>
+                  
+                  {/* Next Week Button */}
+                  <button
+                    onClick={handleNextWeek}
+                    disabled={loading}
+                    className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 transition-all duration-200 border border-blue-200 hover:border-blue-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                    aria-label="Next week"
+                  >
+                    <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
+                  </button>
                 </div>
-                
-                <button
-                  onClick={handleNextWeek}
-                  className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  disabled={loading}
-                >
-                  <span className="hidden sm:inline">Next</span>
-                  <ChevronRight className="h-4 w-4 ml-1" />
-                </button>
               </div>
 
               {/* Employer Filter */}
