@@ -16,6 +16,7 @@ import {
   SUPPLEMENTAL_PAY_LABELS,
   BENEFITS_LABELS
 } from '../../lib/jobs-api';
+import { getJobDescriptionTemplate } from '../../lib/job-description-templates';
 
 interface CreateJobPostProps {
   editingJob?: any; // For future edit functionality
@@ -119,6 +120,9 @@ export function CreateJobPost({ editingJob, onSuccess }: CreateJobPostProps) {
   const handleBusinessSelect = (businessId: string) => {
     const selectedBusiness = businesses.find(b => b.business_id === businessId);
     if (selectedBusiness) {
+      // Get job description template based on business type
+      const template = getJobDescriptionTemplate(selectedBusiness.type);
+      
       setFormData(prev => ({
         ...prev,
         business_id: businessId,
@@ -127,6 +131,9 @@ export function CreateJobPost({ editingJob, onSuccess }: CreateJobPostProps) {
         business_type: selectedBusiness.type,
         phone: selectedBusiness.phone,
         email: selectedBusiness.email || '',
+        // Auto-fill job title and description from template
+        job_title: template?.title || '',
+        job_description: template?.description || '',
       }));
     }
   };
