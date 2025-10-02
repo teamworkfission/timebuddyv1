@@ -9,6 +9,7 @@ import { joinRequestsApi } from '../../lib/join-requests-api';
 import { EmployeeSchedulesAPI, getCurrentWeekStart } from '../../lib/schedules-api';
 import { supabase } from '../../lib/supabase';
 import { hasBeenViewed } from '../../lib/notification-tracker';
+import { getConfirmedHoursList } from '../../lib/confirmed-hours-api';
 
 interface EmployeeDashboardTabsProps {
   userEmail?: string;
@@ -24,13 +25,14 @@ type TabType = 'home' | 'myjobs' | 'schedule' | 'earnings';
 export function EmployeeDashboardTabs({ userEmail, onLogout, onJobProfile, isProfileComplete, profileCompletionPercentage, employeeGid }: EmployeeDashboardTabsProps) {
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [scheduleNotificationCount, setScheduleNotificationCount] = useState(0);
+  const [earningsNotificationCount, setEarningsNotificationCount] = useState(0);
   const [userId, setUserId] = useState<string>('');
 
   const tabs = [
     { id: 'home' as TabType, label: 'Home', icon: '🏠' },
     { id: 'myjobs' as TabType, label: 'My Jobs', icon: '💼' },
     { id: 'schedule' as TabType, label: 'Schedule', icon: '📅', notificationCount: scheduleNotificationCount },
-    { id: 'earnings' as TabType, label: 'Earnings', icon: '💰' }
+    { id: 'earnings' as TabType, label: 'Earnings', icon: '💰', notificationCount: earningsNotificationCount }
   ];
 
   // Get current user ID
@@ -82,6 +84,35 @@ export function EmployeeDashboardTabs({ userEmail, onLogout, onJobProfile, isPro
         
         console.log('🔍 MAIN DASHBOARD DEBUG: Schedules viewed:', schedulesViewed);
         console.log('🔍 MAIN DASHBOARD DEBUG: Unviewed count:', unviewedSchedulesCount);
+
+        // Fetch approved earnings count
+        try {
+          const confirmedHours = await getConfirmedHoursList();
+          const approvedRecords = confirmedHours.filter(record => record.status === 'approved');
+          
+          console.log('🔍 MAIN DASHBOARD DEBUG: Approved earnings:', approvedRecords.length);
+          
+          if (approvedRecords.length > 0) {
+            const latestApprovedAt = approvedRecords.reduce((latest, record) => {
+              if (!record.approved_at) return latest;
+              if (!latest) return record.approved_at;
+              return new Date(record.approved_at) > new Date(latest) ? record.approved_at : latest;
+            }, null as string | null);
+            
+            const earningsViewed = hasBeenViewed(userId, 'earnings', undefined, undefined, latestApprovedAt || undefined);
+            const unviewedEarningsCount = !earningsViewed ? approvedRecords.length : 0;
+            
+            console.log('🔍 MAIN DASHBOARD DEBUG: Earnings viewed:', earningsViewed);
+            console.log('🔍 MAIN DASHBOARD DEBUG: Unviewed earnings count:', unviewedEarningsCount);
+            
+            setEarningsNotificationCount(unviewedEarningsCount);
+          } else {
+            setEarningsNotificationCount(0);
+          }
+        } catch (earningsError) {
+          console.error('Failed to load earnings notifications:', earningsError);
+          setEarningsNotificationCount(0);
+        }
 
         // Set total count of UNVIEWED items only
         setScheduleNotificationCount(unviewedSchedulesCount + unviewedJoinRequestsCount);

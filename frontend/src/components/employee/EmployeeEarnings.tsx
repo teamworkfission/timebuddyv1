@@ -7,10 +7,14 @@ import {
   getCurrentWeekStart,
   getNextWeek,
   getPreviousWeek,
-  formatWeekRange
+  formatWeekRange,
+  getConfirmedHoursList
 } from '../../lib/confirmed-hours-api';
 import { EmployeeSchedulesAPI } from '../../lib/schedules-api';
 import { ChevronLeft, ChevronRight, Calendar, Clock } from 'lucide-react';
+import { NotificationBadge } from '../ui/NotificationBadge';
+import { supabase } from '../../lib/supabase';
+import { markAsViewed, hasBeenViewed } from '../../lib/notification-tracker';
 
 interface Business {
   business_id: string;
@@ -25,10 +29,26 @@ export function EmployeeEarnings() {
   const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(false);
+  const [weeklyNotificationCount, setWeeklyNotificationCount] = useState(0);
+  const [userId, setUserId] = useState<string>('');
+
+  // Get current user ID
+  useEffect(() => {
+    const getUserId = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserId(user.id);
+      }
+    };
+    getUserId();
+  }, []);
 
   useEffect(() => {
     loadBusinesses();
-  }, [currentWeek]);
+    if (userId) {
+      loadApprovedEarningsCount();
+    }
+  }, [currentWeek, userId]);
 
   // Helper function to check if a week is in the future
   const isWeekInFuture = (weekStart: string): boolean => {
@@ -56,6 +76,51 @@ export function EmployeeEarnings() {
     }
   };
 
+  // Load approved earnings count for notification badge
+  const loadApprovedEarningsCount = async () => {
+    if (!userId) return;
+    
+    try {
+      console.log('🔍 EARNINGS DEBUG: Loading approved earnings for user:', userId);
+      
+      // Fetch all confirmed hours records for employee
+      const confirmedHours = await getConfirmedHoursList();
+      
+      console.log('🔍 EARNINGS DEBUG: Confirmed hours records:', confirmedHours);
+      
+      // Find approved records
+      const approvedRecords = confirmedHours.filter(record => record.status === 'approved');
+      
+      console.log('🔍 EARNINGS DEBUG: Approved records:', approvedRecords);
+      
+      if (approvedRecords.length === 0) {
+        setWeeklyNotificationCount(0);
+        return;
+      }
+      
+      // Get the most recent approved_at timestamp
+      const latestApprovedAt = approvedRecords.reduce((latest, record) => {
+        if (!record.approved_at) return latest;
+        if (!latest) return record.approved_at;
+        return new Date(record.approved_at) > new Date(latest) ? record.approved_at : latest;
+      }, null as string | null);
+      
+      console.log('🔍 EARNINGS DEBUG: Latest approved_at:', latestApprovedAt);
+      
+      // Check if viewed
+      const isViewed = hasBeenViewed(userId, 'earnings', undefined, undefined, latestApprovedAt || undefined);
+      
+      console.log('🔍 EARNINGS DEBUG: Is viewed:', isViewed);
+      console.log('🔍 EARNINGS DEBUG: Approved count:', approvedRecords.length);
+      
+      // Show badge if there are approved records that haven't been viewed
+      setWeeklyNotificationCount(approvedRecords.length > 0 && !isViewed ? approvedRecords.length : 0);
+    } catch (error) {
+      console.error('Failed to load approved earnings:', error);
+      setWeeklyNotificationCount(0);
+    }
+  };
+
   const handleWeekNavigation = (direction: 'prev' | 'next') => {
     if (direction === 'next' && isNextWeekDisabled()) {
       // Prevent navigation to future weeks
@@ -80,8 +145,35 @@ export function EmployeeEarnings() {
   };
 
 
+  // Handle tab change - mark as viewed when Weekly tab is clicked
+  const handleTabChange = async (tabId: EarningsTabType) => {
+    setActiveTab(tabId);
+    
+    if (tabId === 'weekly' && userId) {
+      try {
+        // Get latest approved_at timestamp
+        const confirmedHours = await getConfirmedHoursList();
+        const approvedRecords = confirmedHours.filter(record => record.status === 'approved');
+        
+        const latestApprovedAt = approvedRecords.reduce((latest, record) => {
+          if (!record.approved_at) return latest;
+          if (!latest) return record.approved_at;
+          return new Date(record.approved_at) > new Date(latest) ? record.approved_at : latest;
+        }, null as string | null);
+        
+        // Mark as viewed
+        if (latestApprovedAt) {
+          markAsViewed(userId, 'earnings', undefined, undefined, latestApprovedAt);
+          setWeeklyNotificationCount(0);
+        }
+      } catch (error) {
+        console.error('Failed to mark earnings as viewed:', error);
+      }
+    }
+  };
+
   const tabs = [
-    { id: 'weekly' as EarningsTabType, label: 'Weekly', icon: '📅' },
+    { id: 'weekly' as EarningsTabType, label: 'Weekly', icon: '📅', notificationCount: weeklyNotificationCount },
     { id: 'reports' as EarningsTabType, label: 'Reports', icon: '📊' }
   ];
 
@@ -219,16 +311,19 @@ export function EmployeeEarnings() {
             {tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => handleTabChange(tab.id)}
                 className={`flex-1 sm:flex-none sm:min-w-[180px] px-4 sm:px-6 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
                   activeTab === tab.id
                     ? 'bg-green-500 text-white shadow-md'
                     : 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'
                 }`}
               >
-                <div className="flex items-center justify-center gap-2">
+                <div className="flex items-center justify-center gap-2 relative">
                   <span className="text-lg">{tab.icon}</span>
                   <span className="text-sm sm:text-base">{tab.label}</span>
+                  {'notificationCount' in tab && tab.notificationCount !== undefined && tab.notificationCount > 0 && (
+                    <NotificationBadge count={tab.notificationCount} />
+                  )}
                 </div>
               </button>
             ))}

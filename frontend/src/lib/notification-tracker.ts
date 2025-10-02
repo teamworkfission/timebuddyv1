@@ -2,29 +2,33 @@
 
 const STORAGE_KEY_PREFIX = 'employee_notification_viewed_';
 
-export type NotificationType = 'schedules' | 'join_requests';
+export type NotificationType = 'schedules' | 'join_requests' | 'earnings';
 
 interface ViewedState {
   lastViewedAt: string; // ISO timestamp
   weekViewed?: string; // For schedules, track which week was viewed
   schedulePostedAt?: string; // Track when the schedule was posted (to detect updates)
+  earningsApprovedAt?: string; // Track when earnings were last approved (to detect new approvals)
 }
 
 /**
  * Mark a notification type as viewed
  * @param schedulePostedAt - For schedules, the posted_at timestamp from the schedule
+ * @param earningsApprovedAt - For earnings, the most recent approved_at timestamp
  */
 export function markAsViewed(
   employeeGid: string, 
   type: NotificationType, 
   weekStart?: string, 
-  schedulePostedAt?: string
+  schedulePostedAt?: string,
+  earningsApprovedAt?: string
 ): void {
   const key = `${STORAGE_KEY_PREFIX}${employeeGid}_${type}`;
   const state: ViewedState = {
     lastViewedAt: new Date().toISOString(),
     weekViewed: weekStart,
-    schedulePostedAt: schedulePostedAt
+    schedulePostedAt: schedulePostedAt,
+    earningsApprovedAt: earningsApprovedAt
   };
   localStorage.setItem(key, JSON.stringify(state));
 }
@@ -32,12 +36,14 @@ export function markAsViewed(
 /**
  * Check if notifications of this type have been viewed for the current data
  * @param schedulePostedAt - For schedules, the current posted_at timestamp to compare
+ * @param earningsApprovedAt - For earnings, the most recent approved_at timestamp
  */
 export function hasBeenViewed(
   employeeGid: string, 
   type: NotificationType, 
   weekStart?: string,
-  schedulePostedAt?: string
+  schedulePostedAt?: string,
+  earningsApprovedAt?: string
 ): boolean {
   const key = `${STORAGE_KEY_PREFIX}${employeeGid}_${type}`;
   const stored = localStorage.getItem(key);
@@ -46,6 +52,7 @@ export function hasBeenViewed(
     type,
     weekStart,
     schedulePostedAt,
+    earningsApprovedAt,
     stored: !!stored
   });
   
@@ -86,6 +93,32 @@ export function hasBeenViewed(
       
       console.log('🔍 TRACKER DEBUG: Schedule already viewed');
       return true;
+    }
+    
+    // For earnings, check if there are new approvals
+    if (type === 'earnings') {
+      // If earnings have approved_at timestamp, check if it's newer than last viewed
+      if (earningsApprovedAt && state.earningsApprovedAt) {
+        const currentApprovedTime = new Date(earningsApprovedAt).getTime();
+        const viewedApprovedTime = new Date(state.earningsApprovedAt).getTime();
+        
+        console.log('🔍 TRACKER DEBUG: Earnings timestamp comparison:', {
+          current: earningsApprovedAt,
+          currentTime: currentApprovedTime,
+          viewed: state.earningsApprovedAt,
+          viewedTime: viewedApprovedTime,
+          isNewer: currentApprovedTime > viewedApprovedTime
+        });
+        
+        // If current earnings approval is newer, show badge
+        if (currentApprovedTime > viewedApprovedTime) {
+          console.log('🔍 TRACKER DEBUG: New earnings approved, showing badge');
+          return false;
+        }
+      }
+      
+      console.log('🔍 TRACKER DEBUG: Earnings already viewed');
+      return !!state.lastViewedAt;
     }
     
     // For join requests, just check if viewed recently (within last data fetch)
