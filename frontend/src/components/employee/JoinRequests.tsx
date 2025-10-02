@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Button } from '../ui/Button';
 import { joinRequestsApi, JoinRequest } from '../../lib/join-requests-api';
+import { supabase } from '../../lib/supabase';
+import { clearViewedState } from '../../lib/notification-tracker';
 
 interface JoinRequestsProps {
   onRequestsChange?: () => void;
@@ -11,6 +13,18 @@ export function JoinRequests({ onRequestsChange }: JoinRequestsProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [responding, setResponding] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string>('');
+
+  // Get current user ID
+  useEffect(() => {
+    const getUserId = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserId(user.id);
+      }
+    };
+    getUserId();
+  }, []);
 
   const loadJoinRequests = async () => {
     try {
@@ -18,6 +32,11 @@ export function JoinRequests({ onRequestsChange }: JoinRequestsProps) {
       setError(null);
       const data = await joinRequestsApi.getEmployeeJoinRequests();
       setRequests(data);
+      
+      // If no requests left, clear the viewed state so new requests will show badge
+      if (data.length === 0 && userId) {
+        clearViewedState(userId, 'join_requests');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load join requests');
     } finally {
@@ -26,8 +45,10 @@ export function JoinRequests({ onRequestsChange }: JoinRequestsProps) {
   };
 
   useEffect(() => {
-    loadJoinRequests();
-  }, []);
+    if (userId) {
+      loadJoinRequests();
+    }
+  }, [userId]);
 
   const handleResponse = async (requestId: string, status: 'accepted' | 'declined') => {
     try {
@@ -35,7 +56,13 @@ export function JoinRequests({ onRequestsChange }: JoinRequestsProps) {
       await joinRequestsApi.respondToJoinRequest(requestId, { status });
       
       // Remove the request from the list since it's no longer pending
-      setRequests(prev => prev.filter(req => req.id !== requestId));
+      const updatedRequests = requests.filter(req => req.id !== requestId);
+      setRequests(updatedRequests);
+      
+      // If no more requests, clear viewed state so new requests will show badge
+      if (updatedRequests.length === 0 && userId) {
+        clearViewedState(userId, 'join_requests');
+      }
       
       // Notify parent component of changes
       onRequestsChange?.();

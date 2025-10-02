@@ -5,6 +5,10 @@ import { EmployeeWeeklyScheduleView } from './EmployeeWeeklyScheduleView';
 import { EmployeeScheduleFilter } from './EmployeeScheduleFilter';
 import { EmployeeSchedulesAPI, getCurrentWeekStart, formatWeekRange, getPreviousWeek, getNextWeek } from '../../lib/schedules-api';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { NotificationBadge } from '../ui/NotificationBadge';
+import { joinRequestsApi } from '../../lib/join-requests-api';
+import { supabase } from '../../lib/supabase';
+import { markAsViewed, hasBeenViewed } from '../../lib/notification-tracker';
 
 type ScheduleTabType = 'schedule' | 'join-requests';
 
@@ -15,19 +19,38 @@ export function EmployeeSchedule() {
   const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [schedulesCount, setSchedulesCount] = useState(0);
+  const [joinRequestsCount, setJoinRequestsCount] = useState(0);
+  const [userId, setUserId] = useState<string>('');
 
   const tabs = [
-    { id: 'schedule' as ScheduleTabType, label: 'My Schedule', icon: '📅' },
-    { id: 'join-requests' as ScheduleTabType, label: 'Join Requests', icon: '📨' }
+    { id: 'schedule' as ScheduleTabType, label: 'My Schedule', icon: '📅', notificationCount: schedulesCount },
+    { id: 'join-requests' as ScheduleTabType, label: 'Join Requests', icon: '📨', notificationCount: joinRequestsCount }
   ];
 
-  // Load employee schedules
+  // Get current user ID
+  useEffect(() => {
+    const getUserId = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserId(user.id);
+      }
+    };
+    getUserId();
+  }, []);
+
+  // Load employee schedules and update badge count
   const loadScheduleData = async (weekStart: string) => {
     try {
       setLoading(true);
       setError(null);
       const data = await EmployeeSchedulesAPI.getEmployeeWeeklySchedules(weekStart);
       setScheduleData(data);
+      
+      // Update schedules count for notification badge - only show if NOT viewed
+      const schedulesExist = (data.schedules?.length || 0) > 0;
+      const isViewed = userId && hasBeenViewed(userId, 'schedules', weekStart);
+      setSchedulesCount(schedulesExist && !isViewed ? data.schedules.length : 0);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load schedule');
       console.error('Failed to load employee schedules:', err);
@@ -36,10 +59,44 @@ export function EmployeeSchedule() {
     }
   };
 
+  // Load join requests count and update badge
+  const loadJoinRequestsCount = async () => {
+    try {
+      const requests = await joinRequestsApi.getEmployeeJoinRequests();
+      
+      // Only show badge if there are requests AND they haven't been viewed
+      const requestsExist = requests.length > 0;
+      const isViewed = userId && hasBeenViewed(userId, 'join_requests');
+      setJoinRequestsCount(requestsExist && !isViewed ? requests.length : 0);
+    } catch (err) {
+      console.error('Failed to load join requests count:', err);
+      // Silently fail - don't show badge if error
+    }
+  };
+
   // Load initial data
   useEffect(() => {
-    loadScheduleData(currentWeek);
-  }, [currentWeek]);
+    if (userId) {
+      loadScheduleData(currentWeek);
+      loadJoinRequestsCount();
+    }
+  }, [currentWeek, userId]);
+
+  // Handle tab change - mark as viewed when clicked
+  const handleTabChange = (tabId: ScheduleTabType) => {
+    setActiveTab(tabId);
+    
+    if (!userId) return;
+
+    // Mark the tab as viewed and remove its badge
+    if (tabId === 'schedule') {
+      markAsViewed(userId, 'schedules', currentWeek);
+      setSchedulesCount(0);
+    } else if (tabId === 'join-requests') {
+      markAsViewed(userId, 'join_requests');
+      setJoinRequestsCount(0);
+    }
+  };
 
   // Week navigation
   const handlePreviousWeek = () => {
@@ -70,7 +127,7 @@ export function EmployeeSchedule() {
       case 'join-requests':
         return (
           <div className="max-w-4xl mx-auto px-4 py-6">
-            <JoinRequests />
+            <JoinRequests onRequestsChange={loadJoinRequestsCount} />
           </div>
         );
       case 'schedule':
@@ -202,16 +259,19 @@ export function EmployeeSchedule() {
             {tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => handleTabChange(tab.id)}
                 className={`flex-1 sm:flex-none sm:min-w-[180px] px-4 sm:px-6 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
                   activeTab === tab.id
                     ? 'bg-blue-500 text-white shadow-md'
                     : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
                 }`}
               >
-                <div className="flex items-center justify-center gap-2">
+                <div className="flex items-center justify-center gap-2 relative">
                   <span className="text-lg">{tab.icon}</span>
                   <span className="text-sm sm:text-base">{tab.label}</span>
+                  {tab.notificationCount > 0 && (
+                    <NotificationBadge count={tab.notificationCount} />
+                  )}
                 </div>
               </button>
             ))}
