@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { WeeklyHoursInput } from './WeeklyHoursInput';
 import { BusinessDropdown } from './BusinessDropdown';
 import { EmployeeEarningsTable } from './EmployeeEarningsTable';
+import { EmployeeReportsTab } from './EmployeeReportsTab';
 import { 
   getCurrentWeekStart,
   getNextWeek,
@@ -16,7 +17,10 @@ interface Business {
   name: string;
 }
 
+type EarningsTabType = 'weekly' | 'reports';
+
 export function EmployeeEarnings() {
+  const [activeTab, setActiveTab] = useState<EarningsTabType>('weekly');
   const [currentWeek, setCurrentWeek] = useState(getCurrentWeekStart());
   const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
   const [businesses, setBusinesses] = useState<Business[]>([]);
@@ -76,107 +80,152 @@ export function EmployeeEarnings() {
   };
 
 
-  return (
-    <div className="max-w-6xl mx-auto px-4 py-6">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex flex-col space-y-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Hours & Earnings</h1>
-            <p className="text-gray-600 mt-2">
-              Track your actual hours worked and submit them for payroll approval
-            </p>
-          </div>
-          
-          {/* Business and Week Selection */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            {/* Business Dropdown */}
-            <BusinessDropdown
-              businesses={businesses}
-              selectedBusinessId={selectedBusinessId}
-              onBusinessSelect={handleBusinessSelect}
-              loading={loading}
-            />
+  const tabs = [
+    { id: 'weekly' as EarningsTabType, label: 'Weekly', icon: '📅' },
+    { id: 'reports' as EarningsTabType, label: 'Reports', icon: '📊' }
+  ];
+
+  const renderTabContent = () => {
+    if (activeTab === 'reports') {
+      return <EmployeeReportsTab businesses={businesses} />;
+    }
+
+    // Weekly tab content
+    return (
+      <div className="max-w-6xl mx-auto px-4 py-6">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex flex-col space-y-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Hours & Earnings</h1>
+              <p className="text-gray-600 mt-2">
+                Track your actual hours worked and submit them for payroll approval
+              </p>
+            </div>
             
-            {/* Week Navigation */}
-            <div className="flex items-center bg-white rounded-lg shadow-sm border">
-              <button
-                onClick={() => handleWeekNavigation('prev')}
-                className="p-2 hover:bg-gray-50 rounded-l-lg transition-colors duration-200"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-              <div className="px-4 py-2 flex items-center space-x-2 min-w-[200px] justify-center">
-                <Calendar className="h-4 w-4 text-gray-500" />
-                <span className="font-medium">{formatWeekRange(currentWeek)}</span>
+            {/* Business and Week Selection */}
+            <div className="flex flex-col sm:flex-row gap-4">
+              {/* Business Dropdown */}
+              <BusinessDropdown
+                businesses={businesses}
+                selectedBusinessId={selectedBusinessId}
+                onBusinessSelect={handleBusinessSelect}
+                loading={loading}
+              />
+              
+              {/* Week Navigation */}
+              <div className="flex items-center bg-white rounded-lg shadow-sm border">
+                <button
+                  onClick={() => handleWeekNavigation('prev')}
+                  className="p-2 hover:bg-gray-50 rounded-l-lg transition-colors duration-200"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <div className="px-4 py-2 flex items-center space-x-2 min-w-[200px] justify-center">
+                  <Calendar className="h-4 w-4 text-gray-500" />
+                  <span className="font-medium">{formatWeekRange(currentWeek)}</span>
+                </div>
+                <button
+                  onClick={() => handleWeekNavigation('next')}
+                  disabled={isNextWeekDisabled()}
+                  className={`p-2 rounded-r-lg transition-colors duration-200 ${
+                    isNextWeekDisabled()
+                      ? 'cursor-not-allowed bg-gray-100 text-gray-400'
+                      : 'hover:bg-gray-50 text-gray-700'
+                  }`}
+                  title={isNextWeekDisabled() ? 'Cannot navigate to future weeks' : 'Next week'}
+                >
+                  <ChevronRight className={`h-5 w-5 ${
+                    isNextWeekDisabled() ? 'text-gray-400' : 'text-gray-700'
+                  }`} />
+                </button>
               </div>
-              <button
-                onClick={() => handleWeekNavigation('next')}
-                disabled={isNextWeekDisabled()}
-                className={`p-2 rounded-r-lg transition-colors duration-200 ${
-                  isNextWeekDisabled()
-                    ? 'cursor-not-allowed bg-gray-100 text-gray-400'
-                    : 'hover:bg-gray-50 text-gray-700'
-                }`}
-                title={isNextWeekDisabled() ? 'Cannot navigate to future weeks' : 'Next week'}
-              >
-                <ChevronRight className={`h-5 w-5 ${
-                  isNextWeekDisabled() ? 'text-gray-400' : 'text-gray-700'
-                }`} />
-              </button>
             </div>
           </div>
         </div>
+
+        {/* Loading State */}
+        {loading && (
+          <div className="text-center py-8 mb-8">
+            <Clock className="h-8 w-8 animate-spin text-blue-500 mx-auto mb-2" />
+            <p className="text-gray-600">Loading your businesses...</p>
+          </div>
+        )}
+
+        {/* No businesses message */}
+        {!loading && businesses.length === 0 && (
+          <div className="bg-white rounded-lg shadow p-8 text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
+              <span className="text-2xl">🏢</span>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No Businesses Found</h3>
+            <p className="text-gray-600 max-w-md mx-auto">
+              You don't have any business associations yet. Contact your employer to get added to their business.
+            </p>
+          </div>
+        )}
+
+        {/* Instructions */}
+        {!loading && businesses.length > 0 && !selectedBusinessId && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
+            <h3 className="text-lg font-medium text-blue-900 mb-2">Ready to Enter Hours</h3>
+            <p className="text-blue-700">
+              Select a business from the dropdown above to enter your hours for {formatWeekRange(currentWeek)}
+            </p>
+          </div>
+        )}
+
+        {/* Daily Hours and Earnings - Show when business is selected */}
+        {selectedBusinessId && (
+          <div className="mt-8 space-y-8">
+            {/* Daily Hours Input - Now at top */}
+            <WeeklyHoursInput
+              businessId={selectedBusinessId}
+              weekStart={currentWeek}
+            />
+            
+            {/* Weekly Earnings Table - Now at bottom */}
+            <EmployeeEarningsTable
+              businessId={selectedBusinessId}
+              weekStart={currentWeek}
+              weekEnd={getWeekEndDate(currentWeek)}
+            />
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Tab Navigation */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-6xl mx-auto">
+          <nav className="flex">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex-1 sm:flex-none sm:px-8 py-4 text-sm font-medium border-b-2 transition-colors duration-200 ${
+                  activeTab === tab.id
+                    ? 'border-blue-500 text-blue-600 bg-blue-50'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <span className="text-lg">{tab.icon}</span>
+                  <span className="hidden sm:inline">{tab.label}</span>
+                </div>
+              </button>
+            ))}
+          </nav>
+        </div>
       </div>
 
-      {/* Loading State */}
-      {loading && (
-        <div className="text-center py-8 mb-8">
-          <Clock className="h-8 w-8 animate-spin text-blue-500 mx-auto mb-2" />
-          <p className="text-gray-600">Loading your businesses...</p>
-        </div>
-      )}
-
-      {/* No businesses message */}
-      {!loading && businesses.length === 0 && (
-        <div className="bg-white rounded-lg shadow p-8 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
-            <span className="text-2xl">🏢</span>
-          </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No Businesses Found</h3>
-          <p className="text-gray-600 max-w-md mx-auto">
-            You don't have any business associations yet. Contact your employer to get added to their business.
-          </p>
-        </div>
-      )}
-
-      {/* Instructions */}
-      {!loading && businesses.length > 0 && !selectedBusinessId && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
-          <h3 className="text-lg font-medium text-blue-900 mb-2">Ready to Enter Hours</h3>
-          <p className="text-blue-700">
-            Select a business from the dropdown above to enter your hours for {formatWeekRange(currentWeek)}
-          </p>
-        </div>
-      )}
-
-      {/* Daily Hours and Earnings - Show when business is selected */}
-      {selectedBusinessId && (
-        <div className="mt-8 space-y-8">
-          {/* Daily Hours Input - Now at top */}
-          <WeeklyHoursInput
-            businessId={selectedBusinessId}
-            weekStart={currentWeek}
-          />
-          
-          {/* Weekly Earnings Table - Now at bottom */}
-          <EmployeeEarningsTable
-            businessId={selectedBusinessId}
-            weekStart={currentWeek}
-            weekEnd={getWeekEndDate(currentWeek)}
-          />
-        </div>
-      )}
+      {/* Tab Content */}
+      <div className="flex-1">
+        {renderTabContent()}
+      </div>
     </div>
   );
 }

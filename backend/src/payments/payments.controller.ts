@@ -258,12 +258,40 @@ export class PaymentsController {
     @Query('end_date') endDate: string,
     @Request() req
   ): Promise<MonthlyBreakdownReport> {
-    await this.getEmployerIdFromRequest(req);
+    // Allow both employers and employees to access this endpoint
+    // Employees will only see their own data (filtered by service layer)
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      throw new UnauthorizedException('Authorization header required');
+    }
+
+    const userInfo = await this.authService.verifyToken(authHeader);
+    if (!userInfo) {
+      throw new UnauthorizedException('Invalid authentication token');
+    }
     
     if (!startDate || !endDate) {
       throw new BadRequestException('start_date and end_date are required');
     }
 
+    // If employee, get their employee_id and filter results
+    if (userInfo.role === 'employee') {
+      const employeeRecord = await this.paymentsService.getEmployeeByUserId(userInfo.userId);
+      if (!employeeRecord) {
+        throw new UnauthorizedException('Employee record not found');
+      }
+      
+      // Get the breakdown and filter to only this employee's data
+      const breakdown = await this.paymentsService.getEmployeeMonthlyBreakdown(businessId, startDate, endDate);
+      
+      // Filter employees array to only include the current employee
+      return {
+        ...breakdown,
+        employees: breakdown.employees.filter(emp => emp.employee_id === employeeRecord.id)
+      };
+    }
+
+    // Employers see all employees
     return this.paymentsService.getEmployeeMonthlyBreakdown(businessId, startDate, endDate);
   }
 
