@@ -41,41 +41,41 @@ export function JobTabs({
 
   return (
     <div>
-      {/* Tab Navigation */}
-      <div className="border-b border-gray-200 mb-6">
-        <nav className="-mb-px flex space-x-8">
-          {tabs.map((tab) => {
-            const isActive = activeTab === tab.id;
-            
-            return (
-              <button
-                key={tab.id}
-                onClick={() => onTabChange(tab.id)}
-                className={`
-                  group inline-flex items-center py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200
-                  ${isActive
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }
-                `}
-              >
-                <span className="mr-2 text-lg">{tab.icon}</span>
-                {tab.label}
-                {tab.count !== undefined && tab.count > 0 && (
-                  <span className={`
-                    ml-2 py-0.5 px-2 rounded-full text-xs font-medium
-                    ${isActive
-                      ? 'bg-blue-100 text-blue-600'
-                      : 'bg-gray-100 text-gray-600 group-hover:bg-gray-200'
-                    }
-                  `}>
-                    {tab.count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </nav>
+      {/* Tab Navigation - Mobile Optimized */}
+      <div className="bg-white border-b border-gray-200 mb-6">
+        <div className="px-2 py-2">
+          <nav className="flex gap-2 sm:gap-3">
+            {tabs.map((tab) => {
+              const isActive = activeTab === tab.id;
+              
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => onTabChange(tab.id)}
+                  className={`flex-1 sm:flex-none sm:min-w-[180px] px-3 sm:px-6 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    isActive
+                      ? 'bg-purple-500 text-white shadow-md'
+                      : 'bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200'
+                  }`}
+                >
+                  <div className="flex items-center justify-center gap-2 flex-wrap">
+                    <span className="text-lg">{tab.icon}</span>
+                    <span className="text-xs sm:text-sm">{tab.label}</span>
+                    {tab.count !== undefined && tab.count > 0 && (
+                      <span className={`py-0.5 px-2 rounded-full text-xs font-bold ${
+                        isActive
+                          ? 'bg-white bg-opacity-30 text-white'
+                          : 'bg-purple-200 text-purple-800'
+                      }`}>
+                        {tab.count}
+                      </span>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </nav>
+        </div>
       </div>
 
       {/* Tab Content */}

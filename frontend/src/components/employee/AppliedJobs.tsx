@@ -138,13 +138,15 @@ export function AppliedJobs() {
                 onToggleExpanded={() => handleCardToggle(application.job_post_id)}
                 isAppliedJobsContext={true}
               />
-              {/* Show application status and date */}
-              <div className="absolute top-2 right-2 sm:right-12">
-                <span className={`px-2 py-1 text-xs rounded-full font-medium ${getStatusColorClass(application.status)}`}>
-                  {APPLICATION_STATUS_LABELS[application.status]} {
-                    application.status === 'applied' 
-                      ? new Date(application.applied_at).toLocaleDateString()
-                      : new Date(application.status_updated_at || application.applied_at).toLocaleDateString()
+              {/* Show application status and date - Mobile Optimized */}
+              <div className="absolute top-2 right-2 flex flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-2">
+                <span className={`px-2 sm:px-3 py-1 text-xs rounded-full font-medium whitespace-nowrap ${getStatusColorClass(application.status)}`}>
+                  {APPLICATION_STATUS_LABELS[application.status]}
+                </span>
+                <span className="px-2 py-0.5 sm:py-1 text-xs rounded-full font-medium bg-gray-100 text-gray-700 whitespace-nowrap">
+                  {application.status === 'applied' 
+                    ? new Date(application.applied_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                    : new Date(application.status_updated_at || application.applied_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
                   }
                 </span>
               </div>

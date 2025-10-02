@@ -248,35 +248,38 @@ export function JobCard({ job, isExpanded = false, onToggleExpanded, isAppliedJo
           </div>
         )}
 
-        {/* Contact Info */}
+        {/* Contact Info - Mobile Optimized */}
         <div className="border-t-2 border-gray-300 pt-4">
           <h4 className="font-semibold text-gray-900 mb-3">Contact Information</h4>
-          <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <span className="font-medium text-gray-800">Phone:</span>
+          <div className="space-y-3">
+            {/* Phone */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+              <span className="font-medium text-gray-800 flex-shrink-0">Phone:</span>
               <a
                 href={`tel:${job.phone}`}
-                className="text-blue-600 hover:text-blue-800 hover:underline transition-colors cursor-pointer ml-2"
+                className="text-blue-600 hover:text-blue-800 hover:underline transition-colors cursor-pointer break-all"
                 title="Call phone number"
               >
                 {job.phone}
               </a>
             </div>
+            {/* Email */}
             {job.email && (
-              <div className="flex items-center space-x-2">
-                <span className="font-medium text-gray-800">Email:</span>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                <span className="font-medium text-gray-800 flex-shrink-0">Email:</span>
                 <a
                   href={`mailto:${job.email}`}
-                  className="text-blue-600 hover:text-blue-800 hover:underline transition-colors cursor-pointer ml-2"
+                  className="text-blue-600 hover:text-blue-800 hover:underline transition-colors cursor-pointer break-all text-sm sm:text-base"
                   title="Send email"
                 >
                   {job.email}
                 </a>
               </div>
             )}
-            <div>
-              <span className="font-medium text-gray-800">Posted:</span>
-              <span className="text-gray-600 text-sm ml-2">{formatTimeAgo(job.published_at || job.created_at)}</span>
+            {/* Posted Date */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+              <span className="font-medium text-gray-800 flex-shrink-0">Posted:</span>
+              <span className="text-gray-600 text-sm">{formatTimeAgo(job.published_at || job.created_at)}</span>
             </div>
           </div>
         </div>
