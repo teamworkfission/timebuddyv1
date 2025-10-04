@@ -5,10 +5,7 @@ import { JobTabs, JobTabType } from './JobTabs';
 import { AppliedJobs } from './AppliedJobs';
 import { PublicJobPost } from '../../lib/public-job-api';
 import { getJobApplications } from '../../lib/job-applications-api';
-
-interface SavedJob extends PublicJobPost {
-  saved_at: string;
-}
+import { getSavedJobs, unsaveJob, SavedJob } from '../../lib/saved-jobs-utils';
 
 export function MyJobs() {
   const [activeTab, setActiveTab] = useState<JobTabType>('saved');
@@ -43,8 +40,7 @@ export function MyJobs() {
   const loadSavedJobs = async () => {
     setLoading(true);
     try {
-      // Load saved jobs from localStorage for now
-      const savedJobsData = JSON.parse(localStorage.getItem('savedJobs') || '[]');
+      const savedJobsData = getSavedJobs();
       setSavedJobs(savedJobsData);
     } catch (error) {
       console.error('Failed to load saved jobs:', error);
@@ -69,15 +65,11 @@ export function MyJobs() {
 
   const handleUnsaveJob = async (jobId: string) => {
     try {
-      const savedJobs = JSON.parse(localStorage.getItem('savedJobs') || '[]');
-      const filteredJobs = savedJobs.filter((savedJob: any) => savedJob.id !== jobId);
-      localStorage.setItem('savedJobs', JSON.stringify(filteredJobs));
+      unsaveJob(jobId);
       
       // Update local state immediately
-      setSavedJobs(filteredJobs);
-      
-      // Trigger custom event to update JobCard states
-      window.dispatchEvent(new CustomEvent('savedJobsChanged'));
+      const updatedSavedJobs = getSavedJobs();
+      setSavedJobs(updatedSavedJobs);
     } catch (error) {
       console.error('Failed to unsave job:', error);
     }

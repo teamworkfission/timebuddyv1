@@ -3,6 +3,7 @@ import { PublicJobPost, formatPayRange, formatHoursPerWeek, formatTimeAgo, forma
 import { BUSINESS_TYPE_LABELS } from '../../lib/business-api';
 import { Button } from '../ui/Button';
 import { JobApplicationModal } from './JobApplicationModal';
+import { isJobSaved, toggleJobSaved } from '../../lib/saved-jobs-utils';
 
 interface JobCardProps {
   job: PublicJobPost;
@@ -32,35 +33,14 @@ export function JobCard({ job, isExpanded = false, onToggleExpanded, isAppliedJo
 
   // Check if job is saved on component mount
   useEffect(() => {
-    const savedJobs = JSON.parse(localStorage.getItem('savedJobs') || '[]');
-    const isJobSaved = savedJobs.some((savedJob: any) => savedJob.id === job.id);
-    setIsSaved(isJobSaved);
+    setIsSaved(isJobSaved(job.id));
   }, [job.id]);
 
   const handleSaveJob = async () => {
     setIsSaving(true);
     try {
-      const savedJobs = JSON.parse(localStorage.getItem('savedJobs') || '[]');
-      
-      if (isSaved) {
-        // Remove from saved jobs
-        const filteredJobs = savedJobs.filter((savedJob: any) => savedJob.id !== job.id);
-        localStorage.setItem('savedJobs', JSON.stringify(filteredJobs));
-        setIsSaved(false);
-        // Trigger custom event to refresh MyJobs component
-        window.dispatchEvent(new CustomEvent('savedJobsChanged'));
-      } else {
-        // Add to saved jobs
-        const jobWithSavedDate = {
-          ...job,
-          saved_at: new Date().toISOString()
-        };
-        savedJobs.push(jobWithSavedDate);
-        localStorage.setItem('savedJobs', JSON.stringify(savedJobs));
-        setIsSaved(true);
-        // Trigger custom event to refresh MyJobs component
-        window.dispatchEvent(new CustomEvent('savedJobsChanged'));
-      }
+      const newSavedStatus = toggleJobSaved(job);
+      setIsSaved(newSavedStatus);
     } catch (error) {
       console.error('Failed to save job:', error);
     } finally {

@@ -5,6 +5,7 @@ import { Input } from '../ui/Input';
 import { PublicJobPost } from '../../lib/public-job-api';
 import { Employee, employeesApi } from '../../lib/employees-api';
 import { createJobApplication, JobApplicationData } from '../../lib/job-applications-api';
+import { removeJobFromSavedAfterApplication } from '../../lib/saved-jobs-utils';
 
 interface JobApplicationModalProps {
   isOpen: boolean;
@@ -140,6 +141,9 @@ export function JobApplicationModal({ isOpen, onClose, job, onSuccess }: JobAppl
 
       await createJobApplication(formData);
       setSuccess(true);
+      
+      // Remove job from saved jobs if it was previously saved
+      removeJobFromSavedAfterApplication(job.id);
       
       // Notify other components that a new application was submitted
       window.dispatchEvent(new CustomEvent('jobApplicationSubmitted'));
