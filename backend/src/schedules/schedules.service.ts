@@ -1090,24 +1090,49 @@ export class SchedulesService {
       updateData.rejected_by = null;
     }
 
-    const { data: confirmedHours, error } = await supabase
-      .from('employee_confirmed_hours')
-      .update(updateData)
-      .eq('id', id)
-      .eq('employee_id', employee.id)
-      .in('status', ['draft', 'rejected']) // Can update draft or rejected hours
-      .select()
-      .single();
+    // Use atomic RPC function to prevent check_rejected_fields constraint violation
+    try {
+      const { data: rpcResults, error: rpcError } = await supabase.rpc('update_confirmed_hours_atomic', {
+        p_id: id,
+        p_employee_id: employee.id,
+        p_update_data: updateData,
+        p_allowed_statuses: ['draft', 'rejected']
+      });
 
-    if (error) {
-      throw new BadRequestException(`Failed to update confirmed hours: ${error.message}`);
+      if (rpcError) {
+        throw rpcError;
+      }
+
+      // RPC returns array, get first result
+      const confirmedHours = rpcResults && rpcResults.length > 0 ? rpcResults[0] : null;
+      if (!confirmedHours) {
+        throw new NotFoundException('Confirmed hours record not found or not editable');
+      }
+
+      return confirmedHours;
+    } catch (rpcError) {
+      // Fallback to direct update if RPC function fails
+      console.warn('RPC update failed, falling back to direct update:', rpcError.message);
+      
+      const { data: confirmedHours, error } = await supabase
+        .from('employee_confirmed_hours')
+        .update(updateData)
+        .eq('id', id)
+        .eq('employee_id', employee.id)
+        .in('status', ['draft', 'rejected']) // Can update draft or rejected hours
+        .select()
+        .single();
+
+      if (error) {
+        throw new BadRequestException(`Failed to update confirmed hours: ${error.message}`);
+      }
+
+      if (!confirmedHours) {
+        throw new NotFoundException('Confirmed hours record not found or not editable');
+      }
+
+      return confirmedHours;
     }
-
-    if (!confirmedHours) {
-      throw new NotFoundException('Confirmed hours record not found or not editable');
-    }
-
-    return confirmedHours;
   }
 
   async submitConfirmedHours(
