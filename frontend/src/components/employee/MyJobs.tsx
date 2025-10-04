@@ -3,7 +3,6 @@ import { JobCard } from './JobCard';
 import { Button } from '../ui/Button';
 import { JobTabs, JobTabType } from './JobTabs';
 import { AppliedJobs } from './AppliedJobs';
-import { PublicJobPost } from '../../lib/public-job-api';
 import { getJobApplications } from '../../lib/job-applications-api';
 import { getSavedJobs, unsaveJob, SavedJob } from '../../lib/saved-jobs-utils';
 
