@@ -75,8 +75,8 @@ export function JobCard({ job, isExpanded = false, onToggleExpanded, isAppliedJo
         className="bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow duration-200 relative"
         onClick={onToggleExpanded}
       >
-        {/* Status Badge - Top Right (only show when not in applied jobs context) */}
-        {!isAppliedJobsContext && (
+        {/* Status Badge - Top Right (only show when not in applied jobs context and not in saved jobs context) */}
+        {!isAppliedJobsContext && !isSavedJobsContext && (
           <div className="absolute top-3 right-3 z-10">
             {hasApplied ? (
               <StatusBadge type="applied" />
@@ -86,7 +86,7 @@ export function JobCard({ job, isExpanded = false, onToggleExpanded, isAppliedJo
           </div>
         )}
 
-        <div className={`space-y-2 ${!isAppliedJobsContext && (hasApplied || isSaved) ? 'pr-16' : ''}`}>
+        <div className={`space-y-2 ${!isAppliedJobsContext && !isSavedJobsContext && (hasApplied || isSaved) ? 'pr-16' : ''}`}>
           {/* Job Title */}
           <h3 className="text-lg font-semibold text-gray-900 truncate">
             {job.job_title}
