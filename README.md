@@ -44,6 +44,31 @@ PTimeBuddy is a comprehensive platform connecting local businesses with part-tim
 - **Advanced Filters**: Filter by job type, pay range, benefits
 - **Mobile-Optimized**: Responsive design for all devices
 
+### ⏰ **Schedule & Hours Management** ⭐ *ENHANCED*
+- **Employee Hours Tracking**: Track actual hours worked per week
+- **Schedule Integration**: Prefill hours from existing schedules
+- **Approval Workflow**: Submit → Review → Approve/Reject cycle
+- **Hours Correction**: Edit and resubmit rejected hours seamlessly
+- **Status Tracking**: Draft, Submitted, Approved, Rejected statuses
+
+## 🚀 Recent Updates (Oct 2025)
+
+### ✅ **Critical Fix: Employee Hours Constraint Resolution**
+- **Issue**: Employees couldn't update rejected hours due to database constraint violation
+- **Solution**: Implemented atomic database function for safe status transitions
+- **Impact**: ✅ "Update Draft" button now works correctly after rejection
+- **Technical**: Added `update_confirmed_hours_atomic()` PostgreSQL function
+
+### 🔧 **Enhanced Error Handling**
+- **Fallback Mechanism**: Backwards compatibility for hour updates
+- **Better Logging**: Improved error messages and debugging information
+- **Constraint Safety**: Proper handling of database constraints during status changes
+
+### 🎯 **Production Ready Features** 
+- **Schedule Hours Integration**: Seamless connection between schedules and payroll
+- **Bulletproof Business Logic**: Prevents double payments and calculation errors
+- **Real-time Status Updates**: Instant feedback on hour submissions and approvals
+
 ## 🏗️ Architecture
 
 ### Backend (NestJS + Supabase)
@@ -163,6 +188,7 @@ VITE_GOOGLE_MAPS_API_KEY=your_google_maps_key
 
 ### Technical Documentation
 - **[Database Setup](./database/README.md)** - Database schema and migrations
+- **[Backup & Restore Guide](./BACKUP_GUIDE.md)** ⭐ *Database backup and recovery system*
 - **[Frontend Setup](./frontend/SETUP.md)** - Frontend development guide
 - **[Authentication Status](./AUTH_MODULE_STATUS.md)** - Auth system implementation
 
@@ -231,6 +257,7 @@ VITE_GOOGLE_MAPS_API_KEY=your_google_maps_key
 ### Production Checklist
 - [ ] Environment variables configured
 - [ ] Database migrations applied
+- [ ] Automated backups configured ⭐ *NEW - See [BACKUP_GUIDE.md](./BACKUP_GUIDE.md)*
 - [ ] Supabase RLS policies enabled
 - [ ] Google Maps API key configured
 - [ ] SSL certificates installed
